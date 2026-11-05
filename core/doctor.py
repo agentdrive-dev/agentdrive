@@ -92,7 +92,10 @@ def _check_public_key(config_dir: Path, url: str | None, get_text) -> Check:
     except Exception:
         return Check("public_key", False, "The public key URL could not be reached.")
     if status != 200:
-        return Check("public_key", False, f"The public key URL returned HTTP {status}.")
+        detail = f"The public key URL returned HTTP {status}."
+        if status == 403:
+            detail += " A CDN or bot-protection rule may be blocking non-browser clients."
+        return Check("public_key", False, detail)
     if "BEGIN PUBLIC KEY" not in body or "PRIVATE KEY" in body:
         return Check("public_key", False, "The URL did not return a public key.")
     return Check("public_key", True, "Public key URL returned a public key.")

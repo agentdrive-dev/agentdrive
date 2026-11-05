@@ -86,17 +86,31 @@ def test_install_note_and_bundle(tmp_path, capsys):
     assert loaded["token_file"].endswith("tokens.json")
 
 
+VEHICLE_TESTED = "Supported — tested end-to-end on a real vehicle (v0.1, internet commands)"
+
+
 def test_supported_agents_list_marks_muse_supported():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assistants = (ROOT / "docs" / "07-assistants.md").read_text(encoding="utf-8")
+    muse_page = (ROOT / "docs" / "10-install-in-muse.md").read_text(encoding="utf-8")
+    assistant_page = (ROOT / "docs" / "prerequisites" / "assistant.md").read_text(encoding="utf-8")
     assert "## Supported agents" in readme
-    assert "| Muse | Supported |" in readme
-    assert "| [Grok Bot](https://grokbot.ai) | Supported |" in readme
+    assert f"| Muse | {VEHICLE_TESTED} |" in readme
+    assert f"| [Grok Bot](https://grokbot.ai) | {VEHICLE_TESTED} |" in readme
+    assert "Tested end to end on a real car" not in readme
     assert "The Muse adapter is not built yet" not in readme
     assert "stub and not built yet" not in readme
     assert "| `muse` |" in assistants
     assert "Phase 2 stub" not in assistants
-    assert "Supported" in assistants.split("| `muse` |", 1)[1].split("\n", 1)[0]
+    for text in (readme, assistants, muse_page, assistant_page):
+        lowered = text.lower()
+        assert "unverified" not in lowered
+        assert "untested" not in lowered
+        assert VEHICLE_TESTED.lower() in lowered
+    muse_row = assistants.split("| `muse` |", 1)[1].split("\n", 1)[0]
+    grok_row = assistants.split("| `grokbot` |", 1)[1].split("\n", 1)[0]
+    assert VEHICLE_TESTED in muse_row
+    assert VEHICLE_TESTED in grok_row
 
 
 def test_config_home_and_key_path(tmp_path, monkeypatch):

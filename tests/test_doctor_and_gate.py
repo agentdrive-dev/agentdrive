@@ -114,6 +114,30 @@ def test_doctor_reports_each_check(tmp_path):
     assert "secret" not in " ".join(item.detail for item in failed)
 
 
+def test_doctor_public_key_403_hints_at_cdn_blocking():
+    url = "https://your-project.pages.dev/.well-known/appspecific/com.tesla.3p.public-key.pem"
+
+    def run(status):
+        checks = run_doctor(
+            config_dir=ROOT / "config",
+            secrets_dir=None,
+            public_key_url=url,
+            token_file=None,
+            get_text=lambda requested: (status, "blocked"),
+            now=NOW,
+        )
+        return next(item for item in checks if item.name == "public_key")
+
+    blocked = run(403)
+    assert blocked.ok is False
+    assert blocked.detail == (
+        "The public key URL returned HTTP 403. "
+        "A CDN or bot-protection rule may be blocking non-browser clients."
+    )
+    missing = run(404)
+    assert missing.detail == "The public key URL returned HTTP 404."
+
+
 def test_cli_accepts_only_the_explicit_sentence(tmp_path):
     from core.cli import main
 
