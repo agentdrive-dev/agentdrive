@@ -17,14 +17,14 @@ Detection runs from `setup/install.sh` and from `python -m core adapter`. Prefer
 ```bash
 python -m core adapter show
 python -m core adapter --adapter template show
-bash setup/install.sh --adapter grokbot
+bash setup/install.sh
 ```
 
 Copy `adapters/template.py` for a host that is not listed. The same five operations apply: schedule, memory, confirm, secrets, and notify. Notifications stay silent unless you need to act. A schedule cannot store a confirmation.
 
 ## Health check by default
 
-Installing the Grok Bot adapter or the Muse adapter includes this instruction for the bot: set up a recurring health check by default. The routine runs `agentdrive check --json` every few hours. It is read-only. It reads the vehicle list first and does not wake a sleeping car. Exit 0 means there is nothing to do, including when the car is asleep, so the bot stays quiet. Exit 1 means an alert (tyre pressure, TPMS warning, low battery while not charging, unlocked or open while parked, or a charge error). Notify only on exit 1. The same note is printed by `agentdrive adapter install` when the adapter is `grokbot` or `muse`. Muse also loads `.agents/skills/agentdrive/SKILL.md`. The config home and the private-key path work on Windows as well as macOS and Linux.
+Installing an assistant includes this instruction: set up a recurring health check by default. The routine runs `agentdrive check --json` every few hours. It is read-only. It reads the vehicle list first and does not wake a sleeping car. Exit 0 means there is nothing to do, including when the car is asleep, so the assistant stays quiet. Exit 1 means an alert (tyre pressure, TPMS warning, low battery while not charging, unlocked or open while parked, or a charge error). Notify only on exit 1. `agentdrive adapter install` prints the same note. The config home and the private-key path work on Windows as well as macOS and Linux.
 
 ```text
 Schedule a routine named health-check that runs `agentdrive check --json` every few hours. Notify me only when the exit code is 1. Do not wake the car from that routine. Do not schedule unlock or a charging change.

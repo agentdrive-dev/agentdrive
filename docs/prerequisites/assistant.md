@@ -2,17 +2,17 @@
 
 [Back to the checklist](../00-before-you-start.md)
 
-AgentDrive is a toolkit an assistant drives. Grok Bot and Muse are supported — tested end-to-end on a real vehicle (v0.1, internet commands). The template adapter is supported for another agent that can run shell commands. Use the same Quick start prompt for each of them.
+Works with Grok Bot, Muse, or any agent that can run shell commands.
 
-The assistant has to read these docs, run shell commands, store files on the machine, and wait when a step needs you. You choose the assistant. AgentDrive does not add a fee on top of whatever that assistant already costs.
+The assistant has to read these docs, run shell commands, store files on the machine, and wait when a step needs you. You choose the assistant. AgentDrive does not add a fee on top of whatever that assistant already costs. Everyone follows the same Quick start prompt.
 
 ## Step 1 — Choose an assistant that can run commands
 
-![Diagram: you choose Grok Bot or another assistant that can run commands](../images/assistant-1.svg)
+![Diagram: you choose an assistant that can run commands](../images/assistant-1.svg)
 
-Grok Bot and Muse are both implemented. Another assistant can follow `adapters/template.py` if it can call the same five operations: schedule, memory, confirm, secrets, and notify. If the assistant can only chat, it can still walk you through the pages, but it cannot publish the key or refresh tokens by itself.
+The assistant follows these docs and runs commands on your computer. It can use `adapters/template.py` when it can call the same five operations: schedule, memory, confirm, secrets, and notify. If the assistant can only chat, it can still walk you through the pages, but it cannot publish the key or refresh tokens by itself.
 
-When the Grok Bot or Muse adapter is installed, set up a recurring health check by default. Schedule a routine that runs `agentdrive check --json` every few hours. The check is read-only and does not wake a sleeping car. Exit 0 means there is nothing to report, including when the vehicle is asleep. Exit 1 means an alert the owner should hear. Notify only when the exit code is 1. Do not put that check on a schedule that wakes the car, and do not schedule unlock or a charging change. Muse also reads `.agents/skills/agentdrive/SKILL.md`.
+On install, set up a recurring health check by default. Schedule a routine that runs `agentdrive check --json` every few hours. The check is read-only and does not wake a sleeping car. Exit 0 means there is nothing to report, including when the vehicle is asleep. Exit 1 means an alert the owner should hear. Notify only when the exit code is 1. Do not put that check on a schedule that wakes the car, and do not schedule unlock or a charging change.
 
 ## Step 2 — Use two turns for the disclaimer
 
@@ -34,11 +34,9 @@ The adapter reads `client-id`, `client-secret`, `vin`, and `redirect-uri` from f
 
 ![Diagram: one host signal is stored, both hosts stop and ask, and --adapter overrides detection](../images/adapter-detect.svg)
 
-You do not pick an adapter by hand when the process already shows which host it is. `setup/install.sh` and `python -m core adapter` check environment variables and write `$AGENTDRIVE_HOME/host.yaml`.
+You do not pick an adapter by hand when the process already shows which host it is. `setup/install.sh` and `python -m core adapter` check the environment and write `$AGENTDRIVE_HOME/host.yaml`. If none match, the stored choice is `unknown` and runtime uses the template adapter. If two hosts match, the installer stops and asks you to pass `--adapter`. A value of `0`, `false`, or `no` does not count as a match.
 
-Grok Bot matches `GROK_BOT`, `GROKBOT`, `GROK_BOT_HOME`, `GROK_BOT_SESSION`, or `CURSOR_AGENT`. Muse matches `MUSE_BOT`, `MUSE_HOME`, `MUSE_SESSION`, or `MUSE_AGENT`. If none match, the stored choice is `unknown` and runtime uses the template adapter. If both hosts match, the installer stops and asks you to pass `--adapter`. A value of `0`, `false`, or `no` does not count as a match.
-
-Force a choice with `setup/install.sh --adapter template`, `python -m core adapter --adapter muse show`, or `AGENTDRIVE_ADAPTER`. Prefer `$AGENTDRIVE_HOME/host.yaml` (written by the installer). Only copy `config/host.example.yaml` to `config/host.yaml` for a repo-local override you do not commit. A file with `source: override` is kept until you pass `--redetect`. See `config/host.example.yaml`.
+Force a choice with `bash setup/install.sh --adapter template` or `AGENTDRIVE_ADAPTER`. Prefer `$AGENTDRIVE_HOME/host.yaml` (written by the installer). Only copy `config/host.example.yaml` to `config/host.yaml` for a repo-local override you do not commit. A file with `source: override` is kept until you pass `--redetect`. See `config/host.example.yaml`. The host names are listed in [Assistants](../07-assistants.md).
 
 ## Expected result
 

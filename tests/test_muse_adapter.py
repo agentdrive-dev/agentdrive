@@ -99,11 +99,15 @@ def test_supported_agents_list_marks_muse_supported():
     assert "stub and not built yet" not in readme
     assert "| `muse` |" in assistants
     assert "Phase 2 stub" not in assistants
-    for text in (readme, assistants, assistant_page):
+    for text in (readme, assistants):
         lowered = text.lower()
         assert "unverified" not in lowered
         assert "untested" not in lowered
         assert VEHICLE_TESTED.lower() in lowered
+    assistant_lowered = assistant_page.lower()
+    assert "unverified" not in assistant_lowered
+    assert "untested" not in assistant_lowered
+    assert "works with grok bot, muse, or any agent that can run shell commands." in assistant_lowered
     muse_row = assistants.split("| `muse` |", 1)[1].split("\n", 1)[0]
     grok_row = assistants.split("| `grokbot` |", 1)[1].split("\n", 1)[0]
     assert VEHICLE_TESTED in muse_row

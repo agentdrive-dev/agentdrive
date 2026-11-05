@@ -10,7 +10,7 @@ Docs are published at <https://agentdrive-dev.github.io/agentdrive>.
 
 ## Quick start: install with your AI agent
 
-AgentDrive is installed by your assistant (Grok Bot, or any agent that can run shell commands on a computer). Paste this message to it:
+Works with Grok Bot, Muse, or any agent that can run shell commands. Paste this message to your assistant:
 
 ```text
 Install AgentDrive from https://github.com/agentdrive-dev/agentdrive.
@@ -54,7 +54,7 @@ A private key together with an access token can operate the vehicle inside the s
 - A [Tesla account that owns the car](docs/prerequisites/vehicle-account.md).
 - A [car that supports virtual keys](docs/prerequisites/vehicle-compatibility.md).
 - A [computer your assistant can run commands on](docs/prerequisites/computer.md).
-- A supported [assistant](docs/prerequisites/assistant.md) (Grok Bot or Muse, or any shell agent via the template).
+- A supported [assistant](docs/prerequisites/assistant.md). Works with Grok Bot, Muse, or any agent that can run shell commands.
 - A [Tesla developer account](docs/prerequisites/developer-app.md) with a [payment method and a billing limit above 0](docs/prerequisites/billing.md). Tesla bills API use. A $10 monthly credit is published for individual developers.
 - A [GitHub account](docs/prerequisites/public-key-host.md). You do not buy a domain.
 - [About an hour](docs/prerequisites/time.md).
@@ -133,7 +133,7 @@ Use a different `--turn-id` for each chat message (for example 1 when showing th
 **Adapters**
 
 - The Grok Bot adapter. Supported — tested end-to-end on a real vehicle (v0.1, internet commands).
-- The Muse adapter. Supported — tested end-to-end on a real vehicle (v0.1, internet commands). Config home is `~/.config/agentdrive` or `$AGENTDRIVE_HOME`, on macOS, Linux, and Windows.
+- The Muse adapter. Supported — tested end-to-end on a real vehicle (v0.1, internet commands).
 - The template adapter.
 
 **Skills**

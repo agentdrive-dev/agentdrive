@@ -7,7 +7,7 @@
 - A [Tesla account that owns the car](prerequisites/vehicle-account.md).
 - A [car that supports virtual keys](prerequisites/vehicle-compatibility.md).
 - A [computer your assistant can run commands on](prerequisites/computer.md).
-- A supported [assistant](prerequisites/assistant.md) (Grok Bot or Muse, or any shell agent via the template).
+- A supported [assistant](prerequisites/assistant.md). Works with Grok Bot, Muse, or any agent that can run shell commands.
 - A [Tesla developer account](prerequisites/developer-app.md) with a [payment method and a billing limit above 0](prerequisites/billing.md). Tesla bills API use. A $10 monthly credit is published for individual developers.
 - A [GitHub account](prerequisites/public-key-host.md). You do not buy a domain.
 - [About an hour](prerequisites/time.md).
