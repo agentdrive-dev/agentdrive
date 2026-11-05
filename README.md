@@ -49,7 +49,7 @@ A private key together with an access token can operate the vehicle inside the s
 
 ## Before you start
 
-Do not install anything until every row below is true, or you know which row you still have to finish. Each item links to its own step-by-step page. Checked against Tesla's developer docs on the day this guide was written: the getting-started page, the billing page, the virtual-key guide, the partner endpoints, and the vehicle endpoints.
+Before installing, make sure you have everything in the table below. If something is missing, the linked page shows how to get it. Checked against Tesla's developer docs on the day this guide was written: the getting-started page, the billing page, the virtual-key guide, the partner endpoints, and the vehicle endpoints.
 
 | Item | Why it is needed | Cost | Who |
 | --- | --- | --- | --- |
@@ -79,6 +79,16 @@ Do not install anything until every row below is true, or you know which row you
 12. Run doctor. Outcome: config, private key, public URL, and token each pass or name what is still missing. Guide: [Troubleshooting](docs/09-troubleshooting.md).
 13. Ask for status, then flash the lights while the car is parked. Outcome: one read and one signed command, each followed by a fresh read. Guides: [Queries and commands](docs/06-queries-and-commands.md), [Skills](docs/08-skills.md).
 14. Connect the assistant. Outcome: it stays quiet unless you need to act. Guides: [Assistants](docs/07-assistants.md), [Skills](docs/08-skills.md).
+
+## Supported agents
+
+| Agent | Status | Notes |
+| --- | --- | --- |
+| [Grok Bot](https://grokbot.ai) | Supported | Adapter `grokbot`. Tested end to end on a real car. |
+| Any agent that can run shell commands | Supported through the template | Adapter `template`. Works with assistants such as coding agents or self-hosted bots that can run `python3` and `bash` on your computer. |
+| Muse | Planned | Adapter `muse` is a stub and not built yet. |
+
+Want another agent? Copy `adapters/template.py`, then open an issue or a pull request.
 
 ## Host adapter
 
