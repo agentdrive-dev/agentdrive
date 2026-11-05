@@ -8,6 +8,29 @@ AgentDrive is unofficial. It is not affiliated with, endorsed by, or supported b
 
 Docs are published at <https://agentdrive-dev.github.io/agentdrive>.
 
+## Quick start: install with your AI agent
+
+AgentDrive is installed by your assistant (Grok Bot, or any agent that can run shell commands on a computer). Paste this message to it:
+
+```text
+Install AgentDrive from https://github.com/agentdrive-dev/agentdrive.
+Clone it to ~/agentdrive and read README.md, DISCLAIMER.md and SECURITY.md.
+Show me the disclaimer and the security reminder in full, then stop and wait.
+Do not install anything until I reply with the acceptance sentence.
+After that, follow "The path, in order" in the README one step at a time,
+tell me whenever a step needs me (forms, billing, browser sign-in, key pairing),
+and keep every secret in ~/.agentdrive, never in chat or in the repo.
+```
+
+Prefer to do it yourself? Get the code, then follow [Install](#install):
+
+```bash
+git clone https://github.com/agentdrive-dev/agentdrive.git ~/agentdrive
+cd ~/agentdrive
+```
+
+To upgrade later, run `agentdrive update`. It downloads the latest version from this repository and keeps your private config in `~/.agentdrive`.
+
 ## Disclaimer
 
 Experimental and testing purposes only.
