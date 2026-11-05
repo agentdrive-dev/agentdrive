@@ -16,7 +16,7 @@ Finish owner sign-in first. If you open the pairing link before the account has 
 
 ![Diagram: you open the pairing link and the official app asks to add a key](../images/virtual-key-2.svg)
 
-On the phone that is signed into the owner account, open `https://tesla.com/_ak/your-project.pages.dev` (the hostname you published). Use the phone's browser, not an in-app browser, with the Tesla app installed, and stand near the car. The app should ask you to add the key. If you have more than one car, select the one you chose on the compatibility page. Approve it yourself. A remote desktop session is a poor substitute for the phone. An in-app browser often never hands the link to the app.
+On the phone that is signed into the owner account, open `https://tesla.com/_ak/your-username.github.io` (the hostname you published). Use the phone's browser, not an in-app browser, with the Tesla app installed, and stand near the car. The app should ask you to add the key. If you have more than one car, select the one you chose on the compatibility page. Approve it yourself. A remote desktop session is a poor substitute for the phone. An in-app browser often never hands the link to the app.
 
 ## Step 3 — Confirm the key is listed
 
@@ -26,7 +26,7 @@ On the car's locks screen, the new key should appear under the hostname you regi
 
 ## Expected result
 
-The locks screen shows the key for your pages.dev hostname, and a later parked lights flash succeeds once.
+The locks screen shows the key for your github.io hostname, and a later parked lights flash succeeds once.
 
 ## Common errors
 
@@ -41,5 +41,5 @@ An unfamiliar key is already listed. Treat that as a reason to check the car bef
 Copy this only when you want the bot to do the part below. It must not invent approvals.
 
 ```text
-After token exchange has succeeded, build the pairing link from the hostname in ~/.config/agentdrive/public-key-url (or $AGENTDRIVE_HOME/public-key-url). The link looks like https://tesla.com/_ak/your-project.pages.dev (the hostname you published). Give me that link and stop. Do not claim the key is paired until I tell you I approved it in the official app. Do not send a vehicle command in this turn.
+After token exchange has succeeded, build the pairing link from the hostname in ~/.config/agentdrive/public-key-url (or $AGENTDRIVE_HOME/public-key-url). The link looks like https://tesla.com/_ak/your-username.github.io (the hostname you published). Give me that link and stop. Do not claim the key is paired until I tell you I approved it in the official app. Do not send a vehicle command in this turn.
 ```

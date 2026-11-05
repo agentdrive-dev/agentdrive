@@ -7,7 +7,7 @@
 <rect x="24" y="90" width="832" height="34" rx="8" fill="#e7eefc" stroke="#1c2430"/>
 <text x="44" y="112" font-family="sans-serif" font-size="14" fill="#1c2430">2. You: Accept it in a later message</text>
 <rect x="24" y="132" width="832" height="34" rx="8" fill="#e7eefc" stroke="#1c2430"/>
-<text x="44" y="154" font-family="sans-serif" font-size="14" fill="#1c2430">3. You: Cloudflare account and one login</text>
+<text x="44" y="154" font-family="sans-serif" font-size="14" fill="#1c2430">3. You: GitHub account and one login</text>
 <rect x="24" y="174" width="832" height="34" rx="8" fill="#e7f0ea" stroke="#1c2430"/>
 <text x="44" y="196" font-family="sans-serif" font-size="14" fill="#1c2430">4. Bot: Publish the public key and return the URL</text>
 <rect x="24" y="216" width="832" height="34" rx="8" fill="#e7eefc" stroke="#1c2430"/>

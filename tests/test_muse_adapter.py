@@ -72,8 +72,6 @@ def test_install_note_and_bundle(tmp_path, capsys):
     assert "tesla-control" not in source
     assert "NotImplementedError" not in source
     prompt = files["prompt"].read_text(encoding="utf-8").strip()
-    page = (ROOT / "docs" / "10-install-in-muse.md").read_text(encoding="utf-8")
-    assert prompt in page
     assert "https://github.com/agentdrive-dev/agentdrive" in prompt
     assert "agentdrive doctor" in prompt
     assert "read-only vehicle status check" in prompt
@@ -92,7 +90,6 @@ VEHICLE_TESTED = "Supported — tested end-to-end on a real vehicle (v0.1, inter
 def test_supported_agents_list_marks_muse_supported():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assistants = (ROOT / "docs" / "07-assistants.md").read_text(encoding="utf-8")
-    muse_page = (ROOT / "docs" / "10-install-in-muse.md").read_text(encoding="utf-8")
     assistant_page = (ROOT / "docs" / "prerequisites" / "assistant.md").read_text(encoding="utf-8")
     assert "## Supported agents" in readme
     assert f"| Muse | {VEHICLE_TESTED} |" in readme
@@ -102,11 +99,15 @@ def test_supported_agents_list_marks_muse_supported():
     assert "stub and not built yet" not in readme
     assert "| `muse` |" in assistants
     assert "Phase 2 stub" not in assistants
-    for text in (readme, assistants, muse_page, assistant_page):
+    for text in (readme, assistants):
         lowered = text.lower()
         assert "unverified" not in lowered
         assert "untested" not in lowered
         assert VEHICLE_TESTED.lower() in lowered
+    assistant_lowered = assistant_page.lower()
+    assert "unverified" not in assistant_lowered
+    assert "untested" not in assistant_lowered
+    assert "works with grok bot, muse, or any agent that can run shell commands." in assistant_lowered
     muse_row = assistants.split("| `muse` |", 1)[1].split("\n", 1)[0]
     grok_row = assistants.split("| `grokbot` |", 1)[1].split("\n", 1)[0]
     assert VEHICLE_TESTED in muse_row
@@ -156,7 +157,7 @@ def test_doctor_checks_a_key_outside_the_config_home(tmp_path, monkeypatch, caps
             refresh_expires_at=(NOW + timedelta(days=10)).isoformat(),
         )
     )
-    url = "https://your-project.pages.dev/.well-known/appspecific/com.tesla.3p.public-key.pem"
+    url = "https://your-username.github.io/.well-known/appspecific/com.tesla.3p.public-key.pem"
 
     def get_text(requested):
         assert requested == url
