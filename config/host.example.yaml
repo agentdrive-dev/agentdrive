@@ -1,0 +1,9 @@
+# Optional manual override. Copy to config/host.yaml or to
+# $AGENTDRIVE_HOME/host.yaml. The installer writes the detected choice to
+# $AGENTDRIVE_HOME/host.yaml and does not commit it.
+#
+# adapter: grokbot, muse, template, or unknown
+# source: override means this file wins over environment detection
+adapter: template
+source: override
+signals: []

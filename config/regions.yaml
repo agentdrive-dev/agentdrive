@@ -1,0 +1,44 @@
+# Global hosts only. The application reads this file and does not embed hosts.
+# China-region hosts are intentionally absent.
+version: 1
+
+shared:
+  developer_portal: https://developer.tesla.com
+  authorization_host: https://auth.tesla.com
+  # Server-side token exchange. Interactive sign-in stays on authorization_host.
+  token_host: https://fleet-auth.prd.vn.cloud.tesla.com
+  authorize_path: /oauth2/v3/authorize
+  token_path: /oauth2/v3/token
+  public_key_well_known_path: /.well-known/appspecific/com.tesla.3p.public-key.pem
+  partner_accounts_path: /api/1/partner_accounts
+  pairing_link_template: https://tesla.com/_ak/{domain}
+
+regions:
+  na:
+    label: North America
+    fleet_api_host: https://fleet-api.prd.na.vn.cloud.tesla.com
+  eu:
+    label: Europe
+    fleet_api_host: https://fleet-api.prd.eu.vn.cloud.tesla.com
+
+# Routes a personal owner account can call. Paths are data, not code.
+personal_endpoints:
+  vehicles: /api/1/vehicles
+  vehicle: /api/1/vehicles/{vehicle_id}
+  vehicle_data: /api/1/vehicles/{vehicle_id}/vehicle_data
+  wake_up: /api/1/vehicles/{vehicle_id}/wake_up
+  fleet_status: /api/1/vehicles/fleet_status
+  nearby_charging_sites: /api/1/vehicles/{vehicle_id}/nearby_charging_sites
+  charging_history: /api/1/dx/charging/history
+  charging_invoice: /api/1/dx/charging/invoice/{invoice_id}
+
+# Business-only routes. The client refuses these even if a caller asks.
+blocked_endpoints:
+  - /api/1/dx/charging/sessions
+
+# Substrings that identify a region this toolkit does not support.
+rejected_host_markers:
+  - developer.tesla.cn
+  - auth.tesla.cn
+  - fleet-api.prd.cn.vn.cloud.tesla.cn
+  - .tesla.cn

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="210" viewBox="0 0 920 210" role="img">
+  <title>Confirm the account owns the car</title>
+  <rect width="920" height="210" fill="#f7f8fb"/>
+  <text x="24" y="32" font-family="sans-serif" font-size="16" font-weight="700" fill="#1c2430">Confirm the account owns the car</text>
+  <rect x="24" y="52" width="200" height="120" rx="10" fill="#e7eefc" stroke="#1c2430"/>
+  <text x="124" y="90" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="700" fill="#1c2430">Who</text>
+  <text x="124" y="116" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#1c2430">You</text>
+  <polygon points="236,112 268,112 268,104 292,122 268,140 268,132 236,132" fill="#1c2430"/>
+  <rect x="304" y="52" width="280" height="120" rx="10" fill="#fff" stroke="#1c2430"/>
+  <text x="444" y="90" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="700" fill="#1c2430">Action</text>
+  <text x="444" y="116" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#1c2430">Open the car in the app</text>
+  <polygon points="596,112 628,112 628,104 652,122 628,140 628,132 596,132" fill="#1c2430"/>
+  <rect x="664" y="52" width="232" height="120" rx="10" fill="#fff8e8" stroke="#1c2430"/>
+  <text x="780" y="90" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="700" fill="#1c2430">Result</text>
+  <text x="780" y="116" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#1c2430">This account can see it</text>
+</svg>

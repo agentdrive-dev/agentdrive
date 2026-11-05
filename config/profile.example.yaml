@@ -1,0 +1,23 @@
+# Example owner profile. Copy to a path outside the repository before use.
+# Suburb-level places only. Do not add a street, a VIN, tokens, keys, or
+# live coordinates.
+country: US
+timezone: Etc/UTC
+places:
+  - label: home
+    suburb: Example Suburb
+    region: Example Region
+    country: US
+  - label: work
+    suburb: Sample District
+    region: Example Region
+    country: US
+habits:
+  - name: weekday_departure
+    detail: "Leave around 07:30 on weekdays."
+  - name: charge_target_percent
+    detail: "80"
+  - name: low_battery_percent
+    detail: "30"
+  - name: tyre_pressure_bar
+    detail: "2.5"

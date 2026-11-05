@@ -1,0 +1,45 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+dist/
+build/
+
+# Local install and runtime state
+.agentdrive/
+runtime/
+var/
+
+# Secrets and owner material. Never commit these.
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+id_rsa
+id_ecdsa
+id_ed25519
+*secret*
+*token*.json
+credentials.json
+client.json
+.refresh.lock
+.session-cache.json
+secrets/
+.secrets/
+config/local.yaml
+config/owner.local.yaml
+config/profile.local.yaml
+config/host.yaml
+
+# Editor and OS noise
+.DS_Store
+.idea/
+.vscode/

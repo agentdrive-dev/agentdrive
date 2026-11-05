@@ -1,0 +1,61 @@
+# Generic model catalog. This file is not a record of anyone's vehicle.
+# Seat count, options, and color vary by car and are read from the live
+# vehicle_config response when an owner asks. They are not stored here.
+version: 1
+
+protocol:
+  signed_commands_required: true
+  location_endpoint: location_data
+  location_note: >
+    On firmware that hides coordinates unless location_data is requested,
+    a plain vehicle_data call returns no position. Coordinates, when
+    returned, appear on the drive state. Do not copy them into assistant
+    memory.
+
+models:
+  - id: model_s
+    label: Model S
+    command_protocol: "Supported from the command-protocol hardware generation, including earlier cars after an infotainment retrofit that speaks the protocol."
+  - id: model_3
+    label: Model 3
+    command_protocol: "Supported when the vehicle speaks the command protocol."
+  - id: model_x
+    label: Model X
+    command_protocol: "Supported from the command-protocol hardware generation, including earlier cars after an infotainment retrofit that speaks the protocol."
+  - id: model_y
+    label: Model Y
+    command_protocol: "Supported when the vehicle speaks the command protocol. Wheelbase and seat layout are per-vehicle facts and are not recorded in this catalog."
+
+capabilities:
+  read_endpoints:
+    - charge_state
+    - climate_state
+    - drive_state
+    - vehicle_state
+    - vehicle_config
+    - location_data
+  phase_1_commands:
+    - flash_lights
+    - climate_on
+    - climate_off
+  standard_commands:
+    - lock
+    - honk
+    - climate_set_temp
+  sensitive_commands:
+    - unlock
+    - remote_start
+    - frunk_open
+    - trunk_open
+    - sentry_off
+    - charging_start
+    - charging_stop
+    - charging_set_limit
+    - charging_set_amps
+  charging_reads:
+    - nearby_charging_sites
+    - charging_history
+    - charging_invoice
+  unavailable:
+    - live_supercharger_pricing
+    - charging_sessions

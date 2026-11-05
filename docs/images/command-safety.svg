@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="200" viewBox="0 0 920 200" role="img">
+  <title>Command checks</title>
+  <rect width="920" height="200" fill="#f7f8fb"/>
+  <text x="24" y="32" font-family="sans-serif" font-size="16" font-weight="700" fill="#1c2430">Every state-changing command</text>
+  <rect x="24" y="56" width="190" height="100" rx="8" fill="#fff" stroke="#1c2430"/>
+  <text x="119" y="100" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#1c2430">Park and speed 0</text>
+  <text x="119" y="122" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1c2430">or refuse</text>
+  <polygon points="226,106 258,106 258,98 282,116 258,134 258,126 226,126" fill="#1c2430"/>
+  <rect x="294" y="56" width="230" height="100" rx="8" fill="#fff8e8" stroke="#1c2430"/>
+  <text x="409" y="100" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#1c2430">Sensitive: one fresh</text>
+  <text x="409" y="122" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1c2430">confirmation</text>
+  <polygon points="536,106 568,106 568,98 592,116 568,134 568,126 536,126" fill="#1c2430"/>
+  <rect x="604" y="56" width="280" height="100" rx="8" fill="#e7f0ea" stroke="#1c2430"/>
+  <text x="744" y="100" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#1c2430">Send once, then read</text>
+  <text x="744" y="122" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1c2430">Do not send it again</text>
+</svg>

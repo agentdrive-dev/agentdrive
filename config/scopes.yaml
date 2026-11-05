@@ -1,0 +1,13 @@
+# OAuth scope sets. Charging management is omitted until the owner asks for it.
+version: 1
+
+default:
+  - openid
+  - offline_access
+  - user_data
+  - vehicle_device_data
+  - vehicle_location
+  - vehicle_cmds
+
+optional:
+  charging: vehicle_charging_cmds

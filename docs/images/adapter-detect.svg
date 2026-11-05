@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="210" viewBox="0 0 920 210" role="img">
+  <title>Host detection</title>
+  <rect width="920" height="210" fill="#f7f8fb"/>
+  <text x="24" y="32" font-family="sans-serif" font-size="16" font-weight="700" fill="#1c2430">Host detection</text>
+  <rect x="24" y="52" width="250" height="120" rx="10" fill="#e7eefc" stroke="#1c2430"/>
+  <text x="149" y="100" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#1c2430">One host signal</text>
+  <text x="149" y="124" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1c2430">Store grokbot, muse,</text>
+  <text x="149" y="144" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1c2430">or unknown</text>
+  <polygon points="286,112 318,112 318,104 342,122 318,140 318,132 286,132" fill="#1c2430"/>
+  <rect x="354" y="52" width="250" height="120" rx="10" fill="#fff8e8" stroke="#1c2430"/>
+  <text x="479" y="108" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#1c2430">Both hosts match</text>
+  <text x="479" y="132" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1c2430">Stop and ask</text>
+  <polygon points="616,112 648,112 648,104 672,122 648,140 648,132 616,132" fill="#1c2430"/>
+  <rect x="684" y="52" width="212" height="120" rx="10" fill="#e7f0ea" stroke="#1c2430"/>
+  <text x="790" y="108" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#1c2430">--adapter</text>
+  <text x="790" y="132" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1c2430">overrides detection</text>
+</svg>
