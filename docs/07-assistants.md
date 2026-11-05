@@ -4,13 +4,17 @@
 
 ![You choose an assistant that can run commands, or the installer detects the host](images/assistant-1.svg)
 
-Phase 1 has three adapter names:
+## Host environment variables
+
+The installer and `python -m core adapter` look at the process environment and pick the host. If both hosts match, nothing is written and the command asks you to choose. Set one yourself with `--adapter grokbot`, `--adapter muse`, `--adapter template`, or `--adapter unknown`, or with `AGENTDRIVE_ADAPTER`. A saved file with `source: override` stays in place until you pass `--redetect`.
 
 | Name | When it is used | What it does now |
 | --- | --- | --- |
-| `grokbot` | Detected from `GROK_BOT`, `GROKBOT`, `GROK_BOT_HOME`, `GROK_BOT_SESSION`, or `CURSOR_AGENT` | Supported — tested end-to-end on a real vehicle (v0.1, internet commands). Working file-backed adapter. |
-| `muse` | Detected from `MUSE_BOT`, `MUSE_HOME`, `MUSE_SESSION`, or `MUSE_AGENT` | Supported — tested end-to-end on a real vehicle (v0.1, internet commands). Working file-backed adapter. |
+| `grokbot` | Detected from `GROK_BOT`, `GROKBOT`, `GROK_BOT_HOME`, `GROK_BOT_SESSION`, or `CURSOR_AGENT` | Supported — basic real-car commands tried on a vehicle. Working file-backed adapter. |
+| `muse` | Detected from `MUSE_BOT`, `MUSE_HOME`, `MUSE_SESSION`, or `MUSE_AGENT` | Supported — basic real-car commands tried on a vehicle. Working file-backed adapter. |
 | `unknown` | No host signal | The template adapter runs |
+
+Grok Bot and Muse were used for basic real-car commands. That trial does not cover every command in this repository.
 
 Detection runs from `setup/install.sh` and from `python -m core adapter`. Prefer `$AGENTDRIVE_HOME/host.yaml` (written by the installer). Only copy `config/host.example.yaml` to `config/host.yaml` for a repo-local override you do not commit. A conflict does not guess: the command prints both signal lists and exits until you pass `--adapter`. `AGENTDRIVE_ADAPTER` and a `source: override` file also win. `--redetect` drops a saved override and looks again.
 

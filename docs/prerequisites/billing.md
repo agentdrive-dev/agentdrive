@@ -22,13 +22,13 @@ On the billing and usage page, choose Manage Payment and add a card you control.
 
 ![Diagram: you choose Update Limit and bills stop at the cap you set](../images/billing-3.svg)
 
-Choose Update Limit and set a ceiling you are willing to hit. Tesla says usage can run slightly over the limit, and that pre-tax bills are capped at the limit. If the limit is hit, API access is suspended until you raise it or a new billing cycle starts. Pick a small limit for a single car and a morning check.
+Choose Update Limit and set a ceiling you are willing to hit. Tesla says usage can run slightly over the limit, and that pre-tax bills are capped at the limit. If the limit is hit, API access is suspended until you raise it or a new billing cycle starts. Pick a small limit for a single car and an occasional health check.
 
 ## Step 4 — Know what is billed
 
 ![Diagram: you keep use light because status codes under 500 are billed and 5xx is not](../images/billing-4.svg)
 
-Wakes, data reads, and commands are billed. A 500-and-above response is not. The published $10 monthly discount may cover light personal use. It is per account, and Tesla can change it. This toolkit avoids polling loops for that reason. The morning briefing speaks only when you need to act, which also keeps the call count down.
+Wakes, data reads, and commands are billed. A 500-and-above response is not. The published $10 monthly discount may cover light personal use. It is per account, and Tesla can change it. This toolkit avoids polling loops for that reason. `agentdrive check` does not wake a sleeping car, which keeps the call count down. It is not an automatic morning reminder.
 
 ## Expected result
 

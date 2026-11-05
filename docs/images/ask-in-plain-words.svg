@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="360" viewBox="0 0 920 360" role="img">
+  <title>Ask it in plain words. Illustrative example &#8212; sample data.</title>
+  <rect width="920" height="360" fill="#f7f8fb"/>
+  <text x="24" y="32" font-family="sans-serif" font-size="16" font-weight="700" fill="#1c2430">Ask it in plain words</text>
+  <text x="24" y="56" font-family="sans-serif" font-size="13" font-weight="700" fill="#1c2430">Illustrative example &#8212; sample data</text>
+
+  <text x="896" y="90" text-anchor="end" font-family="sans-serif" font-size="12" fill="#5a6470">You</text>
+  <rect x="640" y="96" width="256" height="48" rx="12" fill="#e7eefc" stroke="#1c2430"/>
+  <text x="660" y="126" font-family="sans-serif" font-size="14" fill="#1c2430">How much battery is left?</text>
+
+  <text x="24" y="162" font-family="sans-serif" font-size="12" fill="#5a6470">Assistant</text>
+  <rect x="24" y="168" width="700" height="48" rx="12" fill="#ffffff" stroke="#1c2430"/>
+  <text x="44" y="198" font-family="sans-serif" font-size="14" fill="#1c2430">Sample data: 80% battery, about 300 km, tyres at 2.7 bar.</text>
+
+  <text x="896" y="234" text-anchor="end" font-family="sans-serif" font-size="12" fill="#5a6470">You</text>
+  <rect x="708" y="240" width="188" height="48" rx="12" fill="#e7eefc" stroke="#1c2430"/>
+  <text x="728" y="270" font-family="sans-serif" font-size="14" fill="#1c2430">Flash the lights.</text>
+
+  <text x="24" y="306" font-family="sans-serif" font-size="12" fill="#5a6470">Assistant</text>
+  <rect x="24" y="312" width="620" height="48" rx="12" fill="#ffffff" stroke="#1c2430"/>
+  <text x="44" y="342" font-family="sans-serif" font-size="14" fill="#1c2430">Sample reply: one flash sent. The example is in Park.</text>
+</svg>

@@ -30,7 +30,12 @@ Signed commands run `tesla-control` with `TESLA_TOKEN_FILE`, `TESLA_KEY_FILE`, a
 
 `agentdrive update` fast-forwards the checkout from `main`, or downloads that branch when the tree is not a git checkout, then re-runs the install steps. It does not modify tokens, keys, client credentials, `host.yaml`, or vehicle files under `$AGENTDRIVE_HOME`.
 
-Nearby charging results keep location and stall counts. Charging history and invoice reads are available. Their field names are marked unconfirmed until a live response is compared. The sessions route is refused. There is no live Supercharger pricing.
+```bash
+agentdrive check
+agentdrive update
+```
+
+The command line does not include scheduled charging, charging history, charging invoices, a telemetry stream, or a where command. `agentdrive status` does not request location. The sessions route is refused. There is no live Supercharger pricing.
 
 ## Expected result
 

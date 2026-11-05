@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="280" viewBox="0 0 920 280" role="img">
+  <title>What it does</title>
+  <rect width="920" height="280" fill="#f7f8fb"/>
+  <text x="24" y="32" font-family="sans-serif" font-size="16" font-weight="700" fill="#1c2430">What it does</text>
+
+  <rect x="24" y="52" width="274" height="208" rx="10" fill="#e7eefc" stroke="#1c2430"/>
+  <text x="44" y="84" font-family="sans-serif" font-size="15" font-weight="700" fill="#1c2430">Reads</text>
+  <text x="44" y="116" font-family="sans-serif" font-size="13" fill="#1c2430">Battery, range, charge state</text>
+  <text x="44" y="146" font-family="sans-serif" font-size="13" fill="#1c2430">Lock, climate, tyre pressure</text>
+  <text x="44" y="176" font-family="sans-serif" font-size="13" fill="#1c2430">Cabin temperature and TPMS</text>
+  <text x="44" y="206" font-family="sans-serif" font-size="13" fill="#1c2430">status may wake a sleeping car</text>
+  <text x="44" y="236" font-family="sans-serif" font-size="13" fill="#1c2430">check never wakes the car</text>
+
+  <rect x="323" y="52" width="274" height="208" rx="10" fill="#e7f0ea" stroke="#1c2430"/>
+  <text x="343" y="84" font-family="sans-serif" font-size="15" font-weight="700" fill="#1c2430">Commands</text>
+  <text x="343" y="116" font-family="sans-serif" font-size="13" fill="#1c2430">Separate wake command</text>
+  <text x="343" y="146" font-family="sans-serif" font-size="13" fill="#1c2430">Flash lights and honk</text>
+  <text x="343" y="176" font-family="sans-serif" font-size="13" fill="#1c2430">Lock and unlock</text>
+  <text x="343" y="206" font-family="sans-serif" font-size="13" fill="#1c2430">Climate on, off, set temp</text>
+  <text x="343" y="236" font-family="sans-serif" font-size="13" fill="#1c2430">Charge start, stop, limit</text>
+
+  <rect x="622" y="52" width="274" height="208" rx="10" fill="#fff8e8" stroke="#1c2430"/>
+  <text x="642" y="84" font-family="sans-serif" font-size="15" font-weight="700" fill="#1c2430">Safety first</text>
+  <text x="642" y="116" font-family="sans-serif" font-size="13" fill="#1c2430">Park and speed 0, or refuse</text>
+  <text x="642" y="146" font-family="sans-serif" font-size="13" fill="#1c2430">Parked commands are read back</text>
+  <text x="642" y="176" font-family="sans-serif" font-size="13" fill="#1c2430">wake skips this park check</text>
+  <text x="642" y="206" font-family="sans-serif" font-size="13" fill="#1c2430">Unlock and charging need</text>
+  <text x="642" y="236" font-family="sans-serif" font-size="13" fill="#1c2430">one fresh confirmation</text>
+</svg>
