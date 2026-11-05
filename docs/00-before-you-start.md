@@ -8,13 +8,13 @@
 - A [Tesla that supports virtual keys](prerequisites/vehicle-compatibility.md) (most cars from 2021 on do).
 - An [assistant](prerequisites/assistant.md) that can run shell commands on a [computer](prerequisites/computer.md), for example Grok Bot (brings its own computer), Muse, or any shell-capable agent.
 - A [Tesla developer account](prerequisites/developer-app.md) with a [payment method and a billing limit above 0](prerequisites/billing.md). It uses the same Tesla login, not a new account. Tesla bills API use. A $10 monthly credit is published for individual developers.
-- A [GitHub account](prerequisites/public-key-host.md), used to host the public key. You do not buy a domain.
+- A [GitHub account](prerequisites/public-key-host.md), used to host the public key on GitHub Pages. You do not buy a domain.
 
 ## What you will do
 
 [About an hour, mostly approvals.](prerequisites/time.md)
 
-1. Paste the Quick start prompt to your assistant.
+1. Follow the Quick start in the README. The long agent prompt is folded there.
 2. Read the [disclaimer](../DISCLAIMER.md) and the [security reminder](../SECURITY.md), then reply in a separate message with: `I have read, understood, and accept the AgentDrive disclaimer and security reminder`
 3. Approve GitHub login once when asked.
 4. Create the Tesla developer app and add billing when asked. The assistant tells you what to fill in. Put the secret in a file, never in chat.

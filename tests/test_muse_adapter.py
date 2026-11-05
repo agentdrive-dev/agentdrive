@@ -84,7 +84,7 @@ def test_install_note_and_bundle(tmp_path, capsys):
     assert loaded["token_file"].endswith("tokens.json")
 
 
-VEHICLE_TESTED = "Supported — tested end-to-end on a real vehicle (v0.1, internet commands)"
+VEHICLE_TESTED = "Supported — basic real-car commands tried on a vehicle"
 
 
 def test_supported_agents_list_marks_muse_supported():
