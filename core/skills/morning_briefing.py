@@ -30,7 +30,7 @@ def briefing(observation: Observation, profile: OwnerProfile | None) -> tuple[bo
     if observation.battery_level is not None and observation.battery_level < threshold:
         reasons.append(f"Battery is at {observation.battery_level} percent, under your {threshold} percent line.")
     if observation.tpms_soft_warning is True:
-        reasons.append("A tire-pressure warning is present.")
+        reasons.append("A tyre-pressure warning is present.")
     if not reasons:
         return False, ""
     return True, " ".join(reasons) + " This is worth doing before you leave."

@@ -2,7 +2,7 @@
 
 [Back to the checklist](../00-before-you-start.md)
 
-AgentDrive is a toolkit an assistant drives. Phase 1 includes a working Grok Bot adapter and a template adapter you can copy. The Muse adapter is a stub and will refuse every call.
+AgentDrive is a toolkit an assistant drives. Phase 1 includes a working Grok Bot adapter and a template adapter you can copy. The Muse adapter is a stub in this version: every call fails. Use Grok Bot or the template adapter.
 
 The assistant has to read these docs, run shell commands, store files on the machine, and wait when a step needs you. You choose the assistant. AgentDrive does not add a fee on top of whatever that assistant already costs.
 
@@ -38,7 +38,7 @@ You do not pick an adapter by hand when the process already shows which host it 
 
 Grok Bot matches `GROK_BOT`, `GROKBOT`, `GROK_BOT_HOME`, `GROK_BOT_SESSION`, or `CURSOR_AGENT`. Muse matches `MUSE_BOT`, `MUSE_HOME`, `MUSE_SESSION`, or `MUSE_AGENT`. If none match, the stored choice is `unknown` and runtime uses the template adapter. If both hosts match, the installer stops and asks you to pass `--adapter`. A value of `0`, `false`, or `no` does not count as a match.
 
-Force a choice with `setup/install.sh --adapter template`, `python -m core adapter --adapter muse show`, or `AGENTDRIVE_ADAPTER`. `source: override` in `config/host.yaml` or in the home file is kept until you pass `--redetect`. See `config/host.example.yaml`.
+Force a choice with `setup/install.sh --adapter template`, `python -m core adapter --adapter muse show`, or `AGENTDRIVE_ADAPTER`. Prefer `$AGENTDRIVE_HOME/host.yaml` (written by the installer). Only copy `config/host.example.yaml` to `config/host.yaml` for a repo-local override you do not commit. A file with `source: override` is kept until you pass `--redetect`. See `config/host.example.yaml`.
 
 ## Expected result
 
@@ -50,7 +50,7 @@ The assistant starts installing in the same message as the disclaimer. Stop it. 
 
 The assistant asks you to paste a token or a private key into chat. Refuse. Point it at a mode 600 file instead.
 
-You wanted Muse. That adapter is not implemented in this version. Use Grok Bot or the template adapter.
+You wanted Muse. That adapter is a stub in this version: every call fails. Use Grok Bot or the template adapter.
 
 ## Bot prompt
 

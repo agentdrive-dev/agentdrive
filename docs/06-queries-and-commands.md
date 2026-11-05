@@ -24,7 +24,7 @@ Commands:
 | `charge-start`, `charge-stop` | signed charging command | yes, one time |
 | `charge-limit <percent>` | signed `charging-set-limit` | yes, one time, and only 50 to 100 |
 
-There is no trunk command and no frunk command. Unlock and every charging change go through the existing confirmation layer. A schedule cannot confirm them. State-changing commands are sent only in Park at speed 0, then read back once.
+This version has no trunk, frunk, or remote-start command. Unlock and every charging change go through the existing confirmation layer. A schedule cannot confirm them. State-changing commands are sent only in Park at speed 0, then read back once.
 
 Signed commands run `tesla-control` with `TESLA_TOKEN_FILE`, `TESLA_KEY_FILE`, and `TESLA_VIN` set in the environment. Those names are what the tool requires. The access token is written to a mode 0600 file and deleted in a `finally` block. It is never placed on the argument list. The tool is invoked once. If it fails, it is not launched again until a read shows whether the car already changed.
 

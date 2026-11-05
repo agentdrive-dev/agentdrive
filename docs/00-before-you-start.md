@@ -25,7 +25,7 @@ Each item has its own page: what to do, the result you should see, errors people
 | --- | --- | --- | --- |
 | [Vehicle account](prerequisites/vehicle-account.md) | The getting-started guide requires a vehicle account with a verified email and multi-factor authentication, and only that account can approve the car. | No fee from AgentDrive. | You |
 | [A car that can take a virtual key](prerequisites/vehicle-compatibility.md) | Signed commands need compatible hardware, firmware, and an enrolled key. | No extra fee. | You, then the bot reads fleet status |
-| [A computer the assistant can use](prerequisites/computer.md) | The private key, `tesla-control`, and doctor run here. | Your machine. Tools are free. | You provide it. The bot checks it. |
+| [A computer the assistant can use](prerequisites/computer.md) | The private key and `tesla-control` run here. `agentdrive doctor` (the same command as `python -m core doctor`) checks the config files, the private key, the public-key URL, and the saved token, then names the adapter. | Your machine. Tools are free. | You provide it. The bot checks it. |
 | [An assistant](prerequisites/assistant.md) | Someone has to run the steps and stop when a human approval is required. | Your existing assistant plan, if any. | You choose it |
 | [A developer application](prerequisites/developer-app.md) | Tesla issues the client id and secret only after an application exists. | No AgentDrive fee. API use is billed later. | You |
 | [A payment method and a billing limit](prerequisites/billing.md) | Tesla disables an application that has no payment method or that passes its limit. The default limit is 0. | A card you control. A $10 monthly discount is what Tesla currently publishes. | You |
@@ -46,6 +46,6 @@ Each item has its own page: what to do, the result you should see, errors people
 9. Register the domain and start sign-in. Outcome: a browser link for you, not a token in chat. [Sign-in and pairing](04-sign-in-and-pairing.md).
 10. Finish sign-in yourself. Outcome: a refresh token is stored locally. [Tokens](05-tokens.md).
 11. Pair the key in the app. Outcome: the locks screen lists it. [Virtual key](prerequisites/virtual-key.md).
-12. Run doctor. Outcome: four checks pass, or the failing one says why. [Troubleshooting](09-troubleshooting.md).
+12. Run `agentdrive doctor`. Outcome: four checks pass, or the failing one says why. [Troubleshooting](09-troubleshooting.md).
 13. Ask for status, then flash the lights while parked. Outcome: the car answers and the lights flash once. [Queries and commands](06-queries-and-commands.md) and [Skills](08-skills.md).
 14. Leave the morning briefing off until you want it. Outcome: silence unless you need to act. [Assistants](07-assistants.md).

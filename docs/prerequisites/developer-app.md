@@ -28,7 +28,7 @@ Use the hostname the bot already published, such as `your-project.pages.dev`. Te
 
 ![Diagram: you save the client secret into a local file and chat never sees it](../images/developer-app-4.svg)
 
-Copy the client id and the client secret from the portal into `~/.config/agentdrive/client.json` as `client_id` and `client_secret`, mode 0600. The command line reads that file, or `AGENTDRIVE_CLIENT_ID` and `AGENTDRIVE_CLIENT_SECRET` from the environment. The adapter can still read `secrets/client-id` and `secrets/client-secret` when those files are mode 0600. Also write `redirect-uri` with the exact redirect you registered. Do not paste the secret into chat, and do not regenerate it unless you mean to invalidate the old one. A secret can contain `&`. The toolkit encodes the token request so that character is not treated as another field.
+Copy the client id and the client secret from the portal into `~/.config/agentdrive/client.json` (or `$AGENTDRIVE_HOME/client.json`) as `client_id` and `client_secret`, mode 0600. The command line reads that file, or `AGENTDRIVE_CLIENT_ID` and `AGENTDRIVE_CLIENT_SECRET` from the environment. The adapter can still read `secrets/client-id` and `secrets/client-secret` when those files are mode 0600. Also write `redirect-uri` with the exact redirect you registered. Do not paste the secret into chat, and do not regenerate it unless you mean to invalidate the old one. A secret can contain `&`. The toolkit encodes the token request so that character is not treated as another field.
 
 ## Expected result
 

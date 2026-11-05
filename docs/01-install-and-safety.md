@@ -12,7 +12,7 @@ Read [DISCLAIMER.md](../DISCLAIMER.md) and [SECURITY.md](../SECURITY.md) in full
 
 ## Step 2 — Accept later
 
-From the repository root, after you have decided:
+From the repository root (so Python can find the core package):
 
 ```bash
 PYTHONPATH=. python3 -m core gate-present --turn-id 1
@@ -20,13 +20,13 @@ PYTHONPATH=. python3 -m core gate-accept --turn-id 2 --statement "I have read, u
 bash setup/install.sh
 ```
 
-`gate-present` and `gate-accept` must use different turn ids. `setup/install.sh` checks the stamp, detects the host adapter, then creates `.venv`.
+Use a different `--turn-id` for each chat message (for example 1 when showing the docs, 2 when recording acceptance). Same-turn acceptance is rejected. `setup/install.sh` checks the stamp, detects the host adapter, then creates `.venv`.
 
 Override a wrong detection with `bash setup/install.sh --adapter template`.
 
 ## Step 3 — What the safety gate will refuse
 
-A state-changing command is sent only when the shift state is Park and the speed is 0. Unlock, remote start, the front trunk, the rear trunk, sentry off, and charging changes each need an explicit confirmation for that action. The next action needs a new one. A schedule cannot supply it.
+A state-changing command is sent only when the shift state is Park and the speed is 0. Unlock, remote start, the front trunk, the rear trunk, sentry off, and charging changes each need an explicit confirmation for that action. The next action needs a new one. A schedule cannot supply it. These checks also apply if such commands are added later; this version has no trunk, frunk, or remote-start command.
 
 ## Update an existing install
 
