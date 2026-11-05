@@ -8,11 +8,11 @@ Phase 1 has three adapter names:
 
 | Name | When it is used | What it does now |
 | --- | --- | --- |
-| `grokbot` | Detected from `GROK_BOT`, `GROKBOT`, `GROK_BOT_HOME`, `GROK_BOT_SESSION`, or `CURSOR_AGENT` | Supported. Working file-backed adapter |
+| `grokbot` | Detected from `GROK_BOT`, `GROKBOT`, `GROK_BOT_HOME`, `GROK_BOT_SESSION`, or `CURSOR_AGENT` | Working file-backed adapter |
 | `muse` | Detected from `MUSE_BOT`, `MUSE_HOME`, `MUSE_SESSION`, or `MUSE_AGENT` | Supported. Working file-backed adapter. Install steps: [Install in Muse](10-install-in-muse.md) |
-| `unknown` | No host signal | Supported. The template adapter runs |
+| `unknown` | No host signal | The template adapter runs |
 
-Detection runs from `setup/install.sh` and from `python -m core adapter`. The result is stored in `$AGENTDRIVE_HOME/host.yaml`. A conflict does not guess: the command prints both signal lists and exits until you pass `--adapter`. `AGENTDRIVE_ADAPTER` and a `source: override` file also win. `--redetect` drops a saved override and looks again.
+Detection runs from `setup/install.sh` and from `python -m core adapter`. Prefer `$AGENTDRIVE_HOME/host.yaml` (written by the installer). Only copy `config/host.example.yaml` to `config/host.yaml` for a repo-local override you do not commit. A conflict does not guess: the command prints both signal lists and exits until you pass `--adapter`. `AGENTDRIVE_ADAPTER` and a `source: override` file also win. `--redetect` drops a saved override and looks again.
 
 ```bash
 python -m core adapter show

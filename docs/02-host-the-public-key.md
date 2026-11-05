@@ -13,7 +13,12 @@ Create a free Cloudflare account and run `npx --yes wrangler login` once. Approv
 ## What the bot does
 
 ```text
-I have already created a Cloudflare account and finished npx wrangler login. Read docs/prerequisites/public-key-host.md. Generate a prime256v1 key pair in ~/.config/agentdrive with mode 600 on the private key. Do not print the private key and do not put it in the git repository. Publish only the public key with setup/publish-public-key.sh using a lowercase project name that does not contain tesla. Curl the well-known URL, run doctor for that URL, and reply with the pages.dev URL and the HTTP status. Stop. Do not create a developer application in this turn.
+1. I have already created a Cloudflare account and finished npx wrangler login.
+2. Read docs/prerequisites/public-key-host.md.
+3. Generate a P-256 (prime256v1) key pair, the curve Tesla requires, in ~/.config/agentdrive (or $AGENTDRIVE_HOME). Set mode 600 on the private key (readable only by your user; run chmod 600 on the file). Do not print the private key and do not put it in the git repository.
+4. Publish only the public key with setup/publish-public-key.sh. Use a lowercase project name that does not contain tesla.
+5. Curl the well-known URL. Run python -m core doctor for that URL. Reply with the pages.dev URL and the HTTP status.
+6. Stop. Do not create a developer application in this turn.
 ```
 
 The published URL looks like `https://<project>.pages.dev/.well-known/appspecific/com.tesla.3p.public-key.pem`.

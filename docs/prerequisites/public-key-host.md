@@ -4,7 +4,7 @@
 
 You do not buy a domain. The bot publishes a static site on Cloudflare Pages at `https://<project>.pages.dev` after you sign up and approve `npx wrangler login` once. That hostname serves files from the root, so the key can live at the path Tesla fetches.
 
-Tesla's partner documentation requires a lowercase domain that shares a root with an allowed origin, and a prime256v1 public key that stays publicly readable at `https://<domain>/.well-known/appspecific/com.tesla.3p.public-key.pem`. Their example of the root rule is `123.abc.com` with an allowed origin of `www.abc.com`. The getting-started page also lists "Domain name is invalid" as a reason an application can be rejected automatically.
+Tesla's partner documentation requires a lowercase domain that shares a root with an allowed origin, and a P-256 (prime256v1) key pair, the curve Tesla requires. The public half stays publicly readable at `https://<domain>/.well-known/appspecific/com.tesla.3p.public-key.pem`. Their example of the root rule is `123.abc.com` with an allowed origin of `www.abc.com`. The getting-started page also lists "Domain name is invalid" as a reason an application can be rejected automatically.
 
 Tesla does not publish an allow-list or a ban-list that names `pages.dev`. A shared `pages.dev` hostname is therefore not officially guaranteed. Register the exact hostname you deployed, use that same hostname as the partner domain, and treat the portal and the register call as the verdict. This guide does not offer a second host. If Tesla rejects the hostname, stop and report the error they returned.
 
@@ -26,7 +26,7 @@ Approve the browser prompt. When it finishes, `npx wrangler whoami` should show 
 
 ![Diagram: the bot deploys the site folder and gets a pages.dev URL](../images/public-key-host-2.svg)
 
-The bot generates a prime256v1 key pair in `~/.config/agentdrive`, mode 600 for the private key. It copies only the public key into a temporary folder laid out like `setup/public-key-site`, at `.well-known/appspecific/com.tesla.3p.public-key.pem`. It picks a lowercase project name that does not contain the word tesla, then runs:
+The bot generates a P-256 (prime256v1) key pair, the curve Tesla requires, in `~/.config/agentdrive` (or `$AGENTDRIVE_HOME`), with mode 600 on the private key (readable only by your user; run chmod 600 on the file). It copies only the public key into a temporary folder laid out like `setup/public-key-site`, at `.well-known/appspecific/com.tesla.3p.public-key.pem`. It picks a lowercase project name that does not contain the word tesla, then runs:
 
 ```bash
 bash setup/publish-public-key.sh --project <project> --public-key ~/.config/agentdrive/public-key.pem
@@ -44,7 +44,9 @@ The same script curls the URL. You can repeat it:
 curl -fsS "https://<project>.pages.dev/.well-known/appspecific/com.tesla.3p.public-key.pem"
 ```
 
-The body must contain `BEGIN PUBLIC KEY` and must not contain a private key. Then run doctor. The token check will fail until sign-in. The public-key check should pass.
+The body must contain `BEGIN PUBLIC KEY` and must not contain a private key. Then run `python -m core doctor`. The token check will fail until sign-in. The public-key check should pass.
+
+From the repository root (so Python can find the core package):
 
 ```bash
 PYTHONPATH=. python3 -m core doctor --public-key-url "https://<project>.pages.dev/.well-known/appspecific/com.tesla.3p.public-key.pem" --secrets-dir ~/.config/agentdrive
@@ -58,7 +60,7 @@ The allowed origin, the redirect host, the partner registration domain, and the 
 
 ## Expected result
 
-`curl` prints a public key from the pages.dev URL, doctor passes the public-key check, and you have the hostname written down for the developer application. The private key is only in `~/.config/agentdrive`.
+`curl` prints a public key from the pages.dev URL, `python -m core doctor` passes the public-key check, and you have the hostname written down for the developer application. The private key is only in `~/.config/agentdrive` (or `$AGENTDRIVE_HOME`).
 
 ## Common errors
 
@@ -77,5 +79,10 @@ Partner registration or the application form says the domain is invalid. Tesla h
 Copy this only when you want the bot to do the part below. It must not invent approvals.
 
 ```text
-I have already created a Cloudflare account and finished npx wrangler login. Read docs/prerequisites/public-key-host.md. Generate a prime256v1 key pair in ~/.config/agentdrive with mode 600 on the private key. Do not print the private key and do not put it in the git repository. Publish only the public key with setup/publish-public-key.sh using a lowercase project name that does not contain tesla. Curl the well-known URL, run doctor for that URL, and reply with the pages.dev URL and the HTTP status. Stop. Do not create a developer application in this turn.
+1. I have already created a Cloudflare account and finished npx wrangler login.
+2. Read docs/prerequisites/public-key-host.md.
+3. Generate a P-256 (prime256v1) key pair, the curve Tesla requires, in ~/.config/agentdrive (or $AGENTDRIVE_HOME). Set mode 600 on the private key (readable only by your user; run chmod 600 on the file). Do not print the private key and do not put it in the git repository.
+4. Publish only the public key with setup/publish-public-key.sh. Use a lowercase project name that does not contain tesla.
+5. Curl the well-known URL. Run python -m core doctor for that URL. Reply with the pages.dev URL and the HTTP status.
+6. Stop. Do not create a developer application in this turn.
 ```

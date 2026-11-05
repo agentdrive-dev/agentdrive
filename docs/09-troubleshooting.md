@@ -2,7 +2,7 @@
 
 [Back to the checklist](00-before-you-start.md)
 
-Doctor checks four things, then the adapter:
+`agentdrive doctor` (the same command as `python -m core doctor`) checks four things, then the adapter:
 
 ```bash
 python -m core doctor --secrets-dir ~/.config/agentdrive --public-key-url "https://<project>.pages.dev/.well-known/appspecific/com.tesla.3p.public-key.pem"
@@ -26,7 +26,7 @@ Other stops:
 - `agentdrive check` exits 0 when the car is asleep. That is not a failure. It did not wake the car. Exit 1 means an alert. Exit 2 means the read itself failed.
 - `unauthorized_client` from the token endpoint, after a hand-written `curl -d`, often means the body was not encoded. A client secret may contain `&`. `curl -d` sends the body as-is, so that character starts another field and the token endpoint rejects the client. Encode every field (`curl --data-urlencode` once per field). AgentDrive's client does this. Do not put the secret in the command line of a process list, and do not paste it into chat.
 - The browser says Not found on the redirect page after you approve scopes. That is expected. The authorization code is in the address bar. Copy the whole address into a mode 600 file. Do not paste it into chat.
-- The pairing link `https://tesla.com/_ak/agentdrive.example.com` (use the hostname you registered) must be opened in the phone's browser, not an in-app browser, with the Tesla app installed, while you are near the car. An in-app browser often fails to hand the link to the app.
+- The pairing link `https://tesla.com/_ak/your-project.pages.dev` (the hostname you published) must be opened in the phone's browser, not an in-app browser, with the Tesla app installed, while you are near the car. An in-app browser often fails to hand the link to the app.
 - To see whether the key is paired, send `POST /api/1/vehicles/fleet_status` with a JSON body `{"vins":["<vin>"]}`. Read the access token from the mode 600 token file inside the program. Do not put the token or the VIN on a command line or in chat. A VIN listed under `unpaired_vins` still needs the phone step. A VIN listed under `key_paired_vins` has the key. Mask the VIN in anything you print.
 
 ## Expected result

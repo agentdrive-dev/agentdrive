@@ -1,6 +1,6 @@
-# Optional manual override. Copy to config/host.yaml or to
-# $AGENTDRIVE_HOME/host.yaml. The installer writes the detected choice to
-# $AGENTDRIVE_HOME/host.yaml and does not commit it.
+# Prefer $AGENTDRIVE_HOME/host.yaml (written by the installer).
+# Only copy config/host.example.yaml to config/host.yaml for a repo-local
+# override you do not commit.
 #
 # adapter: grokbot, muse, template, or unknown
 # source: override means this file wins over environment detection

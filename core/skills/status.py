@@ -40,7 +40,7 @@ def summarize(observation: Observation) -> str:
     elif observation.sentry_on is False:
         parts.append("Sentry off.")
     if observation.tpms_soft_warning is True:
-        parts.append("A tire warning is present.")
+        parts.append("A tyre warning is present.")
     if not parts:
         return "No vehicle state was returned."
     return " ".join(parts)

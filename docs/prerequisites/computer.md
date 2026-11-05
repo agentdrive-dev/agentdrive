@@ -2,7 +2,7 @@
 
 [Back to the checklist](../00-before-you-start.md)
 
-The private key, the token file, doctor, and `tesla-control` live on a computer the assistant can operate. A phone can approve sign-in and pairing. It cannot hold the private key for this toolkit.
+The private key, the token file, and `tesla-control` live on a computer the assistant can operate. `agentdrive doctor` (the same command as `python -m core doctor`) checks the config files, the private key, the public-key URL, and the saved token, then names the adapter. A phone can approve sign-in and pairing. It cannot hold the private key for this toolkit.
 
 You provide the machine. The bot checks the tools. Nothing here is a fee from AgentDrive. Python, OpenSSL, curl, Node.js, and the Go toolchain are free. Go is only needed if `tesla-control` is built from source.
 
@@ -10,7 +10,7 @@ You provide the machine. The bot checks the tools. Nothing here is a fee from Ag
 
 ![Diagram: you provide a computer with Python, OpenSSL, curl, and Node](../images/computer-1.svg)
 
-The machine needs Python 3.11 or newer, OpenSSL, curl, and Node.js with npx. Node is used once, to publish the public key with wrangler. `tesla-control` comes from Tesla's vehicle-command project: <https://github.com/teslamotors/vehicle-command>. `setup/install.sh` clones that repository and runs `go build ./cmd/tesla-control`. Installing the module with Go's `@latest` selector fails because the upstream module uses replace directives, so the installer does not do that. The official tool does not support Windows for its Bluetooth path. Internet commands are what this toolkit uses.
+The machine needs Python 3.11 or newer, OpenSSL, curl, and Node.js with npx. Node is used once, to publish the public key with wrangler. `tesla-control` comes from Tesla's vehicle-command project: <https://github.com/teslamotors/vehicle-command>. `setup/install.sh` clones that repository and runs `go build ./cmd/tesla-control`. Installing the module with Go's `@latest` selector fails because the upstream module uses replace directives, so the installer does not do that. AgentDrive uses internet (Fleet API) commands, not Bluetooth. Windows is fine for that path; Tesla's Bluetooth features in tesla-control are unsupported on Windows and unused here.
 
 ## Step 2 — Let the bot check, not guess
 
@@ -20,17 +20,17 @@ Ask the bot to run `python3 --version`, `openssl version`, `curl --version`, `no
 
 ## Step 3 — Keep secrets in a private folder
 
-![Diagram: the bot stores secrets in mode 600 files and does not paste them into chat](../images/computer-3.svg)
+![Diagram: the bot stores secrets in private files and does not paste them into chat](../images/computer-3.svg)
 
-Use `~/.config/agentdrive`, or set `AGENTDRIVE_HOME` to another directory. That is the config home on macOS, Linux, and Windows. On Windows the default is `C:\Users\<you>\.config\agentdrive`. `<you>` is a placeholder.
+Use `~/.config/agentdrive` (or `$AGENTDRIVE_HOME`). That directory is the config home on macOS, Linux, and Windows. On Windows the default is `C:\Users\<you>\.config\agentdrive`. `<you>` is a placeholder.
 
 The private key can stay outside that directory. Set `AGENTDRIVE_KEY_FILE`, or `key_file` in `$AGENTDRIVE_HOME/runtime.yaml`. A placeholder Windows path is `C:\Users\<you>\agentdrive-key\private-key.pem`. The token file is `AGENTDRIVE_TOKEN_FILE` or `token_file` in the same runtime file. See `config/runtime.example.yaml`.
 
-On macOS and Linux the private key file must be mode 600 and the folder should be mode 700. On Windows, limit the file ACL to your user. The repository's `.gitignore` rejects key and token files. Do not copy them into the git checkout. The official `tesla-control` tool does not support Windows for its Bluetooth path. Internet commands are what this toolkit uses, including on Windows.
+On macOS and Linux the private key file must be mode 600 (readable only by your user; run chmod 600 on the file). The folder should be mode 700. On Windows, limit the file ACL to your user. The repository's `.gitignore` rejects key and token files. Do not copy them into the git checkout.
 
 ## Expected result
 
-The four version commands succeed, `tesla-control -h` prints help, and `~/.config/agentdrive` exists with permissions limited to your user.
+The four version commands succeed, `tesla-control -h` prints help, and `~/.config/agentdrive` (or `$AGENTDRIVE_HOME`) exists with permissions limited to your user.
 
 ## Common errors
 
@@ -40,12 +40,12 @@ The four version commands succeed, `tesla-control -h` prints help, and `~/.confi
 
 `tesla-control` is not on `PATH`. Re-run `setup/install.sh` so it can clone the vehicle-command repository and build `./cmd/tesla-control`. The binary is placed in `$AGENTDRIVE_HOME/bin`. Do not substitute a random binary from a forum.
 
-The private key was created inside the git repository. Move it to `AGENTDRIVE_HOME` and do not commit it.
+The private key was created inside the git repository. Move it to `~/.config/agentdrive` (or `$AGENTDRIVE_HOME`) and do not commit it.
 
 ## Bot prompt
 
 Copy this only when you want the bot to do the part below. It must not invent approvals.
 
 ```text
-Check this machine for AgentDrive. Run python3 --version, openssl version, curl --version, node --version, and tesla-control -h. Tell me which ones are missing. Do not generate a key, do not log in anywhere, and do not print any file under ~/.config/agentdrive.
+Check this machine for AgentDrive. Run python3 --version, openssl version, curl --version, node --version, and tesla-control -h. Tell me which ones are missing. Do not generate a key, do not log in anywhere, and do not print any file under ~/.config/agentdrive (or $AGENTDRIVE_HOME).
 ```

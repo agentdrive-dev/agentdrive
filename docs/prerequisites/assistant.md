@@ -38,7 +38,7 @@ You do not pick an adapter by hand when the process already shows which host it 
 
 Grok Bot matches `GROK_BOT`, `GROKBOT`, `GROK_BOT_HOME`, `GROK_BOT_SESSION`, or `CURSOR_AGENT`. Muse matches `MUSE_BOT`, `MUSE_HOME`, `MUSE_SESSION`, or `MUSE_AGENT`. If none match, the stored choice is `unknown` and runtime uses the template adapter. If both hosts match, the installer stops and asks you to pass `--adapter`. A value of `0`, `false`, or `no` does not count as a match.
 
-Force a choice with `setup/install.sh --adapter template`, `python -m core adapter --adapter muse show`, or `AGENTDRIVE_ADAPTER`. `source: override` in `config/host.yaml` or in the home file is kept until you pass `--redetect`. See `config/host.example.yaml`.
+Force a choice with `setup/install.sh --adapter template`, `python -m core adapter --adapter muse show`, or `AGENTDRIVE_ADAPTER`. Prefer `$AGENTDRIVE_HOME/host.yaml` (written by the installer). Only copy `config/host.example.yaml` to `config/host.yaml` for a repo-local override you do not commit. A file with `source: override` is kept until you pass `--redetect`. See `config/host.example.yaml`.
 
 ## Expected result
 

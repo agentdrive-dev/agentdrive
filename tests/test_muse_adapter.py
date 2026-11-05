@@ -91,8 +91,9 @@ def test_supported_agents_list_marks_muse_supported():
     assistants = (ROOT / "docs" / "07-assistants.md").read_text(encoding="utf-8")
     assert "## Supported agents" in readme
     assert "| Muse | Supported |" in readme
-    assert "| Grok Bot | Supported |" in readme
+    assert "| [Grok Bot](https://grokbot.ai) | Supported |" in readme
     assert "The Muse adapter is not built yet" not in readme
+    assert "stub and not built yet" not in readme
     assert "| `muse` |" in assistants
     assert "Phase 2 stub" not in assistants
     assert "Supported" in assistants.split("| `muse` |", 1)[1].split("\n", 1)[0]
