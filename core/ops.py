@@ -28,6 +28,7 @@ from core.fleet.http import UrllibClient
 from core.fleet.queries import FleetReader, QueryError
 from core.fleet.snapshot import Observation, from_vehicle_data
 from core.fleet.tokens import AtomicTokenStore, FleetTokenRefresher, TokenManager, audience_for
+from core.paths import resolve_key, resolve_token_file
 from core.profile.owner import load_profile
 from core.redact import mask_vin, redact
 from core.safety.gateway import Gateway
@@ -124,13 +125,6 @@ def resolve_binary(home: Path) -> str:
     if candidate.is_file():
         return str(candidate)
     return "tesla-control"
-
-
-def resolve_key(home: Path) -> Path:
-    for candidate in (home / "keys" / "private-key.pem", home / "private-key.pem"):
-        if candidate.is_file():
-            return candidate
-    return home / "keys" / "private-key.pem"
 
 
 def resolve_thresholds(
@@ -297,7 +291,7 @@ def build_app(home: Path, *, region: str | None = None) -> App:
     home = Path(home)
     regions = load_regions()
     client_id, client_secret = load_client_credentials(home)
-    store = AtomicTokenStore(home / "tokens.json")
+    store = AtomicTokenStore(resolve_token_file(home))
     try:
         saved_region = store.load().region
     except TokenError:

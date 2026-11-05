@@ -48,4 +48,4 @@ Each item has its own page: what to do, the result you should see, errors people
 11. Pair the key in the app. Outcome: the locks screen lists it. [Virtual key](prerequisites/virtual-key.md).
 12. Run doctor. Outcome: four checks pass, or the failing one says why. [Troubleshooting](09-troubleshooting.md).
 13. Ask for status, then flash the lights while parked. Outcome: the car answers and the lights flash once. [Queries and commands](06-queries-and-commands.md) and [Skills](08-skills.md).
-14. Leave the morning briefing off until you want it. Outcome: silence unless you need to act. [Assistants](07-assistants.md).
+14. Leave the morning briefing off until you want it. Outcome: silence unless you need to act. [Assistants](07-assistants.md). Muse users follow [Install in Muse](10-install-in-muse.md).

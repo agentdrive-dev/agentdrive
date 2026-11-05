@@ -22,6 +22,8 @@ tell me whenever a step needs me (forms, billing, browser sign-in, key pairing),
 and keep every secret in ~/.agentdrive, never in chat or in the repo.
 ```
 
+Muse users: paste the prompt on [Install in Muse](docs/10-install-in-muse.md). It points Muse at an existing private key and existing tokens, then runs doctor and a read-only check before any command.
+
 Prefer to do it yourself? Get the code, then follow [Install](#install):
 
 ```bash
@@ -56,7 +58,7 @@ Do not install anything until every row below is true, or you know which row you
 | [Vehicle account](docs/prerequisites/vehicle-account.md) | Tesla's getting-started page requires an account with a verified email and multi-factor authentication. Only an account that can see the car can approve access and enroll a key. | No fee from this project. Use the account that already owns the car. | You |
 | [A car that can take a virtual key](docs/prerequisites/vehicle-compatibility.md) | Signed commands need the command protocol and an enrolled key. Tesla's fleet status marks some older Model S and Model X hardware as unsupported, and it reports firmware floors. | No extra fee. | You confirm the car. The bot reads fleet status later. |
 | [A computer the assistant can use](docs/prerequisites/computer.md) | Keys, token refresh, doctor, and `tesla-control` run on a machine. A phone alone cannot hold the private key. | Your computer. The tools are free. | You provide it. The bot runs the checks. |
-| [An assistant](docs/prerequisites/assistant.md) | Something has to follow these docs, run commands, and wait for a separate answer. Phase 1 includes a Grok Bot adapter and a template. The Muse adapter is not built yet. | Whatever that assistant already costs. AgentDrive adds none. | You choose it. |
+| [An assistant](docs/prerequisites/assistant.md) | Something has to follow these docs, run commands, and wait for a separate answer. Grok Bot, Muse, and the template adapter are supported. | Whatever that assistant already costs. AgentDrive adds none. | You choose it. |
 | [A developer application](docs/prerequisites/developer-app.md) | Tesla requires an application before any API call. It holds the client id, the secret, the allowed origin, and the redirect URL. | Creating it is not an AgentDrive charge. API use is billed separately. | You submit the form. |
 | [A payment method and a billing limit](docs/prerequisites/billing.md) | Tesla's billing page says an application with no payment method, or one that passes its billing limit, is disabled. The limit starts at 0. Usage is pay-per-use. Status codes 500 and above are not billed. A monthly discount of $10 is published for individual developers. Set a limit. | Not free. The card is yours. The credit is Tesla's, and the amount can change. | You, in the portal. Never give the bot the card. |
 | [A free Cloudflare account](docs/prerequisites/public-key-host.md) | The public key must be on HTTPS before Tesla will register the domain. One login lets the bot publish it. | Cloudflare's free plan. You do not buy a domain. | You sign up and approve login once. The bot publishes. |
@@ -79,6 +81,14 @@ Do not install anything until every row below is true, or you know which row you
 12. Run doctor. Outcome: config, private key, public URL, and token each pass or name what is still missing. Guide: [Troubleshooting](docs/09-troubleshooting.md).
 13. Ask for status, then flash the lights while the car is parked. Outcome: one read and one signed command, each followed by a fresh read. Guides: [Queries and commands](docs/06-queries-and-commands.md), [Skills](docs/08-skills.md).
 14. Connect the assistant. Outcome: it stays quiet unless you need to act. Guides: [Assistants](docs/07-assistants.md), [Skills](docs/08-skills.md).
+
+## Supported agents
+
+| Agent | Status | How it is selected |
+| --- | --- | --- |
+| Grok Bot | Supported | `GROK_BOT`, `GROKBOT`, `GROK_BOT_HOME`, `GROK_BOT_SESSION`, or `CURSOR_AGENT` |
+| Muse | Supported | `MUSE_BOT`, `MUSE_HOME`, `MUSE_SESSION`, or `MUSE_AGENT`. Guide: [Install in Muse](docs/10-install-in-muse.md) |
+| Template | Supported | No host signal (`unknown`), or `--adapter template` |
 
 ## Host adapter
 
@@ -106,9 +116,9 @@ bash setup/install.sh
 
 ## What version 0.1 actually does
 
-Working in this version: owner and partner sign-in, rotating token storage (refresh when the access token has under 30 minutes left, with a lock around the rotation), vehicle reads, wake, status with tyre pressures, a read-only `agentdrive check` that does not wake a sleeping car, nearby charging sites (location and stalls only), charging history, charging invoices, signed commands through `tesla-control` (flash, honk, lock, unlock, climate, set temperature, charge start, charge stop, charge limit), `agentdrive update`, the safety gate, doctor, the Grok Bot adapter, the template adapter, and four skills (status, flash lights, climate on or off, morning briefing). There is no trunk or frunk command. Unlock and charging changes still need a one-time confirmation.
+Working in this version: owner and partner sign-in, rotating token storage (refresh when the access token has under 30 minutes left, with a lock around the rotation), vehicle reads, wake, status with tyre pressures, a read-only `agentdrive check` that does not wake a sleeping car, nearby charging sites (location and stalls only), charging history, charging invoices, signed commands through `tesla-control` (flash, honk, lock, unlock, climate, set temperature, charge start, charge stop, charge limit), `agentdrive update`, the safety gate, doctor, the Grok Bot adapter, the Muse adapter, the template adapter, and four skills (status, flash lights, climate on or off, morning briefing). There is no trunk or frunk command. Unlock and charging changes still need a one-time confirmation. Config home and the private-key path work on Windows as well as macOS and Linux.
 
-Not built yet, and present only as stubs: onboarding, trip advisor, charging tips, news watch, and the Muse adapter. Field names on the charging reads are marked unconfirmed until they are compared with a live response. There is no live Supercharger pricing. The business-only charging sessions route is refused.
+Not built yet, and present only as stubs: onboarding, trip advisor, charging tips, and news watch. Field names on the charging reads are marked unconfirmed until they are compared with a live response. There is no live Supercharger pricing. The business-only charging sessions route is refused.
 
 ## Layout
 

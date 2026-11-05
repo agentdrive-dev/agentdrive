@@ -57,7 +57,18 @@ def test_template_and_grokbot_refuse_secrets_and_sensitive_schedules(tmp_path):
         grok.confirm(challenge)
 
 
-def test_muse_adapter_is_a_stub():
-    muse = MuseAdapter()
-    with pytest.raises(NotImplementedError):
-        muse.notify("hello", requires_action=True)
+def test_muse_adapter_matches_the_file_backed_rules(tmp_path):
+    muse = MuseAdapter(tmp_path, prompter)
+    with pytest.raises(MemoryRejected):
+        muse.remember("vin", "5YJ00000000000000")
+    with pytest.raises(ScheduleBlocked):
+        muse.schedule("night", "22:00", {"command": "unlock"})
+    muse.remember("home", "Example Suburb")
+    assert "home" in json.loads((tmp_path / "memory.json").read_text())
+    muse.schedule("health-check", "every 6 hours", {"command": "check", "json": True})
+    assert muse.notify("all quiet", requires_action=False) is False
+    assert muse.notify("tyre pressure is low", requires_action=True) is True
+    (tmp_path / "secrets").mkdir()
+    (tmp_path / "secrets" / "client-id").write_text("client-123\n", encoding="utf-8")
+    assert muse.get_secret("client_id") == "client-123"
+    assert "client-123" not in (tmp_path / "memory.json").read_text()

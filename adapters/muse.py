@@ -1,32 +1,48 @@
-"""TODO: Phase 2 — connect a Muse-hosted assistant.
+"""File-backed adapter for a Muse agent.
 
-Scheduling, memory, and prompts for Muse are not wired in this version.
+Memory and schedules are JSON in the config home. Secrets stay in files.
+Vehicle commands are not signed here. The shared core signs them.
 """
 
+from __future__ import annotations
 
-class MuseAdapter:
-    """Phase 2 stub. Constructing it does not connect to Muse."""
+from pathlib import Path
 
-    def schedule(self, name: str, when: str, task: dict) -> str:
-        """TODO: Phase 2 — register a Muse schedule without a stored confirmation."""
-        raise NotImplementedError("The Muse adapter is a Phase 2 stub")
+from adapters.files import FileBackedAdapter
+from core.config import repo_root
 
-    def remember(self, key: str, value) -> None:
-        """TODO: Phase 2 — write Muse memory after the secret filter."""
-        raise NotImplementedError("The Muse adapter is a Phase 2 stub")
+# Printed when this adapter is installed. The health check matches the Grok
+# Bot note: `agentdrive check` is read-only and must not wake a sleeping car.
+INSTALL_NOTE = (
+    "Muse adapter is installed. "
+    "Follow .agents/skills/agentdrive/SKILL.md and the prompt in "
+    ".agents/skills/agentdrive/prompts/install.md. "
+    "Set up a recurring health check by default. "
+    "Schedule a routine that runs `agentdrive check --json` every few hours. "
+    "The check is read-only and does not wake a sleeping car. "
+    "Exit 0 means there is nothing to report, including when the vehicle is asleep. "
+    "Exit 1 means an alert the owner should hear. Notify only when the exit code is 1. "
+    "The config home is $AGENTDRIVE_HOME, or ~/.config/agentdrive when that variable is unset "
+    "(on Windows, C:\\Users\\<you>\\.config\\agentdrive). "
+    "Point AGENTDRIVE_KEY_FILE or runtime.yaml key_file at the existing private key, "
+    "for example C:\\Users\\<you>\\agentdrive-key\\private-key.pem. "
+    "Point AGENTDRIVE_TOKEN_FILE or runtime.yaml token_file at the existing token file. "
+    "Do not sign commands in this adapter. Use the agentdrive command, which calls the shared core."
+)
 
-    def recall(self, key: str):
-        """TODO: Phase 2 — read Muse memory."""
-        raise NotImplementedError("The Muse adapter is a Phase 2 stub")
 
-    def confirm(self, challenge) -> object:
-        """TODO: Phase 2 — ask the owner in Muse, once per action."""
-        raise NotImplementedError("The Muse adapter is a Phase 2 stub")
+class MuseAdapter(FileBackedAdapter):
+    """Working file-backed adapter for Muse. Constructing it does not sign a command."""
 
-    def get_secret(self, name: str) -> str:
-        """TODO: Phase 2 — read a local secret without copying it into Muse memory."""
-        raise NotImplementedError("The Muse adapter is a Phase 2 stub")
+    @staticmethod
+    def bundle_dir() -> Path:
+        return repo_root() / ".agents" / "skills" / "agentdrive"
 
-    def notify(self, message: str, *, requires_action: bool, kind: str = "alert") -> bool:
-        """TODO: Phase 2 — deliver a Muse message only when the owner needs to act."""
-        raise NotImplementedError("The Muse adapter is a Phase 2 stub")
+    @classmethod
+    def bundle_files(cls) -> dict[str, Path]:
+        root = cls.bundle_dir()
+        return {
+            "skill": root / "SKILL.md",
+            "prompt": root / "prompts" / "install.md",
+            "config": root / "config" / "runtime.example.yaml",
+        }

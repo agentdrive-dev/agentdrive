@@ -18,10 +18,12 @@ def test_grok_and_cursor_signals_select_grokbot(tmp_path):
     assert isinstance(load_adapter("grokbot", root=tmp_path), GrokBotAdapter)
 
 
-def test_muse_signal_selects_muse_even_though_the_adapter_is_a_stub(tmp_path):
+def test_muse_signal_selects_the_file_backed_adapter(tmp_path):
     choice = resolve_adapter(home=tmp_path, env={"MUSE_HOME": "/tmp/muse"})
     assert choice.adapter == "muse"
-    assert isinstance(load_adapter("muse", root=tmp_path), MuseAdapter)
+    adapter = load_adapter("muse", root=tmp_path)
+    assert isinstance(adapter, MuseAdapter)
+    assert adapter.root == tmp_path
 
 
 def test_no_signal_is_unknown_and_uses_the_template(tmp_path):

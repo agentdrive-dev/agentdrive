@@ -8,9 +8,9 @@ Phase 1 has three adapter names:
 
 | Name | When it is used | What it does now |
 | --- | --- | --- |
-| `grokbot` | Detected from `GROK_BOT`, `GROKBOT`, `GROK_BOT_HOME`, `GROK_BOT_SESSION`, or `CURSOR_AGENT` | Working file-backed adapter |
-| `muse` | Detected from `MUSE_BOT`, `MUSE_HOME`, `MUSE_SESSION`, or `MUSE_AGENT` | Selected, then every call raises. It is a Phase 2 stub |
-| `unknown` | No host signal | The template adapter runs |
+| `grokbot` | Detected from `GROK_BOT`, `GROKBOT`, `GROK_BOT_HOME`, `GROK_BOT_SESSION`, or `CURSOR_AGENT` | Supported. Working file-backed adapter |
+| `muse` | Detected from `MUSE_BOT`, `MUSE_HOME`, `MUSE_SESSION`, or `MUSE_AGENT` | Supported. Working file-backed adapter. Install steps: [Install in Muse](10-install-in-muse.md) |
+| `unknown` | No host signal | Supported. The template adapter runs |
 
 Detection runs from `setup/install.sh` and from `python -m core adapter`. The result is stored in `$AGENTDRIVE_HOME/host.yaml`. A conflict does not guess: the command prints both signal lists and exits until you pass `--adapter`. `AGENTDRIVE_ADAPTER` and a `source: override` file also win. `--redetect` drops a saved override and looks again.
 
@@ -24,7 +24,7 @@ Copy `adapters/template.py` for a host that is not listed. The same five operati
 
 ## Health check by default
 
-Installing the Grok Bot adapter includes this instruction for the bot: set up a recurring health check by default. The routine runs `agentdrive check --json` every few hours. It is read-only. It reads the vehicle list first and does not wake a sleeping car. Exit 0 means there is nothing to do, including when the car is asleep, so the bot stays quiet. Exit 1 means an alert (tyre pressure, TPMS warning, low battery while not charging, unlocked or open while parked, or a charge error). Notify only on exit 1. The same note is printed by `agentdrive adapter install` when the adapter is `grokbot`.
+Installing the Grok Bot adapter or the Muse adapter includes this instruction for the bot: set up a recurring health check by default. The routine runs `agentdrive check --json` every few hours. It is read-only. It reads the vehicle list first and does not wake a sleeping car. Exit 0 means there is nothing to do, including when the car is asleep, so the bot stays quiet. Exit 1 means an alert (tyre pressure, TPMS warning, low battery while not charging, unlocked or open while parked, or a charge error). Notify only on exit 1. The same note is printed by `agentdrive adapter install` when the adapter is `grokbot` or `muse`. Muse also loads `.agents/skills/agentdrive/SKILL.md`. The config home and the private-key path work on Windows as well as macOS and Linux. See [Install in Muse](10-install-in-muse.md).
 
 ```text
 Schedule a routine named health-check that runs `agentdrive check --json` every few hours. Notify me only when the exit code is 1. Do not wake the car from that routine. Do not schedule unlock or a charging change.

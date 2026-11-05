@@ -10,7 +10,7 @@ Phase 1 runs four skills:
 - **Flash lights** requires Park and speed 0, sends one signed command, and reads the car again.
 - **Climate on or off** uses the same park rule and checks the climate flag afterward.
 - **Morning briefing** looks at lock, sentry, battery against your habit, and tire warnings. It speaks only when one of those needs you. Otherwise it stays silent.
-- **`agentdrive check`** is the recurring health check. It does not wake a sleeping car. On a Grok Bot install, set that routine up by default and notify only when it exits 1. See [Assistants](07-assistants.md).
+- **`agentdrive check`** is the recurring health check. It does not wake a sleeping car. On a Grok Bot or Muse install, set that routine up by default and notify only when it exits 1. See [Assistants](07-assistants.md).
 
 These are stubs with a TODO for Phase 2: onboarding, trip advisor, charging tips, and news watch. News watch, when it exists, is still supposed to stay quiet unless you need to act.
 

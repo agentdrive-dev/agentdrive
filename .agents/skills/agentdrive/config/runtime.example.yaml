@@ -1,0 +1,14 @@
+# Copy this file to $AGENTDRIVE_HOME/runtime.yaml and replace the placeholders.
+# Do not commit the filled-in file. Do not put a real account, VIN, or hostname here.
+#
+# Config home:
+#   $AGENTDRIVE_HOME when that variable is set.
+#   Otherwise ~/.config/agentdrive on macOS, Linux, and Windows.
+#   On Windows the default is C:\Users\<you>\.config\agentdrive.
+#
+# AGENTDRIVE_KEY_FILE overrides key_file.
+# AGENTDRIVE_TOKEN_FILE overrides token_file.
+# The values below are placeholders. Replace <you> with the Windows account folder.
+
+key_file: 'C:\Users\<you>\agentdrive-key\private-key.pem'
+token_file: 'C:\Users\<you>\agentdrive-key\tokens.json'
