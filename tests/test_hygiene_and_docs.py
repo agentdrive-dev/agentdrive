@@ -44,9 +44,12 @@ def test_guides_and_checklist_links():
     for number in range(10):
         matches = list((ROOT / "docs").glob(f"{number:02d}-*.md"))
         assert len(matches) == 1
-    assert (ROOT / "DISCLAIMER.md").read_text(encoding="utf-8").startswith("Experimental and testing purposes only.")
-    assert "to the maximum extent permitted by law" in readme.lower()
-    assert "Australian Consumer Law" in readme
+    disclaimer = (ROOT / "DISCLAIMER.md").read_text(encoding="utf-8")
+    assert disclaimer.startswith("Experimental and testing purposes only.")
+    assert "to the maximum extent permitted by law" in disclaimer.lower()
+    assert "Australian Consumer Law" in disclaimer
+    assert "[DISCLAIMER.md](DISCLAIMER.md)" in readme
+    assert "[SECURITY.md](SECURITY.md)" in readme
 
 
 ALLOWED_EMAIL = "agentdrivedev@gmail.com"

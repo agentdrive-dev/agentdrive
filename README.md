@@ -1,16 +1,75 @@
 # AgentDrive
 
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![Real car](https://img.shields.io/badge/real%20car-basic%20commands%20on%20Grok%20Bot%20and%20Muse-green)](#supported-agents)
+
 Turn your AI assistant into your car concierge.
 
-AgentDrive lets you connect a car you own to an assistant you already use. You register your own developer application, publish your own public key, and keep every secret on your own machine. The assistant can then report status, flash the lights, turn climate on or off, and send a morning note only when you need to do something.
+AgentDrive connects a car you own to an assistant you already use. You register your own developer application, publish your own public key, and keep every secret on your machine. The assistant can then report status and send a parked command when you ask.
 
 AgentDrive is unofficial. It is not affiliated with, endorsed by, or supported by Tesla.
 
 Docs are published at <https://agentdrive-dev.github.io/agentdrive>.
 
-## Quick start: install with your AI agent
+## What you can ask
 
-Works with Grok Bot, Muse, or any agent that can run shell commands. Paste this message to your assistant:
+These are the commands this version actually runs:
+
+- Battery, lock, climate, and tyre status. `agentdrive status` may wake a sleeping car.
+- A read-only check that does not wake a sleeping car.
+- Flash the lights, honk, lock, or unlock.
+- Climate on or off, and a set temperature from 15 to 28 C.
+- Charge start, charge stop, or a charge limit. Each one is a single command, not a charging schedule.
+
+A command that changes the car is sent only in Park at speed 0. Unlock and any charging change need a fresh confirmation. This version has no trunk, frunk, or remote-start command.
+
+```mermaid
+flowchart LR
+  assistant[Assistant]
+  agentdrive[AgentDrive]
+  fleet[Tesla Fleet API]
+  vehicle[Vehicle]
+  assistant --> agentdrive --> fleet --> vehicle
+```
+
+## Example chat
+
+Example only. This is not a transcript, and the numbers are not from a car.
+
+```text
+You: How is the car?
+Assistant: Battery is at 70 percent. The car is locked. Climate is off.
+
+You: It is parked. Flash the lights.
+Assistant: The car was in Park at speed 0. I sent one flash and read the car again.
+```
+
+## Everyday commands
+
+`agentdrive check` reads the car only when it is already online. It does not wake a sleeping car. Exit 0 means there is nothing to report. Exit 1 means an alert.
+
+```bash
+agentdrive check
+```
+
+`agentdrive update` updates this checkout from the latest `main` and leaves private config in `~/.config/agentdrive` (or `$AGENTDRIVE_HOME`).
+
+```bash
+agentdrive update
+```
+
+The installer asks the assistant to schedule `agentdrive check`. It does not schedule a morning briefing, and it does not schedule a charging change.
+
+## Quick start
+
+Works with Grok Bot, Muse, or any agent that can run shell commands.
+
+1. Check [What you need](#before-you-start).
+2. Paste the install prompt to your assistant. It must show [DISCLAIMER.md](DISCLAIMER.md) and [SECURITY.md](SECURITY.md) in full, then stop. It must not install in that same turn.
+3. In a later message, accept with this sentence: `I have read, understood, and accept the AgentDrive disclaimer and security reminder`
+
+<details>
+<summary>Install prompt</summary>
 
 ```text
 Install AgentDrive from https://github.com/agentdrive-dev/agentdrive.
@@ -22,6 +81,8 @@ tell me whenever a step needs me (GitHub login, forms, billing, browser sign-in,
 and keep every secret in ~/.config/agentdrive (or $AGENTDRIVE_HOME), never in chat or in the repo.
 ```
 
+</details>
+
 Prefer to do it yourself? Get the code, then follow [Install](#install):
 
 ```bash
@@ -29,23 +90,11 @@ git clone https://github.com/agentdrive-dev/agentdrive.git ~/agentdrive
 cd ~/agentdrive
 ```
 
-To upgrade later, run `agentdrive update`. It updates this checkout from the latest `main` and leaves your private config in `~/.config/agentdrive` (or `$AGENTDRIVE_HOME`).
-
 ## Disclaimer
 
-Experimental and testing purposes only.
+Experimental and testing purposes only. AgentDrive is an unofficial personal toolkit for a vehicle you own, or a vehicle you are explicitly allowed to control. You bear the consequences of installing and using it.
 
-AgentDrive is an unofficial personal toolkit. It is not affiliated with, endorsed by, or supported by Tesla. It is not a Tesla product, and Tesla does not provide support for it.
-
-Use it only on a vehicle you own, or a vehicle you are explicitly allowed to control, with your own account, for your own personal use. You bear all consequences of installing, configuring, and using this project. The author is not responsible for vehicle damage, injury, property loss, theft, fines, charges, account limits, data loss, or any other outcome.
-
-To the maximum extent permitted by law, the software and the documentation are provided as is, without warranty of any kind, and the author's liability is excluded. Nothing in this disclaimer excludes, restricts, or modifies any consumer guarantee, right, or remedy under the Australian Consumer Law that cannot be excluded. Where the Australian Consumer Law allows liability for a failure to comply with a consumer guarantee to be limited, the author's liability is limited to the maximum extent permitted by that law.
-
-A command that changes the vehicle is sent only when the shift state is Park and the speed is zero. After every command, AgentDrive reads the vehicle again. Unlock, remote start, opening the front trunk, opening the rear trunk, turning sentry mode off, and any charging change each need a fresh explicit confirmation. That confirmation covers that single action and then expires. It is never reused, and a schedule cannot supply it or skip it. These checks also apply if such commands are added later; this version has no trunk, frunk, or remote-start command.
-
-Follow Tesla's current safety guidance, developer terms, and Fleet API terms. Where those terms and this project differ, the terms win. Obey the road rules that apply where you are, and do not interact with the assistant while you are driving.
-
-A private key together with an access token can operate the vehicle inside the scopes you approved. Keep both private. Reported problems are reviewed and fixed promptly through GitHub Issues and GitHub private vulnerability reporting. See [SECURITY.md](SECURITY.md). The same text is in [DISCLAIMER.md](DISCLAIMER.md).
+The full text, including the Australian Consumer Law limit, is in [DISCLAIMER.md](DISCLAIMER.md). Reporting is in [SECURITY.md](SECURITY.md).
 
 ## Before you start
 
@@ -76,21 +125,13 @@ Everything else (installing, publishing the key, registering, tokens, doctor, te
 
 | Agent | Status | Notes |
 | --- | --- | --- |
-| [Grok Bot](https://grokbot.ai) | Supported — tested end-to-end on a real vehicle (v0.1, internet commands) | Adapter `grokbot`. |
+| [Grok Bot](https://grokbot.ai) | Supported — tested end-to-end on a real vehicle (v0.1, internet commands) | Adapter `grokbot`. Basic commands were verified on a real car. Not every feature was part of that check. |
 | Any agent that can run shell commands | Supported through the template | Adapter `template`. Works with assistants such as coding agents or self-hosted bots that can run `python3` and `bash` on your computer. |
-| Muse | Supported — tested end-to-end on a real vehicle (v0.1, internet commands) | Adapter `muse`. |
+| Muse | Supported — tested end-to-end on a real vehicle (v0.1, internet commands) | Adapter `muse`. Basic commands were verified on a real car. Not every feature was part of that check. |
 
 Want another agent? Copy `adapters/template.py`, then open an issue or a pull request.
 
-## Host adapter
-
-The installer and `python -m core adapter` look at the process environment and pick the host bot:
-
-- Grok Bot when `GROK_BOT`, `GROKBOT`, `GROK_BOT_HOME`, `GROK_BOT_SESSION`, or `CURSOR_AGENT` is set. Supported — tested end-to-end on a real vehicle (v0.1, internet commands).
-- Muse when `MUSE_BOT`, `MUSE_HOME`, `MUSE_SESSION`, or `MUSE_AGENT` is set. Supported — tested end-to-end on a real vehicle (v0.1, internet commands).
-- `unknown` when none of those are set. Runtime then uses the template adapter.
-
-Prefer `$AGENTDRIVE_HOME/host.yaml` (written by the installer). Only copy `config/host.example.yaml` to `config/host.yaml` for a repo-local override you do not commit. If both hosts match, nothing is written and the command asks you to choose. Set one yourself with `--adapter grokbot`, `--adapter muse`, `--adapter template`, or `--adapter unknown`, or with `AGENTDRIVE_ADAPTER`. A saved file with `source: override` stays in place until you pass `--redetect`.
+Host detection, including the environment variables, is in [Assistants](docs/07-assistants.md#host-detection).
 
 ## Install
 
@@ -116,7 +157,6 @@ Use a different `--turn-id` for each chat message (for example 1 when showing th
 - Rotating token storage. The access token is refreshed when fewer than 30 minutes remain, and a lock stops two refreshes at once.
 - Vehicle reads, wake, and status with tyre pressures.
 - A read-only `agentdrive check` that does not wake a sleeping car.
-- Nearby charging sites (location and stalls only), charging history, and charging invoices.
 
 **Commands**
 
@@ -132,8 +172,8 @@ Use a different `--turn-id` for each chat message (for example 1 when showing th
 
 **Adapters**
 
-- The Grok Bot adapter. Supported — tested end-to-end on a real vehicle (v0.1, internet commands).
-- The Muse adapter. Supported — tested end-to-end on a real vehicle (v0.1, internet commands).
+- The Grok Bot adapter. Supported — tested end-to-end on a real vehicle (v0.1, internet commands). Basic commands were verified. Not every feature was part of that check.
+- The Muse adapter. Supported — tested end-to-end on a real vehicle (v0.1, internet commands). Basic commands were verified. Not every feature was part of that check.
 - The template adapter.
 
 **Skills**
@@ -141,15 +181,18 @@ Use a different `--turn-id` for each chat message (for example 1 when showing th
 - Status.
 - Flash lights.
 - Climate on or off.
-- Morning briefing.
+
+The morning-briefing skill is in the repository. The installer does not schedule it.
 
 **Not in this version**
 
 - Onboarding, trip advisor, charging tips, and news watch. These are stubs.
+- A charging schedule.
 - Live Supercharger pricing.
 - The business-only charging sessions route. The client refuses it.
-- Confirmed field names on the charging reads. They stay marked unconfirmed until they are compared with a live response.
 - China-region Tesla accounts are not supported.
+
+Command details are in [Queries and commands](docs/06-queries-and-commands.md).
 
 ## Layout
 
