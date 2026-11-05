@@ -22,8 +22,6 @@ tell me whenever a step needs me (GitHub login, forms, billing, browser sign-in,
 and keep every secret in ~/.config/agentdrive (or $AGENTDRIVE_HOME), never in chat or in the repo.
 ```
 
-Muse users: paste the prompt on [Install in Muse](docs/10-install-in-muse.md). It points Muse at an existing private key and existing tokens, then runs doctor and a read-only check before any command.
-
 Prefer to do it yourself? Get the code, then follow [Install](#install):
 
 ```bash
@@ -80,7 +78,7 @@ Everything else (installing, publishing the key, registering, tokens, doctor, te
 | --- | --- | --- |
 | [Grok Bot](https://grokbot.ai) | Supported — tested end-to-end on a real vehicle (v0.1, internet commands) | Adapter `grokbot`. |
 | Any agent that can run shell commands | Supported through the template | Adapter `template`. Works with assistants such as coding agents or self-hosted bots that can run `python3` and `bash` on your computer. |
-| Muse | Supported — tested end-to-end on a real vehicle (v0.1, internet commands) | Adapter `muse`. Install steps: [Install in Muse](docs/10-install-in-muse.md). |
+| Muse | Supported — tested end-to-end on a real vehicle (v0.1, internet commands) | Adapter `muse`. |
 
 Want another agent? Copy `adapters/template.py`, then open an issue or a pull request.
 
@@ -89,7 +87,7 @@ Want another agent? Copy `adapters/template.py`, then open an issue or a pull re
 The installer and `python -m core adapter` look at the process environment and pick the host bot:
 
 - Grok Bot when `GROK_BOT`, `GROKBOT`, `GROK_BOT_HOME`, `GROK_BOT_SESSION`, or `CURSOR_AGENT` is set. Supported — tested end-to-end on a real vehicle (v0.1, internet commands).
-- Muse when `MUSE_BOT`, `MUSE_HOME`, `MUSE_SESSION`, or `MUSE_AGENT` is set. Supported — tested end-to-end on a real vehicle (v0.1, internet commands). See [Install in Muse](docs/10-install-in-muse.md).
+- Muse when `MUSE_BOT`, `MUSE_HOME`, `MUSE_SESSION`, or `MUSE_AGENT` is set. Supported — tested end-to-end on a real vehicle (v0.1, internet commands).
 - `unknown` when none of those are set. Runtime then uses the template adapter.
 
 Prefer `$AGENTDRIVE_HOME/host.yaml` (written by the installer). Only copy `config/host.example.yaml` to `config/host.yaml` for a repo-local override you do not commit. If both hosts match, nothing is written and the command asks you to choose. Set one yourself with `--adapter grokbot`, `--adapter muse`, `--adapter template`, or `--adapter unknown`, or with `AGENTDRIVE_ADAPTER`. A saved file with `source: override` stays in place until you pass `--redetect`.
@@ -135,7 +133,7 @@ Use a different `--turn-id` for each chat message (for example 1 when showing th
 **Adapters**
 
 - The Grok Bot adapter. Supported — tested end-to-end on a real vehicle (v0.1, internet commands).
-- The Muse adapter. Supported — tested end-to-end on a real vehicle (v0.1, internet commands). Install steps are in [Install in Muse](docs/10-install-in-muse.md). Config home is `~/.config/agentdrive` or `$AGENTDRIVE_HOME`, on macOS, Linux, and Windows. The private-key path can point at an existing file.
+- The Muse adapter. Supported — tested end-to-end on a real vehicle (v0.1, internet commands). Config home is `~/.config/agentdrive` or `$AGENTDRIVE_HOME`, on macOS, Linux, and Windows.
 - The template adapter.
 
 **Skills**

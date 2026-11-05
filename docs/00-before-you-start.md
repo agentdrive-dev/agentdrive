@@ -36,4 +36,3 @@ These pages are the longer version. Your assistant follows them. You only do the
 7. [Assistants](07-assistants.md)
 8. [Skills](08-skills.md)
 9. [Troubleshooting](09-troubleshooting.md)
-10. [Install in Muse](10-install-in-muse.md)

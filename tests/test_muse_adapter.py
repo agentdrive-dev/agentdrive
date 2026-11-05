@@ -72,8 +72,6 @@ def test_install_note_and_bundle(tmp_path, capsys):
     assert "tesla-control" not in source
     assert "NotImplementedError" not in source
     prompt = files["prompt"].read_text(encoding="utf-8").strip()
-    page = (ROOT / "docs" / "10-install-in-muse.md").read_text(encoding="utf-8")
-    assert prompt in page
     assert "https://github.com/agentdrive-dev/agentdrive" in prompt
     assert "agentdrive doctor" in prompt
     assert "read-only vehicle status check" in prompt
@@ -92,7 +90,6 @@ VEHICLE_TESTED = "Supported — tested end-to-end on a real vehicle (v0.1, inter
 def test_supported_agents_list_marks_muse_supported():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assistants = (ROOT / "docs" / "07-assistants.md").read_text(encoding="utf-8")
-    muse_page = (ROOT / "docs" / "10-install-in-muse.md").read_text(encoding="utf-8")
     assistant_page = (ROOT / "docs" / "prerequisites" / "assistant.md").read_text(encoding="utf-8")
     assert "## Supported agents" in readme
     assert f"| Muse | {VEHICLE_TESTED} |" in readme
@@ -102,7 +99,7 @@ def test_supported_agents_list_marks_muse_supported():
     assert "stub and not built yet" not in readme
     assert "| `muse` |" in assistants
     assert "Phase 2 stub" not in assistants
-    for text in (readme, assistants, muse_page, assistant_page):
+    for text in (readme, assistants, assistant_page):
         lowered = text.lower()
         assert "unverified" not in lowered
         assert "untested" not in lowered
