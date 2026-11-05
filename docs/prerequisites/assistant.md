@@ -2,7 +2,7 @@
 
 [Back to the checklist](../00-before-you-start.md)
 
-AgentDrive is a toolkit an assistant drives. Grok Bot, Muse, and the template adapter are supported. Muse install steps are on [Install in Muse](../10-install-in-muse.md).
+AgentDrive is a toolkit an assistant drives. Grok Bot and Muse are supported — tested end-to-end on a real vehicle (v0.1, internet commands). The template adapter is supported for another agent that can run shell commands. Muse install steps are on [Install in Muse](../10-install-in-muse.md).
 
 The assistant has to read these docs, run shell commands, store files on the machine, and wait when a step needs you. You choose the assistant. AgentDrive does not add a fee on top of whatever that assistant already costs.
 
@@ -50,7 +50,7 @@ The assistant starts installing in the same message as the disclaimer. Stop it. 
 
 The assistant asks you to paste a token or a private key into chat. Refuse. Point it at a mode 600 file instead.
 
-You wanted Muse. Follow [Install in Muse](../10-install-in-muse.md). The adapter is supported. Point it at the existing private key and the existing token file, then run `agentdrive doctor` and `agentdrive check` before any command.
+You wanted Muse. Follow [Install in Muse](../10-install-in-muse.md). Muse is supported — tested end-to-end on a real vehicle (v0.1, internet commands). Point it at the existing private key and the existing token file, then run `agentdrive doctor` and `agentdrive check` before any command.
 
 ## Bot prompt
 

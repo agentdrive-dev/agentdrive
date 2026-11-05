@@ -2,7 +2,7 @@
 
 [Back to the checklist](00-before-you-start.md)
 
-Muse is a supported agent. The adapter stores memory and schedules in the config home, asks for a confirmation one action at a time, and leaves signing to the shared core. Give Muse the prompt below. It clones this repository, installs, points at an existing private key and existing tokens, then runs doctor and a read-only check before any command.
+Muse is supported — tested end-to-end on a real vehicle (v0.1, internet commands). The adapter stores memory and schedules in the config home, asks for a confirmation one action at a time, and leaves signing to the shared core. Give Muse the prompt below. It clones this repository, installs, points at an existing private key and existing tokens, then runs doctor and a read-only check before any command.
 
 ![You choose an assistant that can run commands, or the installer detects the host](images/assistant-1.svg)
 

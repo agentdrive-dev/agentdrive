@@ -12,12 +12,13 @@ python -m core doctor --secrets-dir ~/.config/agentdrive --public-key-url "https
 | --- | --- | --- |
 | config | `config/regions.yaml` and `config/vehicles.yaml` load, with North America and Europe only | Fix the YAML. Do not add a China host. |
 | private_key | The private key file exists and, on macOS and Linux, is not group-readable | Set `AGENTDRIVE_KEY_FILE` or `key_file` in `$AGENTDRIVE_HOME/runtime.yaml`. A placeholder Windows path is `C:\Users\<you>\agentdrive-key\private-key.pem`. On macOS or Linux, `chmod 600` the file. On Windows, limit the file ACL to your user. |
-| public_key | The HTTPS URL returns a public key | Re-run the publish script. A 404 means the well-known path is wrong. |
+| public_key | The HTTPS URL returns a public key | Re-run the publish script. A 404 means the well-known path is wrong. HTTP 403 can mean a CDN or bot-protection rule is blocking non-browser clients. |
 | token | The access token is still in date, or the refresh token is | Sign in again only when the refresh token is dead. |
 | adapter | A single host was detected or you set an override | If it says ambiguous, re-run with `--adapter`. |
 
 Other stops:
 
+- The public key check returns HTTP 403 while curl, with its default user agent, returns 200. A CDN or bot-protection rule may be blocking non-browser clients. The default Python user agent `Python-urllib` is often blocked. AgentDrive sends `AgentDrive/<version> (+https://github.com/agentdrive-dev/agentdrive)` on every HTTP request it makes. If 403 remains, allow that user agent or exempt the well-known path. Hosts in this guide are placeholders, such as `https://<project>.pages.dev`.
 - Installer exit 2: the disclaimer was not accepted in a separate turn.
 - Installer exit 3: Grok Bot and Muse signals are both set.
 - A command exits non-zero: do not send it again until a read shows the car's state.

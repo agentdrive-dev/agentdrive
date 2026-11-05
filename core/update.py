@@ -14,9 +14,9 @@ import subprocess
 import tarfile
 from pathlib import Path, PurePosixPath
 from typing import Callable
-from urllib.request import urlopen
 
 from core.errors import ConfigError
+from core.fleet.http import open_url
 
 ARCHIVE_URL = "https://github.com/agentdrive-dev/agentdrive/archive/refs/heads/main.tar.gz"
 
@@ -165,5 +165,5 @@ def _default_runner(argv: list[str]):
 
 
 def _fetch_bytes(url: str) -> bytes:
-    with urlopen(url, timeout=60) as response:
+    with open_url(url, method="GET", timeout=60) as response:
         return response.read()

@@ -1,4 +1,8 @@
-"""Small HTTP helper. Tests pass a fake with the same methods."""
+"""Small HTTP helper. Tests pass a fake with the same methods.
+
+Every outbound request sends one shared User-Agent. CDNs often block the
+default Python-urllib agent and answer 403.
+"""
 
 from __future__ import annotations
 
@@ -8,7 +12,10 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
+from core import __version__
 from core.errors import AgentDriveError
+
+USER_AGENT = f"AgentDrive/{__version__} (+https://github.com/agentdrive-dev/agentdrive)"
 
 
 class HttpError(AgentDriveError):
@@ -35,6 +42,36 @@ class HttpClient(Protocol):
         """Return the status code and the response body as text."""
 
 
+def build_request(
+    url: str,
+    *,
+    data: bytes | None = None,
+    method: str | None = None,
+    headers: dict[str, str] | None = None,
+) -> Request:
+    """Build a urllib request that sends the AgentDrive User-Agent."""
+    request = Request(url, data=data, method=method)
+    for key, value in (headers or {}).items():
+        if key.lower() == "user-agent":
+            continue
+        request.add_header(key, value)
+    request.add_header("User-Agent", USER_AGENT)
+    return request
+
+
+def open_url(
+    url: str,
+    *,
+    data: bytes | None = None,
+    method: str | None = None,
+    headers: dict[str, str] | None = None,
+    timeout: float = 30,
+):
+    """Open a URL with the shared User-Agent."""
+    request = build_request(url, data=data, method=method, headers=headers)
+    return urlopen(request, timeout=timeout)
+
+
 class UrllibClient:
     """Stdlib client used by the real installation. Not used in unit tests.
 
@@ -45,11 +82,17 @@ class UrllibClient:
 
     def post_form(self, url: str, fields: dict[str, str], timeout: float = 30) -> dict:
         data = urlencode(fields).encode("utf-8")
-        request = Request(url, data=data, method="POST")
-        request.add_header("Content-Type", "application/x-www-form-urlencoded")
-        request.add_header("Accept", "application/json")
         try:
-            with urlopen(request, timeout=timeout) as response:
+            with open_url(
+                url,
+                data=data,
+                method="POST",
+                headers={
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Accept": "application/json",
+                },
+                timeout=timeout,
+            ) as response:
                 payload = json.loads(response.read().decode("utf-8"))
         except HTTPError as exc:
             raise HttpError("Token endpoint refused the request", status=exc.code) from None
@@ -67,11 +110,8 @@ class UrllibClient:
         timeout: float = 30,
         body: bytes | None = None,
     ) -> tuple[int, dict]:
-        request = Request(url, data=body, method=method)
-        for key, value in headers.items():
-            request.add_header(key, value)
         try:
-            with urlopen(request, timeout=timeout) as response:
+            with open_url(url, data=body, method=method, headers=headers, timeout=timeout) as response:
                 raw = response.read().decode("utf-8")
                 status = response.status
         except HTTPError as exc:
@@ -88,9 +128,8 @@ class UrllibClient:
         return status, payload
 
     def get_text(self, url: str, timeout: float = 20) -> tuple[int, str]:
-        request = Request(url, method="GET")
         try:
-            with urlopen(request, timeout=timeout) as response:
+            with open_url(url, method="GET", timeout=timeout) as response:
                 return response.status, response.read().decode("utf-8", errors="replace")
         except HTTPError as exc:
             return exc.code, exc.read().decode("utf-8", errors="replace")
