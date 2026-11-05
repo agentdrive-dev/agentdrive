@@ -9,26 +9,21 @@ AgentDrive is unofficial. It is not affiliated with, endorsed by, or supported b
 
 You register your own developer application, publish your own public key, and keep every secret on your own machine. The public key is hosted on GitHub Pages (`<username>.github.io`). You do not buy a domain. Docs are published at <https://agentdrive-dev.github.io/agentdrive>.
 
-## How a request moves
+## How it works
 
-![Assistant to AgentDrive to the Tesla Fleet API to the vehicle](docs/images/request-path.svg)
+![How it works. You ask in plain words. The assistant invokes AgentDrive. AgentDrive reads the Tesla Fleet API and signs parked commands for the vehicle.](docs/images/how-it-works.svg)
 
-The assistant runs AgentDrive on your computer. AgentDrive calls the Tesla Fleet API with your application. The API reaches the vehicle. Signed commands go through `tesla-control` on that same computer.
+The assistant invokes AgentDrive on your computer. Reads use the Tesla Fleet API. Parked commands are signed with your key. Those commands act while the vehicle is parked. AgentDrive does not drive the vehicle.
 
 ## What this version does
 
+![What it does. Reads, parked commands, and the safety checks in the agentdrive command line.](docs/images/what-it-does.svg)
+
 These are the commands in `agentdrive` today. Grok Bot and Muse have been used for basic real-car commands. That trial does not cover every command in this repository.
 
-**Reads**
+`agentdrive status` may wake a sleeping car. `agentdrive check` never wakes. `agentdrive wake` is a separate command. A parked command is sent only in Park at speed 0, then the car is read once. `wake` does not use that park check. The VIN in a status reading is masked. Status does not request location.
 
-- `agentdrive status` reads battery, range, charge limit, charging state, lock, climate, cabin temperatures, tyre pressures, and TPMS. It may wake a sleeping car. The VIN is masked. It does not request location.
-- `agentdrive check` is read-only. It reads the vehicle list first and does not wake a sleeping car.
-- `agentdrive doctor` checks the local setup.
-- `agentdrive refresh` refreshes the access token. A later command refreshes on its own when fewer than 30 minutes remain.
-
-**Parked commands**
-
-A state-changing command other than `wake` is sent only in Park at speed 0, then the car is read again. The command is not sent a second time.
+`agentdrive doctor` checks the local setup. `agentdrive refresh` refreshes the access token. A later command refreshes on its own when fewer than 30 minutes remain.
 
 | Command | Confirmation |
 | --- | --- |
@@ -64,39 +59,9 @@ agentdrive update
 - Onboarding, trip advisor, charging tips, and news watch are stubs.
 - No live Supercharger pricing. The business-only charging sessions route is refused.
 
-## Illustrative chat
+## Illustrative example
 
-This dialogue is an illustration. The figures are example data, not a reading from a vehicle.
-
-```text
-You: What is the battery, and are the tyres okay?
-
-Assistant: I ran agentdrive status. Example output:
-
-Vehicle: Example (VIN ****0000) - online
-Battery: 72% | Range: 280 km | Limit: 80%
-Charging: Disconnected
-Locked: yes
-Climate: off (set 21.0°C)
-Inside: 21.0°C | Outside: 16.0°C
-Tyres (bar): FL 2.7 FR 2.7 RL 2.7 RR 2.7
-TPMS: ok
-
-You: Flash the lights.
-
-Assistant: The example is in Park at speed 0. I ran agentdrive flash once
-and read the car again. The program prints OK: flash when that succeeds.
-
-You: Unlock the car.
-
-Assistant: Unlock needs a fresh confirmation for this action. A previous
-yes does not carry over. Reply with a sentence that includes confirm and unlock.
-
-You: I confirm unlock.
-
-Assistant: I ran agentdrive unlock --confirm "I confirm unlock" once.
-The program prints OK: unlock only after the follow-up read matches.
-```
+![Illustrative example — sample data. A sample chat about battery and a lights flash. The figures are sample data, not a vehicle reading or a transcript.](docs/images/ask-in-plain-words.svg)
 
 ## Disclaimer
 

@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="308" viewBox="0 0 920 308" role="img">
+  <title>How it works</title>
+  <rect width="920" height="308" fill="#f7f8fb"/>
+  <text x="24" y="32" font-family="sans-serif" font-size="16" font-weight="700" fill="#1c2430">How it works</text>
+
+  <rect x="24" y="64" width="185" height="120" rx="10" fill="#ffffff" stroke="#1c2430"/>
+  <text x="116" y="104" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="700" fill="#1c2430">You</text>
+  <text x="116" y="128" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1c2430">Ask in plain words</text>
+  <text x="116" y="150" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1c2430">about your own car</text>
+
+  <polygon points="215,118 233,118 233,110 249,124 233,138 233,130 215,130" fill="#1c2430"/>
+
+  <rect x="253" y="64" width="185" height="120" rx="10" fill="#e7eefc" stroke="#1c2430"/>
+  <text x="345" y="104" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="700" fill="#1c2430">Assistant</text>
+  <text x="345" y="128" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1c2430">Invokes AgentDrive</text>
+  <text x="345" y="150" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1c2430">Any shell agent</text>
+
+  <polygon points="444,118 462,118 462,110 478,124 462,138 462,130 444,130" fill="#1c2430"/>
+
+  <rect x="482" y="64" width="185" height="120" rx="10" fill="#e7f0ea" stroke="#1c2430"/>
+  <text x="574" y="104" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="700" fill="#1c2430">AgentDrive</text>
+  <text x="574" y="128" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1c2430">Reads the Fleet API</text>
+  <text x="574" y="150" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1c2430">Signs each command</text>
+
+  <polygon points="673,118 691,118 691,110 707,124 691,138 691,130 673,130" fill="#1c2430"/>
+
+  <rect x="711" y="64" width="185" height="120" rx="10" fill="#fff8e8" stroke="#1c2430"/>
+  <text x="803" y="104" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="700" fill="#1c2430">Vehicle</text>
+  <text x="803" y="128" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1c2430">Lights, climate, charge</text>
+  <text x="803" y="150" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1c2430">Parked commands only</text>
+
+  <rect x="24" y="220" width="430" height="64" rx="10" fill="#e7f0ea" stroke="#1c2430"/>
+  <text x="44" y="246" font-family="sans-serif" font-size="13" font-weight="700" fill="#1c2430">Secrets stay with you</text>
+  <text x="44" y="267" font-family="sans-serif" font-size="13" fill="#1c2430">Private key and tokens stay on your computer.</text>
+
+  <rect x="466" y="220" width="430" height="64" rx="10" fill="#fff8e8" stroke="#1c2430"/>
+  <text x="486" y="246" font-family="sans-serif" font-size="13" font-weight="700" fill="#1c2430">Reads and signed commands</text>
+  <text x="486" y="267" font-family="sans-serif" font-size="13" fill="#1c2430">Reads use the Tesla Fleet API. Commands are signed.</text>
+</svg>
