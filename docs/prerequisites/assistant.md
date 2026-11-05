@@ -2,7 +2,7 @@
 
 [Back to the checklist](../00-before-you-start.md)
 
-AgentDrive is a toolkit an assistant drives. Phase 1 includes a working Grok Bot adapter and a template adapter you can copy. The Muse adapter is a stub in this version: every call fails. Use Grok Bot or the template adapter.
+AgentDrive is a toolkit an assistant drives. Grok Bot, Muse, and the template adapter are supported. Muse install steps are on [Install in Muse](../10-install-in-muse.md).
 
 The assistant has to read these docs, run shell commands, store files on the machine, and wait when a step needs you. You choose the assistant. AgentDrive does not add a fee on top of whatever that assistant already costs.
 
@@ -10,9 +10,9 @@ The assistant has to read these docs, run shell commands, store files on the mac
 
 ![Diagram: you choose Grok Bot or another assistant that can run commands](../images/assistant-1.svg)
 
-Grok Bot is the adapter that is implemented. Another assistant can follow `adapters/template.py` if it can call the same five operations: schedule, memory, confirm, secrets, and notify. If the assistant can only chat, it can still walk you through the pages, but it cannot publish the key or refresh tokens by itself.
+Grok Bot and Muse are both implemented. Another assistant can follow `adapters/template.py` if it can call the same five operations: schedule, memory, confirm, secrets, and notify. If the assistant can only chat, it can still walk you through the pages, but it cannot publish the key or refresh tokens by itself.
 
-When the Grok Bot adapter is installed, set up a recurring health check by default. Schedule a routine that runs `agentdrive check --json` every few hours. The check is read-only and does not wake a sleeping car. Exit 0 means there is nothing to report, including when the vehicle is asleep. Exit 1 means an alert the owner should hear. Notify only when the exit code is 1. Do not put that check on a schedule that wakes the car, and do not schedule unlock or a charging change.
+When the Grok Bot or Muse adapter is installed, set up a recurring health check by default. Schedule a routine that runs `agentdrive check --json` every few hours. The check is read-only and does not wake a sleeping car. Exit 0 means there is nothing to report, including when the vehicle is asleep. Exit 1 means an alert the owner should hear. Notify only when the exit code is 1. Do not put that check on a schedule that wakes the car, and do not schedule unlock or a charging change. Muse also reads `.agents/skills/agentdrive/SKILL.md`.
 
 ## Step 2 — Use two turns for the disclaimer
 
@@ -50,7 +50,7 @@ The assistant starts installing in the same message as the disclaimer. Stop it. 
 
 The assistant asks you to paste a token or a private key into chat. Refuse. Point it at a mode 600 file instead.
 
-You wanted Muse. That adapter is a stub in this version: every call fails. Use Grok Bot or the template adapter.
+You wanted Muse. Follow [Install in Muse](../10-install-in-muse.md). The adapter is supported. Point it at the existing private key and the existing token file, then run `agentdrive doctor` and `agentdrive check` before any command.
 
 ## Bot prompt
 

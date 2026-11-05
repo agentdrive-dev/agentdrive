@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -26,11 +27,12 @@ def run_doctor(
     token_file: Path | None,
     get_text,
     now: datetime | None = None,
+    key_file: Path | None = None,
 ) -> list[Check]:
     moment = now or utcnow()
     checks = [
         _check_config(config_dir),
-        _check_private_key(secrets_dir),
+        _check_private_key(secrets_dir, key_file=key_file),
         _check_public_key(config_dir, public_key_url, get_text),
         _check_token(token_file, moment),
     ]
@@ -48,22 +50,28 @@ def _check_config(config_dir: Path) -> Check:
     return Check("config", True, f"Regions {', '.join(hosts)} and phase 1 commands {', '.join(phase_1)} loaded.")
 
 
-def _check_private_key(secrets_dir: Path | None) -> Check:
-    if secrets_dir is None:
+def _check_private_key(secrets_dir: Path | None, key_file: Path | None = None) -> Check:
+    if key_file is not None:
+        path = Path(key_file)
+    elif secrets_dir is None:
         return Check("private_key", False, "No secrets directory was provided.")
-    path = secrets_dir / "private-key.pem"
+    else:
+        path = Path(secrets_dir) / "private-key.pem"
     if not path.is_file():
-        return Check("private_key", False, "private-key.pem is missing.")
-    mode = path.stat().st_mode & 0o077
+        return Check("private_key", False, f"The private key file is missing ({path.name}).")
     text = path.read_text(encoding="utf-8", errors="replace")
     if "PRIVATE KEY" not in text:
         return Check("private_key", False, "The key file does not look like a private key.")
     if "BEGIN PUBLIC KEY" in text and "PRIVATE KEY" not in text:
         return Check("private_key", False, "A public key was found where the private key should be.")
-    if mode:
-        return Check("private_key", False, "The private key is readable by someone other than the owner.")
     if path.stat().st_size == 0:
         return Check("private_key", False, "The private key file is empty.")
+    # Unix mode bits do not describe a Windows ACL. On Windows the owner
+    # limits the file to their user; doctor still requires the key material.
+    if os.name != "nt" and path.stat().st_mode & 0o077:
+        return Check("private_key", False, "The private key is readable by someone other than the owner.")
+    if os.name == "nt":
+        return Check("private_key", True, "Private key file is present. On Windows, limit the file ACL to your user.")
     return Check("private_key", True, "Private key file is present and not group-readable.")
 
 

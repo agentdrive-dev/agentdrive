@@ -39,14 +39,16 @@ class TeslaControl:
         created_dir = None
         if directory is None:
             created_dir = Path(tempfile.mkdtemp(prefix="agentdrive-cmd-"))
-            os.chmod(created_dir, 0o700)
+            if os.name != "nt":
+                os.chmod(created_dir, 0o700)
             directory = created_dir
         else:
             directory.mkdir(parents=True, exist_ok=True)
         fd, token_name = tempfile.mkstemp(prefix=".token-", dir=str(directory))
         token_path = Path(token_name)
         try:
-            os.fchmod(fd, 0o600)
+            if os.name != "nt" and hasattr(os, "fchmod"):
+                os.fchmod(fd, 0o600)
             with os.fdopen(fd, "w", encoding="utf-8") as handle:
                 handle.write(access_token)
                 handle.flush()

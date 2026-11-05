@@ -22,7 +22,11 @@ Ask the bot to run `python3 --version`, `openssl version`, `curl --version`, `no
 
 ![Diagram: the bot stores secrets in private files and does not paste them into chat](../images/computer-3.svg)
 
-Use `~/.config/agentdrive` (or `$AGENTDRIVE_HOME`). The private key file must be mode 600 (readable only by your user; run chmod 600 on the file). The folder should be mode 700. The repository's `.gitignore` rejects key and token files. Do not copy them into the git checkout.
+Use `~/.config/agentdrive` (or `$AGENTDRIVE_HOME`). That directory is the config home on macOS, Linux, and Windows. On Windows the default is `C:\Users\<you>\.config\agentdrive`. `<you>` is a placeholder.
+
+The private key can stay outside that directory. Set `AGENTDRIVE_KEY_FILE`, or `key_file` in `$AGENTDRIVE_HOME/runtime.yaml`. A placeholder Windows path is `C:\Users\<you>\agentdrive-key\private-key.pem`. The token file is `AGENTDRIVE_TOKEN_FILE` or `token_file` in the same runtime file. See `config/runtime.example.yaml`.
+
+On macOS and Linux the private key file must be mode 600 (readable only by your user; run chmod 600 on the file). The folder should be mode 700. On Windows, limit the file ACL to your user. The repository's `.gitignore` rejects key and token files. Do not copy them into the git checkout.
 
 ## Expected result
 

@@ -3,17 +3,18 @@
 from __future__ import annotations
 
 import argparse
-import os
 import sys
 from pathlib import Path
 
 from adapters.detect import VALID_ADAPTERS, resolve_adapter
-from adapters.grokbot import INSTALL_NOTE
+from adapters.grokbot import INSTALL_NOTE as GROK_INSTALL_NOTE
+from adapters.muse import INSTALL_NOTE as MUSE_INSTALL_NOTE
 from core.config import repo_root
 from core.doctor import run_doctor
 from core.errors import AgentDriveError, AmbiguousAdapter, ConfigError
 from core.fleet.http import UrllibClient
 from core.ops import PUBLIC_COMMANDS, build_app, format_check, format_check_json, parse_limit, parse_temp, preferred_vin, resolve_thresholds
+from core.paths import resolve_home, resolve_key, resolve_token_file
 from core.redact import scrub
 from core.safety.install_gate import accept, assert_install_allowed, present
 from core.update import update_install
@@ -28,7 +29,7 @@ def build_parser() -> argparse.ArgumentParser:
     confirmed.add_argument("--confirm", default=None, help="Confirmation sentence for a sensitive command")
 
     parser = argparse.ArgumentParser(prog="agentdrive")
-    parser.add_argument("--home", default=os.environ.get("AGENTDRIVE_HOME", str(Path.home() / ".config" / "agentdrive")))
+    parser.add_argument("--home", default="", help="Config home. Defaults to $AGENTDRIVE_HOME or ~/.config/agentdrive")
     sub = parser.add_subparsers(dest="command", required=True)
 
     present_cmd = sub.add_parser("gate-present")
@@ -71,7 +72,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    home = Path(args.home)
+    home = Path(args.home) if args.home else resolve_home()
     try:
         if args.command == "gate-present":
             sys.stdout.write(present(home, args.turn_id))
@@ -112,20 +113,25 @@ def _adapter(args, home: Path) -> int:
     print(f"Adapter {choice.summary()}.")
     if choice.adapter == "unknown":
         print("No host bot was detected. Runtime will use the template adapter.")
-    elif choice.adapter == "muse":
-        print("Muse was detected. That adapter is still a Phase 2 stub.")
     if args.action == "install" and choice.adapter == "grokbot":
-        print(INSTALL_NOTE)
+        print(GROK_INSTALL_NOTE)
+    if args.action == "install" and choice.adapter == "muse":
+        print(MUSE_INSTALL_NOTE)
     return 0
 
 
 def _doctor(args, home: Path) -> int:
-    secrets = Path(args.secrets_dir) if args.secrets_dir else home
+    if args.secrets_dir:
+        secrets = Path(args.secrets_dir)
+        key = secrets / "private-key.pem"
+    else:
+        secrets = home
+        key = resolve_key(home)
     url = args.public_key_url
     url_file = home / "public-key-url"
     if not url and url_file.is_file():
         url = url_file.read_text(encoding="utf-8").strip()
-    token = Path(args.token_file) if args.token_file else home / "tokens.json"
+    token = Path(args.token_file) if args.token_file else resolve_token_file(home)
     client = UrllibClient()
     checks = run_doctor(
         config_dir=Path(args.config_dir),
@@ -133,6 +139,7 @@ def _doctor(args, home: Path) -> int:
         public_key_url=url or None,
         token_file=token,
         get_text=client.get_text,
+        key_file=key,
     )
     failed = False
     for check in checks:

@@ -22,6 +22,8 @@ tell me whenever a step needs me (forms, billing, browser sign-in, key pairing),
 and keep every secret in ~/.config/agentdrive (or $AGENTDRIVE_HOME), never in chat or in the repo.
 ```
 
+Muse users: paste the prompt on [Install in Muse](docs/10-install-in-muse.md). It points Muse at an existing private key and existing tokens, then runs doctor and a read-only check before any command.
+
 Prefer to do it yourself? Get the code, then follow [Install](#install):
 
 ```bash
@@ -56,7 +58,7 @@ Before installing, make sure you have everything in the table below. If somethin
 | [Vehicle account](docs/prerequisites/vehicle-account.md) | Tesla's getting-started page requires an account with a verified email and multi-factor authentication. Only an account that can see the car can approve access and enroll a key. | No fee from this project. Use the account that already owns the car. | You |
 | [A car that can take a virtual key](docs/prerequisites/vehicle-compatibility.md) | Signed commands need the command protocol and an enrolled key. Tesla's fleet status marks some older Model S and Model X hardware as unsupported, and it reports firmware floors. | No extra fee. | You confirm the car. The bot reads fleet status later. |
 | [A computer the assistant can use](docs/prerequisites/computer.md) | Keys, token refresh, and `tesla-control` run on a machine. `agentdrive doctor` (the same command as `python -m core doctor`) checks the config files, the private key, the public-key URL, and the saved token, then names the adapter. A phone alone cannot hold the private key. | Your computer. The tools are free. | You provide it. The bot runs the checks. |
-| [An assistant](docs/prerequisites/assistant.md) | Something has to follow these docs, run commands, and wait for a separate answer. Phase 1 includes a Grok Bot adapter and a template. The Muse adapter is a stub in this version: every call fails. | Whatever that assistant already costs. AgentDrive adds none. | You choose it. |
+| [An assistant](docs/prerequisites/assistant.md) | Something has to follow these docs, run commands, and wait for a separate answer. Grok Bot, Muse, and the template adapter are supported. | Whatever that assistant already costs. AgentDrive adds none. | You choose it. |
 | [A developer application](docs/prerequisites/developer-app.md) | Tesla requires an application before any API call. It holds the client id, the secret, the allowed origin, and the redirect URL. | Creating it is not an AgentDrive charge. API use is billed separately. | You submit the form. |
 | [A payment method and a billing limit](docs/prerequisites/billing.md) | Tesla's billing page says an application with no payment method, or one that passes its billing limit, is disabled. The limit starts at 0. Usage is pay-per-use. Status codes 500 and above are not billed. A monthly discount of $10 is published for individual developers. Set a limit. | Not free. The card is yours. The credit is Tesla's, and the amount can change. | You, in the portal. Never give the bot the card. |
 | [A free Cloudflare account](docs/prerequisites/public-key-host.md) | The public key must be on HTTPS before Tesla will register the domain. One login lets the bot publish it. | Cloudflare's free plan. You do not buy a domain. | You sign up and approve login once. The bot publishes. |
@@ -86,7 +88,7 @@ Before installing, make sure you have everything in the table below. If somethin
 | --- | --- | --- |
 | [Grok Bot](https://grokbot.ai) | Supported | Adapter `grokbot`. Tested end to end on a real car. |
 | Any agent that can run shell commands | Supported through the template | Adapter `template`. Works with assistants such as coding agents or self-hosted bots that can run `python3` and `bash` on your computer. |
-| Muse | Planned | Adapter `muse` is a stub and not built yet. |
+| Muse | Supported | Adapter `muse`. Install steps: [Install in Muse](docs/10-install-in-muse.md). |
 
 Want another agent? Copy `adapters/template.py`, then open an issue or a pull request.
 
@@ -95,7 +97,7 @@ Want another agent? Copy `adapters/template.py`, then open an issue or a pull re
 The installer and `python -m core adapter` look at the process environment and pick the host bot:
 
 - Grok Bot when `GROK_BOT`, `GROKBOT`, `GROK_BOT_HOME`, `GROK_BOT_SESSION`, or `CURSOR_AGENT` is set.
-- Muse when `MUSE_BOT`, `MUSE_HOME`, `MUSE_SESSION`, or `MUSE_AGENT` is set. Stub in this version: every call fails; use Grok Bot or the template adapter.
+- Muse when `MUSE_BOT`, `MUSE_HOME`, `MUSE_SESSION`, or `MUSE_AGENT` is set. Supported. See [Install in Muse](docs/10-install-in-muse.md).
 - `unknown` when none of those are set. Runtime then uses the template adapter.
 
 Prefer `$AGENTDRIVE_HOME/host.yaml` (written by the installer). Only copy `config/host.example.yaml` to `config/host.yaml` for a repo-local override you do not commit. If both hosts match, nothing is written and the command asks you to choose. Set one yourself with `--adapter grokbot`, `--adapter muse`, `--adapter template`, or `--adapter unknown`, or with `AGENTDRIVE_ADAPTER`. A saved file with `source: override` stays in place until you pass `--redetect`.
@@ -141,6 +143,7 @@ Use a different `--turn-id` for each chat message (for example 1 when showing th
 **Adapters**
 
 - The Grok Bot adapter.
+- The Muse adapter. Install steps are in [Install in Muse](docs/10-install-in-muse.md). Config home is `~/.config/agentdrive` or `$AGENTDRIVE_HOME`, on macOS, Linux, and Windows. The private-key path can point at an existing file.
 - The template adapter.
 
 **Skills**
@@ -153,7 +156,6 @@ Use a different `--turn-id` for each chat message (for example 1 when showing th
 **Not in this version**
 
 - Onboarding, trip advisor, charging tips, and news watch. These are stubs.
-- The Muse adapter. Stub in this version: every call fails.
 - Live Supercharger pricing.
 - The business-only charging sessions route. The client refuses it.
 - Confirmed field names on the charging reads. They stay marked unconfirmed until they are compared with a live response.

@@ -11,7 +11,7 @@ python -m core doctor --secrets-dir ~/.config/agentdrive --public-key-url "https
 | Check | Pass means | If it fails |
 | --- | --- | --- |
 | config | `config/regions.yaml` and `config/vehicles.yaml` load, with North America and Europe only | Fix the YAML. Do not add a China host. |
-| private_key | `private-key.pem` exists and is not group-readable | Move it to the home directory and `chmod 600` it. |
+| private_key | The private key file exists and, on macOS and Linux, is not group-readable | Set `AGENTDRIVE_KEY_FILE` or `key_file` in `$AGENTDRIVE_HOME/runtime.yaml`. A placeholder Windows path is `C:\Users\<you>\agentdrive-key\private-key.pem`. On macOS or Linux, `chmod 600` the file. On Windows, limit the file ACL to your user. |
 | public_key | The HTTPS URL returns a public key | Re-run the publish script. A 404 means the well-known path is wrong. |
 | token | The access token is still in date, or the refresh token is | Sign in again only when the refresh token is dead. |
 | adapter | A single host was detected or you set an override | If it says ambiguous, re-run with `--adapter`. |

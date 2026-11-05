@@ -9,10 +9,14 @@ A lock stops two processes from refreshing the same token at once.
 from __future__ import annotations
 
 import base64
-import fcntl
 import json
 import os
 import tempfile
+
+try:
+    import fcntl
+except ImportError:  # Windows
+    fcntl = None
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -90,6 +94,27 @@ class TokenRefresher(Protocol):
         """Return the token endpoint JSON."""
 
 
+def _lock_handle(handle, *, exclusive: bool) -> None:
+    """Take or release an exclusive lock. POSIX uses flock. Windows uses msvcrt."""
+    if fcntl is not None:
+        flag = fcntl.LOCK_EX if exclusive else fcntl.LOCK_UN
+        fcntl.flock(handle.fileno(), flag)
+        return
+    import msvcrt
+
+    if exclusive and handle.seek(0, os.SEEK_END) == 0:
+        handle.write(b"\0")
+        handle.flush()
+    handle.seek(0)
+    if exclusive:
+        msvcrt.locking(handle.fileno(), msvcrt.LK_LOCK, 1)
+    else:
+        try:
+            msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+        except OSError:
+            pass
+
+
 class _RefreshLock:
     """Exclusive lock file, mode 0600, next to the token file."""
 
@@ -99,9 +124,12 @@ class _RefreshLock:
 
     def __enter__(self) -> _RefreshLock:
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        self._handle = open(self.path, "a+", encoding="utf-8")
-        os.chmod(self.path, 0o600)
-        fcntl.flock(self._handle.fileno(), fcntl.LOCK_EX)
+        # msvcrt.locking requires a binary handle. POSIX keeps the text handle.
+        mode = "a+b" if fcntl is None else "a+"
+        self._handle = open(self.path, mode)
+        if os.name != "nt":
+            os.chmod(self.path, 0o600)
+        _lock_handle(self._handle, exclusive=True)
         return self
 
     def __exit__(self, *exc: object) -> None:
@@ -110,7 +138,7 @@ class _RefreshLock:
         if handle is None:
             return
         try:
-            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+            _lock_handle(handle, exclusive=False)
         finally:
             handle.close()
 
@@ -152,13 +180,15 @@ class AtomicTokenStore:
         payload = json.dumps(asdict(bundle), indent=2)
         fd, temporary = tempfile.mkstemp(dir=str(self.path.parent), prefix=".token-", suffix=".tmp")
         try:
-            os.fchmod(fd, 0o600)
+            if os.name != "nt" and hasattr(os, "fchmod"):
+                os.fchmod(fd, 0o600)
             with os.fdopen(fd, "w", encoding="utf-8") as handle:
                 handle.write(payload)
                 handle.flush()
                 os.fsync(handle.fileno())
             os.replace(temporary, self.path)
-            os.chmod(self.path, 0o600)
+            if os.name != "nt":
+                os.chmod(self.path, 0o600)
         except Exception:
             try:
                 os.unlink(temporary)

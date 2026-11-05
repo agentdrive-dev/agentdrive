@@ -162,7 +162,7 @@ def load_adapter(name: str, *, root: Path, prompter=None):
     if name == "grokbot":
         return GrokBotAdapter(root, prompter)
     if name == "muse":
-        return MuseAdapter()
+        return MuseAdapter(root, prompter)
     if name in {"unknown", "template"}:
         return TemplateAdapter(prompter)
     raise ConfigError("Adapter must be grokbot, muse, template, or unknown")
