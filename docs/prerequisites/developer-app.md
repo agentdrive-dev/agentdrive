@@ -20,9 +20,9 @@ Create an application with a unique English name. Describe personal use of your 
 
 ## Step 3 — Set the origin and the redirect to the public-key hostname
 
-![Diagram: you enter the pages.dev hostname so the origin matches the key host](../images/developer-app-3.svg)
+![Diagram: you enter the github.io hostname so the origin matches the key host](../images/developer-app-3.svg)
 
-Use the hostname the bot already published, such as `your-project.pages.dev`. Tesla's partner docs say the registered domain must be lowercase and must share a root with an allowed origin. Their example is `123.abc.com` with an origin of `www.abc.com`. Put the hostname, with no path and no trailing slash, in the allowed origin. Put `https://your-project.pages.dev/callback` as the redirect. The static site includes that path so the browser can land somewhere after you approve.
+Use the hostname the assistant already published, such as `your-username.github.io`. Tesla's partner docs say the registered domain must be lowercase and must share a root with an allowed origin. Their example is `123.abc.com` with an origin of `www.abc.com`. Put the hostname, with no path and no trailing slash, in the allowed origin. Put `https://your-username.github.io/callback` as the redirect. The static site includes that path so the browser can land somewhere after you approve. A project subpath does not work.
 
 ## Step 4 — Store the client secret in a file
 
@@ -32,7 +32,7 @@ Copy the client id and the client secret from the portal into `~/.config/agentdr
 
 ## Expected result
 
-The dashboard shows the application, the allowed origin is the pages.dev hostname, the redirect is the callback URL, and the secret exists only in the local file.
+The dashboard shows the application, the allowed origin is the github.io hostname, the redirect is the callback URL, and the secret exists only in the local file.
 
 ## Common errors
 
@@ -47,5 +47,5 @@ The secret was pasted into chat. Treat it as exposed. Regenerate it in the porta
 Copy this only when you want the bot to do the part below. It must not invent approvals.
 
 ```text
-Draft a short English description of a personal application that reads my own car and sends occasional commands. Do not submit the form. Do not ask me to paste the client secret. After I tell you the pages.dev hostname, tell me the exact allowed origin and redirect URI to type. Then stop.
+Draft a short English description of a personal application that reads my own car and sends occasional commands. Do not submit the form. Do not ask me to paste the client secret. After I tell you the github.io hostname, tell me the exact allowed origin and redirect URI to type. Then stop.
 ```

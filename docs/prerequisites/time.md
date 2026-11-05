@@ -2,7 +2,7 @@
 
 [Back to the checklist](../00-before-you-start.md)
 
-The human steps are the disclaimer, the Cloudflare approval, the developer form, the card, the billing limit, the browser sign-in, and the phone pairing. Together they are about an hour of clicking when every form is accepted on the first try.
+The human steps are the disclaimer, the GitHub login, the developer form, the card, the billing limit, the browser sign-in, and the phone pairing. Together they are about an hour of clicking when every form is accepted on the first try.
 
 Tesla does not publish a review time for the application. A duplicate name or an invalid domain is rejected automatically, and that rejection ends the hour until you fix it. The bot's commands sit between your approvals. They are not a reason to skip a turn.
 

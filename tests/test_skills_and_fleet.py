@@ -132,7 +132,7 @@ def test_authorize_url_uses_configured_hosts():
         regions,
         region="na",
         client_id="client",
-        redirect_uri="https://your-project.pages.dev/callback",
+        redirect_uri="https://your-username.github.io/callback",
         state="state-1",
     )
     assert url.startswith(regions["shared"]["authorization_host"])
@@ -144,11 +144,11 @@ def test_authorize_url_uses_configured_hosts():
             return 200, {"response": {"ok": True}}
 
     http = PartnerHttp()
-    status, _payload = register_partner(http, regions, region="eu", partner_token="partner", domain="your-project.pages.dev")
+    status, _payload = register_partner(http, regions, region="eu", partner_token="partner", domain="your-username.github.io")
     assert status == 200
     assert http.urls[0][1].startswith(regions["regions"]["eu"]["fleet_api_host"])
-    assert b"your-project.pages.dev" in http.urls[0][2]
-    assert pairing_link(regions, "your-project.pages.dev").endswith("/_ak/your-project.pages.dev")
+    assert b"your-username.github.io" in http.urls[0][2]
+    assert pairing_link(regions, "your-username.github.io").endswith("/_ak/your-username.github.io")
 
 
 def test_execute_import_used_by_climate_matches_safety_runner():

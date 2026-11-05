@@ -17,8 +17,8 @@ Install AgentDrive from https://github.com/agentdrive-dev/agentdrive.
 Clone it to ~/agentdrive and read README.md, DISCLAIMER.md and SECURITY.md.
 Show me the disclaimer and the security reminder in full, then stop and wait.
 Do not install anything until I reply with the acceptance sentence.
-After that, follow "The path, in order" in the README one step at a time,
-tell me whenever a step needs me (forms, billing, browser sign-in, key pairing),
+After that, follow "What you will do" in the README one step at a time,
+tell me whenever a step needs me (GitHub login, forms, billing, browser sign-in, key pairing),
 and keep every secret in ~/.config/agentdrive (or $AGENTDRIVE_HOME), never in chat or in the repo.
 ```
 
@@ -51,36 +51,28 @@ A private key together with an access token can operate the vehicle inside the s
 
 ## Before you start
 
-Before installing, make sure you have everything in the table below. If something is missing, the linked page shows how to get it. Checked against Tesla's developer docs on the day this guide was written: the getting-started page, the billing page, the virtual-key guide, the partner endpoints, and the vehicle endpoints.
+### What you need
 
-| Item | Why it is needed | Cost | Who |
-| --- | --- | --- | --- |
-| [Vehicle account](docs/prerequisites/vehicle-account.md) | Tesla's getting-started page requires an account with a verified email and multi-factor authentication. Only an account that can see the car can approve access and enroll a key. | No fee from this project. Use the account that already owns the car. | You |
-| [A car that can take a virtual key](docs/prerequisites/vehicle-compatibility.md) | Signed commands need the command protocol and an enrolled key. Tesla's fleet status marks some older Model S and Model X hardware as unsupported, and it reports firmware floors. | No extra fee. | You confirm the car. The bot reads fleet status later. |
-| [A computer the assistant can use](docs/prerequisites/computer.md) | Keys, token refresh, and `tesla-control` run on a machine. `agentdrive doctor` (the same command as `python -m core doctor`) checks the config files, the private key, the public-key URL, and the saved token, then names the adapter. A phone alone cannot hold the private key. | Your computer. The tools are free. | You provide it. The bot runs the checks. |
-| [An assistant](docs/prerequisites/assistant.md) | Something has to follow these docs, run commands, and wait for a separate answer. Grok Bot and Muse are supported — tested end-to-end on a real vehicle (v0.1, internet commands). The template adapter is supported for other agents. | Whatever that assistant already costs. AgentDrive adds none. | You choose it. |
-| [A developer application](docs/prerequisites/developer-app.md) | Tesla requires an application before any API call. It holds the client id, the secret, the allowed origin, and the redirect URL. | Creating it is not an AgentDrive charge. API use is billed separately. | You submit the form. |
-| [A payment method and a billing limit](docs/prerequisites/billing.md) | Tesla's billing page says an application with no payment method, or one that passes its billing limit, is disabled. The limit starts at 0. Usage is pay-per-use. Status codes 500 and above are not billed. A monthly discount of $10 is published for individual developers. Set a limit. | Not free. The card is yours. The credit is Tesla's, and the amount can change. | You, in the portal. Never give the bot the card. |
-| [A free Cloudflare account](docs/prerequisites/public-key-host.md) | The public key must be on HTTPS before Tesla will register the domain. One login lets the bot publish it. | Cloudflare's free plan. You do not buy a domain. | You sign up and approve login once. The bot publishes. |
-| [Key pairing in the official app](docs/prerequisites/virtual-key.md) | A personal vehicle rejects signed commands until someone with access adds the key. Tesla does not add that key for you. | Free. | You, on your phone, after scopes are granted. |
-| [Time](docs/prerequisites/time.md) | The forms, the card, the browser approvals, and the pairing are human steps. | About an hour of clicking if Tesla accepts the application immediately. Their review time is not published here. | You for approvals. The bot for the commands in between. |
+- A [Tesla account that owns the car](docs/prerequisites/vehicle-account.md).
+- A [car that supports virtual keys](docs/prerequisites/vehicle-compatibility.md).
+- A [computer your assistant can run commands on](docs/prerequisites/computer.md).
+- A supported [assistant](docs/prerequisites/assistant.md) (Grok Bot or Muse, or any shell agent via the template).
+- A [Tesla developer account](docs/prerequisites/developer-app.md) with a [payment method and a billing limit above 0](docs/prerequisites/billing.md). Tesla bills API use. A $10 monthly credit is published for individual developers.
+- A [GitHub account](docs/prerequisites/public-key-host.md). You do not buy a domain.
+- [About an hour](docs/prerequisites/time.md).
 
-### The path, in order
+### What you will do
 
-1. Read [DISCLAIMER.md](DISCLAIMER.md) and [SECURITY.md](SECURITY.md), then stop. Outcome: the risks are in front of you and nothing is installed. Guide: [Before you start](docs/00-before-you-start.md).
-2. In a later message, accept with this sentence: `I have read, understood, and accept the AgentDrive disclaimer and security reminder`. Outcome: the install gate opens. Guide: [Install](docs/01-install-and-safety.md).
-3. Finish any open row in the checklist. Outcome: you know nothing required is missing. Guide: [Before you start](docs/00-before-you-start.md).
-4. Run the installer. Outcome: a local environment can run AgentDrive. Guide: [Install](docs/01-install-and-safety.md).
-5. Create the Cloudflare account and approve `npx wrangler login` once. Outcome: the bot is allowed to publish. Guide: [Public key host](docs/prerequisites/public-key-host.md).
-6. Let the bot publish the key. Outcome: `https://<project>.pages.dev/.well-known/appspecific/com.tesla.3p.public-key.pem` returns the public key. Guide: [Host the public key](docs/02-host-the-public-key.md).
-7. Create the developer application and store the secret in a file, not in chat. Outcome: the hostname is an allowed origin. Guide: [Developer application](docs/03-developer-app.md).
-8. Add the payment method and raise the billing limit above 0. Outcome: calls are allowed up to the cap you set. Guide: [Billing](docs/prerequisites/billing.md).
-9. Let the bot register the partner domain and hand you a sign-in link. Outcome: Tesla has been asked to fetch the key, and your browser is ready. Guide: [Sign-in and pairing](docs/04-sign-in-and-pairing.md).
-10. Finish sign-in in your own browser. Outcome: tokens are stored locally, and a new refresh token is saved before the old one is dropped. Guide: [Tokens](docs/05-tokens.md).
-11. Pair the key in the official app. Outcome: the car lists the key. Guide: [Virtual key](docs/prerequisites/virtual-key.md).
-12. Run `agentdrive doctor`. Outcome: config, private key, public URL, and token each pass or name what is still missing. Guide: [Troubleshooting](docs/09-troubleshooting.md).
-13. Ask for status, then flash the lights while the car is parked. Outcome: one read and one signed command, each followed by a fresh read. Guides: [Queries and commands](docs/06-queries-and-commands.md), [Skills](docs/08-skills.md).
-14. Connect the assistant. Outcome: it stays quiet unless you need to act. Guides: [Assistants](docs/07-assistants.md), [Skills](docs/08-skills.md).
+1. Paste the Quick start prompt to your assistant.
+2. Read the [disclaimer](DISCLAIMER.md) and the [security reminder](SECURITY.md), then reply in a separate message with: `I have read, understood, and accept the AgentDrive disclaimer and security reminder`
+3. Approve GitHub login once when asked.
+4. Create the Tesla developer app and add billing when asked. The assistant tells you what to fill in. Put the secret in a file, never in chat.
+5. Sign in to Tesla in your browser when the assistant gives you a link.
+6. Approve the key in the Tesla app on your phone. See [Virtual key](docs/prerequisites/virtual-key.md).
+
+Everything else (installing, publishing the key, registering, tokens, doctor, test command) your assistant does and reports back.
+
+[Full step-by-step guide](docs/00-before-you-start.md#full-step-by-step-guide)
 
 ## Supported agents
 

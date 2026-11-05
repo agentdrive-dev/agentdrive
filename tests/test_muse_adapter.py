@@ -156,7 +156,7 @@ def test_doctor_checks_a_key_outside_the_config_home(tmp_path, monkeypatch, caps
             refresh_expires_at=(NOW + timedelta(days=10)).isoformat(),
         )
     )
-    url = "https://your-project.pages.dev/.well-known/appspecific/com.tesla.3p.public-key.pem"
+    url = "https://your-username.github.io/.well-known/appspecific/com.tesla.3p.public-key.pem"
 
     def get_text(requested):
         assert requested == url

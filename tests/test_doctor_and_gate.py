@@ -42,11 +42,11 @@ def test_install_script_refuses_without_acceptance(tmp_path):
     assert not (ROOT / ".venv").exists()
 
 
-def test_publish_script_rejects_a_bad_project_name(tmp_path):
+def test_publish_script_rejects_a_bad_owner(tmp_path):
     key = tmp_path / "public-key.pem"
     key.write_text("-----BEGIN PUBLIC KEY-----\nMFkw\n-----END PUBLIC KEY-----\n", encoding="utf-8")
     bad = subprocess.run(
-        ["bash", "setup/publish-public-key.sh", "--project", "tesla-keys", "--public-key", str(key)],
+        ["bash", "setup/publish-public-key.sh", "--owner", "tesla-keys", "--public-key", str(key)],
         cwd=ROOT,
         env={"CHECK_ONLY": "1", "PATH": "/usr/bin:/bin"},
         capture_output=True,
@@ -54,8 +54,18 @@ def test_publish_script_rejects_a_bad_project_name(tmp_path):
         check=False,
     )
     assert bad.returncode == 2
+    subpath = subprocess.run(
+        ["bash", "setup/publish-public-key.sh", "--owner", "your-username.github.io/agentdrive", "--public-key", str(key)],
+        cwd=ROOT,
+        env={"CHECK_ONLY": "1", "PATH": "/usr/bin:/bin"},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert subpath.returncode == 2
+    assert "domain root" in subpath.stderr
     good = subprocess.run(
-        ["bash", "setup/publish-public-key.sh", "--project", "agentdrive-keys", "--public-key", str(key)],
+        ["bash", "setup/publish-public-key.sh", "--owner", "agentdrive-keys", "--public-key", str(key)],
         cwd=ROOT,
         env={"CHECK_ONLY": "1", "PATH": "/usr/bin:/bin"},
         capture_output=True,
@@ -80,7 +90,7 @@ def test_doctor_reports_each_check(tmp_path):
             refresh_expires_at=(NOW + timedelta(days=10)).isoformat(),
         )
     )
-    url = "https://your-project.pages.dev/.well-known/appspecific/com.tesla.3p.public-key.pem"
+    url = "https://your-username.github.io/.well-known/appspecific/com.tesla.3p.public-key.pem"
 
     def get_text(requested):
         assert requested == url
@@ -115,7 +125,7 @@ def test_doctor_reports_each_check(tmp_path):
 
 
 def test_doctor_public_key_403_hints_at_cdn_blocking():
-    url = "https://your-project.pages.dev/.well-known/appspecific/com.tesla.3p.public-key.pem"
+    url = "https://your-username.github.io/.well-known/appspecific/com.tesla.3p.public-key.pem"
 
     def run(status):
         checks = run_doctor(
