@@ -2,7 +2,13 @@
 
 [Back to the checklist](../00-before-you-start.md)
 
-Signed commands work when the car speaks the command protocol and has room for another key. Tesla's vehicle endpoints describe `fleet_status`, which reports `vehicle_command_protocol_required`, firmware, and the key count. A maximum of 20 keys is supported. Pre-2018 Model S and Model X cars are reported as unsupported hardware. Firmware earlier than 2023.20 is reported unsupported for a direct call. The command-proxy path documents 2024.26 as a floor, and 2025.20 for Intel Atom Model S and Model X. Firmware 2023.38 and later returns location only when `location_data` is requested.
+Signed commands work when the car speaks the command protocol and has room for another key. Tesla's vehicle endpoints describe `fleet_status`, which reports `vehicle_command_protocol_required`, firmware, and the key count. A maximum of 20 keys is supported.
+
+| Topic | Detail |
+| --- | --- |
+| Unsupported hardware | Pre-2018 Model S and Model X cars are reported as unsupported hardware. |
+| Needs signed commands | Pre-2021 Model S and Model X are called out in Tesla's vehicle-command docs as not requiring the command proxy. Newer cars require a signed command, which is what `tesla-control` sends. |
+| Firmware floors | Firmware earlier than 2023.20 is reported unsupported for a direct call. The command-proxy path documents 2024.26 as a floor, and 2025.20 for Intel Atom Model S and Model X. Firmware 2023.38 and later returns location only when `location_data` is requested. |
 
 This page is generic. It is not a record of a particular car. You confirm the car in the app. The bot reads fleet status only after sign-in works.
 
@@ -16,7 +22,7 @@ Select the car you intend to connect. If you have more than one, pick one and st
 
 ![Diagram: you note the model and software version to see whether signed commands are possible](../images/vehicle-compatibility-2.svg)
 
-In the car, open the software screen and read the version. Compare it with the floors above. Pre-2021 Model S and Model X are called out in Tesla's vehicle-command docs as not requiring the command proxy. Newer cars require a signed command, which is what `tesla-control` sends. If the software is older than the floor for your hardware, update the car before you expect commands to work.
+In the car, open the software screen and read the version. Compare it with the table above. If the software is older than the floor for your hardware, update the car before you expect commands to work.
 
 ## Step 3 — Let the bot read fleet status later
 
@@ -41,5 +47,8 @@ The key count is already 20. Remove a key you recognize as unused before adding 
 Copy this only when you want the bot to do the part below. It must not invent approvals.
 
 ```text
-Explain whether my car can take a virtual key, using only the model generation and software version I type. Do not ask for the VIN. Compare what I tell you with Tesla's published fleet status floors: pre-2018 Model S and Model X unsupported hardware, firmware earlier than 2023.20 unsupported for a direct call, 2024.26 for the command proxy path, 2025.20 for Intel Atom Model S and Model X, and location_data required on firmware 2023.38 and later. Then stop.
+Explain whether my car can take a virtual key, using only the model generation and software version I type. Do not ask for the VIN. Compare what I tell you with these notes, then stop.
+1. Unsupported hardware: pre-2018 Model S and Model X.
+2. Needs signed commands: pre-2021 Model S and Model X do not require the command proxy. Newer cars require a signed command.
+3. Firmware floors: firmware earlier than 2023.20 is unsupported for a direct call. The command-proxy path uses 2024.26 as a floor, and 2025.20 for Intel Atom Model S and Model X. Firmware 2023.38 and later returns location only when location_data is requested.
 ```

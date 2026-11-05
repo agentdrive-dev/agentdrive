@@ -19,7 +19,7 @@ Show me the disclaimer and the security reminder in full, then stop and wait.
 Do not install anything until I reply with the acceptance sentence.
 After that, follow "The path, in order" in the README one step at a time,
 tell me whenever a step needs me (forms, billing, browser sign-in, key pairing),
-and keep every secret in ~/.agentdrive, never in chat or in the repo.
+and keep every secret in ~/.config/agentdrive (or $AGENTDRIVE_HOME), never in chat or in the repo.
 ```
 
 Prefer to do it yourself? Get the code, then follow [Install](#install):
@@ -29,7 +29,7 @@ git clone https://github.com/agentdrive-dev/agentdrive.git ~/agentdrive
 cd ~/agentdrive
 ```
 
-To upgrade later, run `agentdrive update`. It downloads the latest version from this repository and keeps your private config in `~/.agentdrive`.
+To upgrade later, run `agentdrive update`. It updates this checkout from the latest `main` and leaves your private config in `~/.config/agentdrive` (or `$AGENTDRIVE_HOME`).
 
 ## Disclaimer
 
@@ -41,7 +41,7 @@ Use it only on a vehicle you own, or a vehicle you are explicitly allowed to con
 
 To the maximum extent permitted by law, the software and the documentation are provided as is, without warranty of any kind, and the author's liability is excluded. Nothing in this disclaimer excludes, restricts, or modifies any consumer guarantee, right, or remedy under the Australian Consumer Law that cannot be excluded. Where the Australian Consumer Law allows liability for a failure to comply with a consumer guarantee to be limited, the author's liability is limited to the maximum extent permitted by that law.
 
-A command that changes the vehicle is sent only when the shift state is Park and the speed is zero. After every command, AgentDrive reads the vehicle again. Unlock, remote start, opening the front trunk, opening the rear trunk, turning sentry mode off, and any charging change each need a fresh explicit confirmation. That confirmation covers that single action and then expires. It is never reused, and a schedule cannot supply it or skip it.
+A command that changes the vehicle is sent only when the shift state is Park and the speed is zero. After every command, AgentDrive reads the vehicle again. Unlock, remote start, opening the front trunk, opening the rear trunk, turning sentry mode off, and any charging change each need a fresh explicit confirmation. That confirmation covers that single action and then expires. It is never reused, and a schedule cannot supply it or skip it. These checks also apply if such commands are added later; this version has no trunk, frunk, or remote-start command.
 
 Follow Tesla's current safety guidance, developer terms, and Fleet API terms. Where those terms and this project differ, the terms win. Obey the road rules that apply where you are, and do not interact with the assistant while you are driving.
 
@@ -55,8 +55,8 @@ Before installing, make sure you have everything in the table below. If somethin
 | --- | --- | --- | --- |
 | [Vehicle account](docs/prerequisites/vehicle-account.md) | Tesla's getting-started page requires an account with a verified email and multi-factor authentication. Only an account that can see the car can approve access and enroll a key. | No fee from this project. Use the account that already owns the car. | You |
 | [A car that can take a virtual key](docs/prerequisites/vehicle-compatibility.md) | Signed commands need the command protocol and an enrolled key. Tesla's fleet status marks some older Model S and Model X hardware as unsupported, and it reports firmware floors. | No extra fee. | You confirm the car. The bot reads fleet status later. |
-| [A computer the assistant can use](docs/prerequisites/computer.md) | Keys, token refresh, doctor, and `tesla-control` run on a machine. A phone alone cannot hold the private key. | Your computer. The tools are free. | You provide it. The bot runs the checks. |
-| [An assistant](docs/prerequisites/assistant.md) | Something has to follow these docs, run commands, and wait for a separate answer. Phase 1 includes a Grok Bot adapter and a template. The Muse adapter is not built yet. | Whatever that assistant already costs. AgentDrive adds none. | You choose it. |
+| [A computer the assistant can use](docs/prerequisites/computer.md) | Keys, token refresh, and `tesla-control` run on a machine. `agentdrive doctor` (the same command as `python -m core doctor`) checks the config files, the private key, the public-key URL, and the saved token, then names the adapter. A phone alone cannot hold the private key. | Your computer. The tools are free. | You provide it. The bot runs the checks. |
+| [An assistant](docs/prerequisites/assistant.md) | Something has to follow these docs, run commands, and wait for a separate answer. Phase 1 includes a Grok Bot adapter and a template. The Muse adapter is a stub in this version: every call fails. | Whatever that assistant already costs. AgentDrive adds none. | You choose it. |
 | [A developer application](docs/prerequisites/developer-app.md) | Tesla requires an application before any API call. It holds the client id, the secret, the allowed origin, and the redirect URL. | Creating it is not an AgentDrive charge. API use is billed separately. | You submit the form. |
 | [A payment method and a billing limit](docs/prerequisites/billing.md) | Tesla's billing page says an application with no payment method, or one that passes its billing limit, is disabled. The limit starts at 0. Usage is pay-per-use. Status codes 500 and above are not billed. A monthly discount of $10 is published for individual developers. Set a limit. | Not free. The card is yours. The credit is Tesla's, and the amount can change. | You, in the portal. Never give the bot the card. |
 | [A free Cloudflare account](docs/prerequisites/public-key-host.md) | The public key must be on HTTPS before Tesla will register the domain. One login lets the bot publish it. | Cloudflare's free plan. You do not buy a domain. | You sign up and approve login once. The bot publishes. |
@@ -66,7 +66,7 @@ Before installing, make sure you have everything in the table below. If somethin
 ### The path, in order
 
 1. Read [DISCLAIMER.md](DISCLAIMER.md) and [SECURITY.md](SECURITY.md), then stop. Outcome: the risks are in front of you and nothing is installed. Guide: [Before you start](docs/00-before-you-start.md).
-2. In a later message, accept with the sentence in the security file. Outcome: the install gate opens. Guide: [Install](docs/01-install-and-safety.md).
+2. In a later message, accept with this sentence: `I have read, understood, and accept the AgentDrive disclaimer and security reminder`. Outcome: the install gate opens. Guide: [Install](docs/01-install-and-safety.md).
 3. Finish any open row in the checklist. Outcome: you know nothing required is missing. Guide: [Before you start](docs/00-before-you-start.md).
 4. Run the installer. Outcome: a local environment can run AgentDrive. Guide: [Install](docs/01-install-and-safety.md).
 5. Create the Cloudflare account and approve `npx wrangler login` once. Outcome: the bot is allowed to publish. Guide: [Public key host](docs/prerequisites/public-key-host.md).
@@ -76,7 +76,7 @@ Before installing, make sure you have everything in the table below. If somethin
 9. Let the bot register the partner domain and hand you a sign-in link. Outcome: Tesla has been asked to fetch the key, and your browser is ready. Guide: [Sign-in and pairing](docs/04-sign-in-and-pairing.md).
 10. Finish sign-in in your own browser. Outcome: tokens are stored locally, and a new refresh token is saved before the old one is dropped. Guide: [Tokens](docs/05-tokens.md).
 11. Pair the key in the official app. Outcome: the car lists the key. Guide: [Virtual key](docs/prerequisites/virtual-key.md).
-12. Run doctor. Outcome: config, private key, public URL, and token each pass or name what is still missing. Guide: [Troubleshooting](docs/09-troubleshooting.md).
+12. Run `agentdrive doctor`. Outcome: config, private key, public URL, and token each pass or name what is still missing. Guide: [Troubleshooting](docs/09-troubleshooting.md).
 13. Ask for status, then flash the lights while the car is parked. Outcome: one read and one signed command, each followed by a fresh read. Guides: [Queries and commands](docs/06-queries-and-commands.md), [Skills](docs/08-skills.md).
 14. Connect the assistant. Outcome: it stays quiet unless you need to act. Guides: [Assistants](docs/07-assistants.md), [Skills](docs/08-skills.md).
 
@@ -95,10 +95,10 @@ Want another agent? Copy `adapters/template.py`, then open an issue or a pull re
 The installer and `python -m core adapter` look at the process environment and pick the host bot:
 
 - Grok Bot when `GROK_BOT`, `GROKBOT`, `GROK_BOT_HOME`, `GROK_BOT_SESSION`, or `CURSOR_AGENT` is set.
-- Muse when `MUSE_BOT`, `MUSE_HOME`, `MUSE_SESSION`, or `MUSE_AGENT` is set.
+- Muse when `MUSE_BOT`, `MUSE_HOME`, `MUSE_SESSION`, or `MUSE_AGENT` is set. Stub in this version: every call fails; use Grok Bot or the template adapter.
 - `unknown` when none of those are set. Runtime then uses the template adapter.
 
-The choice is written to `$AGENTDRIVE_HOME/host.yaml`. If both hosts match, nothing is written and the command asks you to choose. Set one yourself with `--adapter grokbot`, `--adapter muse`, `--adapter template`, or `--adapter unknown`, with `AGENTDRIVE_ADAPTER`, or with `source: override` in `config/host.yaml` (see `config/host.example.yaml`). `--redetect` ignores a saved override and detects again.
+Prefer `$AGENTDRIVE_HOME/host.yaml` (written by the installer). Only copy `config/host.example.yaml` to `config/host.yaml` for a repo-local override you do not commit. If both hosts match, nothing is written and the command asks you to choose. Set one yourself with `--adapter grokbot`, `--adapter muse`, `--adapter template`, or `--adapter unknown`, or with `AGENTDRIVE_ADAPTER`. A saved file with `source: override` stays in place until you pass `--redetect`.
 
 ## Install
 
@@ -106,19 +106,58 @@ The assistant must show [DISCLAIMER.md](DISCLAIMER.md) and [SECURITY.md](SECURIT
 
 After you reply with the acceptance sentence:
 
+From the repository root (so Python can find the core package):
+
 ```bash
 PYTHONPATH=. python3 -m core gate-present --turn-id 1
 PYTHONPATH=. python3 -m core gate-accept --turn-id 2 --statement "I have read, understood, and accept the AgentDrive disclaimer and security reminder"
 bash setup/install.sh
 ```
 
-`gate-present` and `gate-accept` have to use different turn ids. The installer checks the stamp and will not create it.
+Use a different `--turn-id` for each chat message (for example 1 when showing the docs, 2 when recording acceptance). Same-turn acceptance is rejected. The installer checks the stamp and will not create it.
 
 ## What version 0.1 actually does
 
-Working in this version: owner and partner sign-in, rotating token storage (refresh when the access token has under 30 minutes left, with a lock around the rotation), vehicle reads, wake, status with tyre pressures, a read-only `agentdrive check` that does not wake a sleeping car, nearby charging sites (location and stalls only), charging history, charging invoices, signed commands through `tesla-control` (flash, honk, lock, unlock, climate, set temperature, charge start, charge stop, charge limit), `agentdrive update`, the safety gate, doctor, the Grok Bot adapter, the template adapter, and four skills (status, flash lights, climate on or off, morning briefing). There is no trunk or frunk command. Unlock and charging changes still need a one-time confirmation.
+**Reads**
 
-Not built yet, and present only as stubs: onboarding, trip advisor, charging tips, news watch, and the Muse adapter. Field names on the charging reads are marked unconfirmed until they are compared with a live response. There is no live Supercharger pricing. The business-only charging sessions route is refused.
+- Owner and partner sign-in.
+- Rotating token storage. The access token is refreshed when fewer than 30 minutes remain, and a lock stops two refreshes at once.
+- Vehicle reads, wake, and status with tyre pressures.
+- A read-only `agentdrive check` that does not wake a sleeping car.
+- Nearby charging sites (location and stalls only), charging history, and charging invoices.
+
+**Commands**
+
+- Signed commands through `tesla-control`: flash, honk, lock, unlock, climate, set temperature, charge start, charge stop, and charge limit.
+- `agentdrive update`, which updates this checkout from the latest `main`.
+- `agentdrive doctor`.
+
+**Safety**
+
+- The safety gate. A state-changing command is sent only in Park at speed 0, then the car is read again.
+- Unlock and charging changes need a one-time confirmation.
+- This version has no trunk, frunk, or remote-start command.
+
+**Adapters**
+
+- The Grok Bot adapter.
+- The template adapter.
+
+**Skills**
+
+- Status.
+- Flash lights.
+- Climate on or off.
+- Morning briefing.
+
+**Not in this version**
+
+- Onboarding, trip advisor, charging tips, and news watch. These are stubs.
+- The Muse adapter. Stub in this version: every call fails.
+- Live Supercharger pricing.
+- The business-only charging sessions route. The client refuses it.
+- Confirmed field names on the charging reads. They stay marked unconfirmed until they are compared with a live response.
+- China-region Tesla accounts are not supported.
 
 ## Layout
 
