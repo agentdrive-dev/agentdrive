@@ -13,6 +13,7 @@ from core.config import repo_root
 from core.doctor import run_doctor
 from core.errors import AgentDriveError, AmbiguousAdapter, ConfigError
 from core.fleet.http import UrllibClient
+from core.fleet.charge_schedule import format_schedule_report, format_schedule_report_json, parse_schedule_id, parse_schedule_write
 from core.ops import PUBLIC_COMMANDS, build_app, format_check, format_check_json, parse_limit, parse_temp, preferred_vin, resolve_thresholds
 from core.paths import resolve_home, resolve_key, resolve_token_file
 from core.redact import scrub
@@ -59,6 +60,25 @@ def build_parser() -> argparse.ArgumentParser:
     charge_limit = sub.add_parser("charge-limit", parents=[confirmed])
     charge_limit.add_argument("percent")
 
+    schedule = sub.add_parser("charge-schedule", help="Read or change the in-car charging timetable")
+    schedule_sub = schedule.add_subparsers(dest="schedule_action", required=True)
+    show = schedule_sub.add_parser("show", help="Read the in-car charging timetable. Does not wake the car.")
+    show.add_argument("--json", action="store_true")
+    set_cmd = schedule_sub.add_parser("set", parents=[confirmed], help="Add an in-car charging schedule")
+    set_cmd.add_argument("days", help="all, weekdays, or comma-separated Sun, Mon, Tues, Wed, Thurs, Fri, Sat")
+    set_cmd.add_argument("time", help="Local window HH:MM-HH:MM, HH:MM-, or -HH:MM")
+    set_cmd.add_argument("latitude")
+    set_cmd.add_argument("longitude")
+    set_cmd.add_argument("--once", action="store_true", help="Run once. Omit to repeat every week.")
+    set_cmd.add_argument(
+        "--enabled",
+        choices=("true", "false"),
+        default="true",
+        help="true adds an enabled schedule. false adds a disabled schedule.",
+    )
+    remove = schedule_sub.add_parser("remove", parents=[confirmed], help="Remove one in-car charging schedule by id")
+    remove.add_argument("schedule_id", metavar="ID")
+
     check = sub.add_parser("check")
     check.add_argument("--json", action="store_true")
     check.add_argument("--tyre-threshold", type=float, default=None)
@@ -93,6 +113,8 @@ def main(argv: list[str] | None = None) -> int:
             return _update(home)
         if args.command == "check":
             return _check(args, home)
+        if args.command == "charge-schedule":
+            return _charge_schedule(args, home)
         if args.command in {"refresh", "status", *PUBLIC_COMMANDS}:
             return _vehicle(args, home)
     except AmbiguousAdapter as exc:
@@ -182,6 +204,47 @@ def _check(args, home: Path) -> int:
     else:
         print(scrub(format_check(report)))
     return report.exit_code
+
+
+def _charge_schedule(args, home: Path) -> int:
+    if args.schedule_action == "show":
+        report = build_app(home).charge_schedule_show(preferred=preferred_vin())
+        text = format_schedule_report_json(report) if args.json else format_schedule_report(report)
+        print(scrub(text))
+        return 0
+    statement = getattr(args, "confirm", None)
+    if args.schedule_action == "set":
+        spec = parse_schedule_write(
+            args.days,
+            args.time,
+            args.latitude,
+            args.longitude,
+            once=args.once,
+            enabled=args.enabled == "true",
+        )
+        print(
+            scrub(
+                build_app(home).charge_schedule_set(
+                    spec,
+                    preferred=preferred_vin(),
+                    statement=statement,
+                )
+            )
+        )
+        return 0
+    if args.schedule_action == "remove":
+        schedule_id = parse_schedule_id(args.schedule_id)
+        print(
+            scrub(
+                build_app(home).charge_schedule_remove(
+                    schedule_id,
+                    preferred=preferred_vin(),
+                    statement=statement,
+                )
+            )
+        )
+        return 0
+    raise ConfigError("unknown command")
 
 
 def _vehicle(args, home: Path) -> int:

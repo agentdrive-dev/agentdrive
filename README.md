@@ -34,8 +34,28 @@ These are the commands in `agentdrive` today. Grok Bot and Muse have been used f
 | `unlock` | yes, one time |
 | `charge-start`, `charge-stop` | yes, one time |
 | `charge-limit <percent>` | yes, one time, and only 50 to 100 |
+| `charge-schedule show` | no. It does not wake a sleeping car |
+| `charge-schedule set <days> <time> <latitude> <longitude>` | yes, one time |
+| `charge-schedule remove <id>` | yes, one time |
 
 Unlock and charging changes are immediate commands. A schedule cannot run them or confirm them. This version has no trunk, frunk, or remote-start command.
+
+### In-car charging timetable
+
+```bash
+agentdrive charge-schedule show
+agentdrive charge-schedule show --json
+agentdrive charge-schedule set weekdays 22:00-06:00 1 2 --confirm "I confirm charging schedule set"
+agentdrive charge-schedule set all 23:30- --once --confirm "I confirm charging schedule set"
+agentdrive charge-schedule set Mon,Wed -06:00 1 2 --enabled false --confirm "I confirm charging schedule set"
+agentdrive charge-schedule remove 1700000000 --confirm "I confirm charging schedule remove"
+```
+
+`charge-schedule show` reads the in-car timetable (`charge_schedule_data`) and leaves a sleeping or offline car asleep. `set` adds one schedule. `remove` deletes one id. `set` and `remove` are charging changes: they wake a sleeping car, then require Park, speed 0, and a fresh confirmation. An assistant schedule cannot confirm them. The coordinates `1` and `2`, and the id `1700000000`, are placeholders.
+
+`days` is `all`, `weekdays`, or a comma-separated list of `Sun`, `Mon`, `Tues`, `Wed`, `Thurs`, `Fri`, `Sat` (full names are accepted). `time` is a 24-hour window in the vehicle's local time: `22:00-06:00`, a start only (`22:00-`), or an end only (`-06:00`). The end may fall on the next day. Latitude and longitude are the charging-site coordinates in decimal degrees, from -180 to 180. `--once` runs the schedule one time; omit it to repeat every week. `--enabled false` adds the schedule turned off. The default is on.
+
+`show` prints the id, whether the row is enabled, the days, the start and end, weekly or once, the charging-site coordinates, and a name when the car sends one. The field list and the firmware note are in [Queries and commands](docs/06-queries-and-commands.md#in-car-charging-timetable).
 
 ### Check and update
 
@@ -50,7 +70,6 @@ agentdrive update
 
 ### Not in this version
 
-- No scheduled charging.
 - No charging history, charging invoices, or telemetry stream.
 - No where command and no location readout.
 - No automatic morning reminder.

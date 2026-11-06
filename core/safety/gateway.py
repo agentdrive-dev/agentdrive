@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from core.errors import ConfigError, ScheduleBlocked, VerificationFailed
 from core.fleet.commands import TeslaControl
+from core.fleet.charge_schedule import charge_schedule_satisfied
 from core.fleet.snapshot import Observation
 from core.safety.catalog import CommandSpec, load_specs
 from core.safety.confirm import Confirmation, ConfirmationBroker, new_challenge
@@ -88,4 +89,6 @@ def _verify(kind: str, observed: Observation, extra_args: list[str]) -> None:
     if kind == "charge_amps" and extra_args and observed.charge_amps is not None:
         if str(observed.charge_amps) == str(extra_args[0]):
             return
+    if kind in {"charge_schedule_set", "charge_schedule_remove"} and charge_schedule_satisfied(kind, observed, extra_args):
+        return
     raise VerificationFailed("The vehicle state after the command did not match the request. The command was not sent again.")

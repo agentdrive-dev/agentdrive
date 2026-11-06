@@ -1,12 +1,15 @@
 """Normalize a vehicle_data payload into the fields the safety checks need.
 
-Latitude and longitude are ignored on purpose so a readout cannot be copied
-into assistant memory by accident.
+Drive-state latitude and longitude are ignored on purpose so a readout cannot
+be copied into assistant memory by accident. Charging-timetable coordinates
+stay on the schedule rows, which only the charge-schedule command prints.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+
+from core.fleet.charge_schedule import ChargeScheduleRow, schedules_from_vehicle_data
 
 
 @dataclass
@@ -33,6 +36,9 @@ class Observation:
     outside_temp: float | None = None
     battery_range_miles: float | None = None
     open_closure: bool | None = None
+    charge_schedules: tuple[ChargeScheduleRow, ...] = ()
+    charge_schedule_section_present: bool = False
+    charge_schedule_list_present: bool = False
 
 
 def _section(payload: dict, name: str) -> dict:
@@ -128,6 +134,7 @@ def from_vehicle_data(payload: dict) -> Observation:
     charge = _section(payload, "charge_state")
     amps = charge.get("charge_amps", charge.get("charge_current_request"))
     shift = drive.get("shift_state")
+    section_present, list_present, schedules = schedules_from_vehicle_data(payload)
     return Observation(
         shift_state=str(shift) if shift not in (None, "") else None,
         speed=_optional_float(drive.get("speed")),
@@ -151,4 +158,7 @@ def from_vehicle_data(payload: dict) -> Observation:
         outside_temp=_optional_float(climate.get("outside_temp")),
         battery_range_miles=_optional_float(charge.get("battery_range")),
         open_closure=_any_open(vehicle),
+        charge_schedules=schedules,
+        charge_schedule_section_present=section_present,
+        charge_schedule_list_present=list_present,
     )

@@ -24,6 +24,8 @@ TOOL_ARGS: dict[str, tuple[str, ...]] = {
     "charging_stop": ("charging-stop",),
     "charging_set_limit": ("charging-set-limit",),
     "charging_set_amps": ("charging-set-amps",),
+    "charging_schedule_set": ("charging-schedule-add",),
+    "charging_schedule_remove": ("charging-schedule-remove",),
 }
 
 VERIFY_KIND = {
@@ -42,6 +44,8 @@ VERIFY_KIND = {
     "charging_stop": "not_charging",
     "charging_set_limit": "charge_limit",
     "charging_set_amps": "charge_amps",
+    "charging_schedule_set": "charge_schedule_set",
+    "charging_schedule_remove": "charge_schedule_remove",
 }
 
 
