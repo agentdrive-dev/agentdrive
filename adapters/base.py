@@ -28,7 +28,7 @@ class AdapterBase:
         if not isinstance(task, dict):
             raise ScheduleBlocked("A schedule needs a task mapping.")
         command = task.get("command")
-        if command in self._sensitive:
+        if _schedule_command_is_sensitive(command, self._sensitive):
             raise ScheduleBlocked("A sensitive command cannot be put on a schedule.")
         if task.get("preconfirmed") or "confirmation" in task:
             raise ScheduleBlocked("A schedule cannot carry a confirmation.")
@@ -81,3 +81,12 @@ class AdapterBase:
 
     def _persist(self) -> None:
         return None
+
+
+def _schedule_command_is_sensitive(command, sensitive: set[str]) -> bool:
+    if not isinstance(command, str):
+        return False
+    if command in sensitive:
+        return True
+    # The public command family. A host schedule must not store it.
+    return command == "charge-schedule" or command.startswith("charge-schedule ")

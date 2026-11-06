@@ -41,11 +41,13 @@ Security trade-off of a shared key: every agent that can read the private key fi
 3. `agentdrive where` — a coarse area only: suburb or locality, state or region, and country. It does not wake a sleeping vehicle, it does not print coordinates, and it does not send a command. A rounded point is sent to Nominatim. Do not copy coordinates into memory.
 4. A vehicle command only after doctor and check have finished, and only when the user asks. Park and speed 0 are required. Unlock and charging changes need a fresh confirmation. A schedule cannot supply that confirmation.
 
+`agentdrive charge-schedule show` reads the in-car charging timetable and does not wake a sleeping vehicle. `agentdrive charge-schedule set` and `agentdrive charge-schedule remove` change that timetable. They are charging commands. Each one needs a fresh confirmation. An assistant schedule cannot supply that confirmation.
+
 `agentdrive status` answers a direct question and may wake a sleeping vehicle. It is still not a lock, unlock, climate, or charging command. Use `agentdrive check` for the check that must happen first.
 
 ## Health check
 
-On install, schedule a routine that runs `agentdrive check --json` every few hours. Exit 0 means there is nothing to report, including when the vehicle is asleep, so stay quiet. Exit 1 means an alert the user should hear. Notify only when the exit code is 1. Do not schedule unlock or a charging change.
+On install, schedule a routine that runs `agentdrive check --json` every few hours. Exit 0 means there is nothing to report, including when the vehicle is asleep, so stay quiet. Exit 1 means an alert the user should hear. Notify only when the exit code is 1. Do not schedule unlock or a charging change. `charge-schedule set` and `charge-schedule remove` are charging changes.
 
 ## Secrets
 

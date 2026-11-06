@@ -16,6 +16,13 @@ from adapters.template import TemplateAdapter
 from core.config import load_regions
 from core.errors import ConfigError, ConfirmationRequired, TokenError
 from core.fleet.area import WhereReport, area_from_vehicle_payload
+from core.fleet.charge_schedule import (
+    ScheduleReport,
+    ScheduleWrite,
+    matching_ids,
+    parse_schedule_id,
+    schedules_from_vehicle_data,
+)
 from core.fleet.commands import TeslaControl
 from core.fleet.credentials import load_client_credentials
 from core.fleet.health import (
@@ -36,6 +43,7 @@ from core.safety.gateway import Gateway
 
 MILES_TO_KM = 1.609344
 DATA_ENDPOINTS = ["charge_state", "climate_state", "vehicle_state", "drive_state"]
+CHARGE_SCHEDULE_ENDPOINT = "charge_schedule_data"
 LOCATION_ENDPOINTS = ["location_data"]
 
 PUBLIC_COMMANDS = {
@@ -197,6 +205,61 @@ class App:
             return WhereReport(kind="unavailable")
         return area_from_vehicle_payload(self.reader.http, payload)
 
+    def charge_schedule_show(self, *, preferred: str | None) -> ScheduleReport:
+        """Read the in-car timetable. A car that is not online is left asleep."""
+        chosen = select_vehicle(self.reader.list_vehicles(), preferred)
+        state = vehicle_state_name(chosen) or "unknown"
+        if state != "online":
+            return ScheduleReport(
+                state=state,
+                skipped=True,
+                section_present=False,
+                list_present=False,
+                schedules=(),
+            )
+        payload = self.reader.vehicle_data(vehicle_key(chosen), [CHARGE_SCHEDULE_ENDPOINT])
+        section_present, list_present, schedules = schedules_from_vehicle_data(payload)
+        return ScheduleReport(
+            state="online",
+            skipped=False,
+            section_present=section_present,
+            list_present=list_present,
+            schedules=schedules,
+        )
+
+    def charge_schedule_set(
+        self,
+        spec: ScheduleWrite,
+        *,
+        preferred: str | None,
+        statement: str | None,
+        sleep=time.sleep,
+    ) -> str:
+        return self._charge_schedule_command(
+            "charging_schedule_set",
+            spec.tool_args(),
+            preferred=preferred,
+            statement=statement,
+            sleep=sleep,
+        )
+
+    def charge_schedule_remove(
+        self,
+        schedule_id: str,
+        *,
+        preferred: str | None,
+        statement: str | None,
+        sleep=time.sleep,
+    ) -> str:
+        identified = parse_schedule_id(schedule_id)
+        return self._charge_schedule_command(
+            "charging_schedule_remove",
+            ["charging-schedule-remove", "id", identified],
+            preferred=preferred,
+            statement=statement,
+            sleep=sleep,
+        )
+
     def command(self, name: str, *, preferred: str | None, argument: str | None, statement: str | None, sleep=time.sleep) -> str:
         spec = PUBLIC_COMMANDS.get(name)
         if spec is None:
@@ -242,6 +305,40 @@ class App:
     def _read_online(self, preferred: str | None, *, sleep) -> tuple[str, Observation]:
         _chosen, key, observation = self._online(preferred, sleep=sleep)
         return key, observation
+
+    def _charge_schedule_command(
+        self,
+        spec_name: str,
+        tool_args: list[str],
+        *,
+        preferred: str | None,
+        statement: str | None,
+        sleep,
+    ) -> str:
+        key, _observation = self._read_online(preferred, sleep=sleep)
+        token = self.tokens.access_token()
+
+        def observe() -> Observation:
+            payload = self.reader.vehicle_data(key, [*DATA_ENDPOINTS, CHARGE_SCHEDULE_ENDPOINT])
+            return from_vehicle_data(payload)
+
+        observed = self.gateway.execute(
+            spec_name,
+            shift_state=_observation.shift_state,
+            speed=_observation.speed,
+            adapter=_cli_adapter(statement),
+            via_schedule=False,
+            vin=key,
+            access_token=token,
+            observe=observe,
+            extra_args=tool_args[1:],
+        )
+        if spec_name == "charging_schedule_set":
+            found = matching_ids(observed.charge_schedules, tool_args[1:])
+            if found:
+                return "OK: charge-schedule set id " + " ".join(found)
+            return "OK: charge-schedule set"
+        return f"OK: charge-schedule remove {tool_args[-1]}"
 
 
 def _extra(name: str, argument: str | None) -> list[str] | None:

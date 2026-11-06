@@ -83,7 +83,8 @@ def test_readme_next_lists_planned_work_in_positive_language():
         assert banned not in lowered
     assert "supercharger" not in lowered
     assert "china-region" not in lowered
-    assert "charging timetable" in lowered
+    assert "charging timetable" not in lowered
+    assert "charge-schedule" not in lowered
     assert "where" not in lowered
     assert "coarse area" not in lowered
     assert "morning report" in lowered
@@ -95,7 +96,9 @@ def test_readme_next_lists_planned_work_in_positive_language():
     commands = readme[readme.index("## What this version does"):next_at]
     assert "| `where`" in commands
     assert "agentdrive where" in commands
-    assert "charge-schedule" not in commands
+    assert "charge-schedule show" in commands
+    assert "charge-schedule set" in commands
+    assert "charge-schedule remove" in commands
     assert "morning report" not in commands.lower()
 
 

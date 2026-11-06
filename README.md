@@ -64,7 +64,7 @@ The assistant invokes AgentDrive on your computer. Reads use the Tesla Fleet API
 
 These are the commands in `agentdrive` today. Grok Bot and Muse have been used for basic real-car commands. That trial does not cover every command in this repository.
 
-`agentdrive status` may wake a sleeping car. `agentdrive check` and `agentdrive where` never wake. `agentdrive wake` is a separate command. A parked command is sent only in Park at speed 0, then the car is read once. `wake` does not use that park check. The VIN in a status reading is masked. Status and check do not request location. `where` requests location only when the car is already online, and it prints a coarse area rather than coordinates.
+`agentdrive status` may wake a sleeping car. `agentdrive check`, `agentdrive where`, and `agentdrive charge-schedule show` never wake. `agentdrive wake` is a separate command. A parked command is sent only in Park at speed 0, then the car is read once. `wake` does not use that park check. The VIN in a status reading is masked. Status and check do not request location. `where` requests location only when the car is already online, and it prints a coarse area rather than coordinates.
 
 `agentdrive doctor` checks the local setup. `agentdrive refresh` refreshes the access token. A later command refreshes on its own when fewer than 30 minutes remain.
 
@@ -78,8 +78,28 @@ These are the commands in `agentdrive` today. Grok Bot and Muse have been used f
 | `unlock` | yes, one time |
 | `charge-start`, `charge-stop` | yes, one time |
 | `charge-limit <percent>` | yes, one time, and only 50 to 100 |
+| `charge-schedule show` | no. It does not wake a sleeping car |
+| `charge-schedule set <days> <time> <latitude> <longitude>` | yes, one time |
+| `charge-schedule remove <id>` | yes, one time |
 
 Unlock and charging changes are immediate commands. A schedule cannot run them or confirm them.
+
+### In-car charging timetable
+
+```bash
+agentdrive charge-schedule show
+agentdrive charge-schedule show --json
+agentdrive charge-schedule set weekdays 22:00-06:00 1 2 --confirm "I confirm charging schedule set"
+agentdrive charge-schedule set all 23:30- --once --confirm "I confirm charging schedule set"
+agentdrive charge-schedule set Mon,Wed -06:00 1 2 --enabled false --confirm "I confirm charging schedule set"
+agentdrive charge-schedule remove 1700000000 --confirm "I confirm charging schedule remove"
+```
+
+`charge-schedule show` reads the in-car timetable (`charge_schedule_data`) and leaves a sleeping or offline car asleep. `set` adds one schedule. `remove` deletes one id. `set` and `remove` are charging changes: they wake a sleeping car, then require Park, speed 0, and a fresh confirmation. An assistant schedule cannot confirm them. The coordinates `1` and `2`, and the id `1700000000`, are placeholders.
+
+`days` is `all`, `weekdays`, or a comma-separated list of `Sun`, `Mon`, `Tues`, `Wed`, `Thurs`, `Fri`, `Sat` (full names are accepted). `time` is a 24-hour window in the vehicle's local time: `22:00-06:00`, a start only (`22:00-`), or an end only (`-06:00`). The end may fall on the next day. Latitude and longitude are the charging-site coordinates in decimal degrees, from -180 to 180. `--once` runs the schedule one time; omit it to repeat every week. `--enabled false` adds the schedule turned off. The default is on.
+
+`show` prints the id, whether the row is enabled, the days, the start and end, weekly or once, the charging-site coordinates, and a name when the car sends one. The field list and the firmware note are in [Queries and commands](docs/06-queries-and-commands.md#in-car-charging-timetable).
 
 ### Check and update
 
@@ -99,7 +119,6 @@ agentdrive update
 
 Work we intend to add:
 
-- A charging timetable on the vehicle. Setting it uses the same one-time confirmation and park check as a charging change. An assistant schedule cannot supply that confirmation.
 - An automatic morning report, scheduled by the assistant, with a default time the owner can change. It stays quiet unless something needs attention before departure.
 - Trunk, frunk, and remote start on the command line. The signed-command path, the park check, and the one-time confirmation already cover those actions.
 - Onboarding, trip advisor, charging tips, and news watch. Onboarding walks registration after the disclaimer gate. Trip advisor compares a planned drive with current range from a saved suburb, and keeps live coordinates out of assistant memory. Charging tips turns charging history and nearby stall counts into a short suggestion. News watch speaks only when a public recall or safety notice needs the owner to act.
