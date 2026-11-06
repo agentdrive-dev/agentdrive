@@ -24,7 +24,7 @@ A private key that is already paired with another agent you trust can be the key
 
 AgentDrive refuses a state-changing command unless the vehicle reports shift state Park and speed 0. It then reads the vehicle again. If that read does not match the command you asked for, the result is a failure, and the command is not sent a second time.
 
-These actions are sensitive: unlock, remote start, front trunk, rear trunk, sentry mode off, and any charging change. Each one needs an explicit confirmation for that action. A previous "yes" does not carry over. A schedule cannot confirm them and cannot skip the check. These checks also apply if such commands are added later; this version has no trunk, frunk, or remote-start command.
+These actions are sensitive: unlock, remote start, front trunk, rear trunk, sentry mode off, and any charging change. Each one needs an explicit confirmation for that action. A previous "yes" does not carry over. A schedule cannot confirm them and cannot skip the check. These checks also apply to trunk, frunk, and remote start when those commands are added.
 
 Remote commands that can unlock a vehicle create a real theft risk if the credentials leak. Do not leave valuables in the vehicle. After an unlock, confirm that the vehicle is locked again. Prefer leaving sentry mode on when the vehicle is parked somewhere unfamiliar.
 
