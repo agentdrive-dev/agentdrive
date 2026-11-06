@@ -12,5 +12,5 @@
   <polygon points="596,112 628,112 628,104 652,122 628,140 628,132 596,132" fill="#1c2430"/>
   <rect x="664" y="52" width="232" height="120" rx="10" fill="#fff8e8" stroke="#1c2430"/>
   <text x="780" y="90" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="700" fill="#1c2430">Result</text>
-  <text x="780" y="116" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#1c2430">The bot may publish</text>
+  <text x="780" y="116" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#1c2430">The AI agent may publish</text>
 </svg>

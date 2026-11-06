@@ -107,7 +107,7 @@ def test_supported_agents_list_marks_muse_supported():
     assistant_lowered = assistant_page.lower()
     assert "unverified" not in assistant_lowered
     assert "untested" not in assistant_lowered
-    assert "works with grok bot, muse, or any agent that can run shell commands." in assistant_lowered
+    assert "works with grok bot, muse, or any shell-capable ai agent." in assistant_lowered
     muse_row = assistants.split("| `muse` |", 1)[1].split("\n", 1)[0]
     grok_row = assistants.split("| `grokbot` |", 1)[1].split("\n", 1)[0]
     assert VEHICLE_TESTED in muse_row

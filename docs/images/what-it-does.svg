@@ -1,29 +1,42 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="920" height="280" viewBox="0 0 920 280" role="img">
-  <title>What it does</title>
-  <rect width="920" height="280" fill="#f7f8fb"/>
-  <text x="24" y="32" font-family="sans-serif" font-size="16" font-weight="700" fill="#1c2430">What it does</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="460" viewBox="0 0 960 460" role="img">
+  <title>What it does. A friendly picture of looking at the car, asking for a change, and staying parked.</title>
+  <rect width="960" height="460" fill="#fff4e8"/>
+  <text x="48" y="58" font-family="Segoe UI, Trebuchet MS, sans-serif" font-size="28" font-weight="700" fill="#4a342c">What you can ask</text>
+  <text x="48" y="90" font-family="Segoe UI, Trebuchet MS, sans-serif" font-size="16" fill="#6b5348">Say it in a sentence. This picture is the idea.</text>
 
-  <rect x="24" y="52" width="274" height="208" rx="10" fill="#e7eefc" stroke="#1c2430"/>
-  <text x="44" y="84" font-family="sans-serif" font-size="15" font-weight="700" fill="#1c2430">Reads</text>
-  <text x="44" y="116" font-family="sans-serif" font-size="13" fill="#1c2430">Battery, range, charge state</text>
-  <text x="44" y="146" font-family="sans-serif" font-size="13" fill="#1c2430">Lock, climate, tyre pressure</text>
-  <text x="44" y="176" font-family="sans-serif" font-size="13" fill="#1c2430">Cabin temperature and TPMS</text>
-  <text x="44" y="206" font-family="sans-serif" font-size="13" fill="#1c2430">status may wake a sleeping car</text>
-  <text x="44" y="236" font-family="sans-serif" font-size="13" fill="#1c2430">check never wakes the car</text>
+  <rect x="36" y="120" width="280" height="300" rx="36" fill="#ffe1d2" stroke="#4a342c" stroke-width="3"/>
+  <g transform="translate(176,230)">
+    <rect x="-46" y="-58" width="92" height="128" rx="24" fill="#7fd4cc" stroke="#4a342c" stroke-width="3"/>
+    <rect x="-28" y="-40" width="56" height="70" rx="12" fill="#fff8ef" stroke="#4a342c" stroke-width="3"/>
+    <path d="M-14,-8 Q0,10 14,-8" fill="none" stroke="#4a342c" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="-12" cy="-22" r="3.5" fill="#4a342c"/>
+    <circle cx="12" cy="-22" r="3.5" fill="#4a342c"/>
+    <rect x="-16" y="52" width="32" height="12" rx="6" fill="#ffc857" stroke="#4a342c" stroke-width="3"/>
+  </g>
+  <text x="176" y="350" text-anchor="middle" font-family="Segoe UI, Trebuchet MS, sans-serif" font-size="22" font-weight="700" fill="#4a342c">Look</text>
+  <text x="176" y="380" text-anchor="middle" font-family="Segoe UI, Trebuchet MS, sans-serif" font-size="16" fill="#6b5348">Battery, lock, climate</text>
 
-  <rect x="323" y="52" width="274" height="208" rx="10" fill="#e7f0ea" stroke="#1c2430"/>
-  <text x="343" y="84" font-family="sans-serif" font-size="15" font-weight="700" fill="#1c2430">Commands</text>
-  <text x="343" y="116" font-family="sans-serif" font-size="13" fill="#1c2430">Separate wake command</text>
-  <text x="343" y="146" font-family="sans-serif" font-size="13" fill="#1c2430">Flash lights and honk</text>
-  <text x="343" y="176" font-family="sans-serif" font-size="13" fill="#1c2430">Lock and unlock</text>
-  <text x="343" y="206" font-family="sans-serif" font-size="13" fill="#1c2430">Climate on, off, set temp</text>
-  <text x="343" y="236" font-family="sans-serif" font-size="13" fill="#1c2430">Charge start, stop, limit</text>
+  <rect x="340" y="120" width="280" height="300" rx="36" fill="#fff0c2" stroke="#4a342c" stroke-width="3"/>
+  <g transform="translate(480,230)">
+    <circle cx="0" cy="-10" r="54" fill="#ffc857" stroke="#4a342c" stroke-width="3"/>
+    <path d="M-16,8 Q0,28 16,8" fill="none" stroke="#4a342c" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="-16" cy="-16" r="4" fill="#4a342c"/>
+    <circle cx="16" cy="-16" r="4" fill="#4a342c"/>
+    <path d="M-28,-62 L-18,-40" stroke="#ff7a59" stroke-width="6" stroke-linecap="round"/>
+    <path d="M0,-70 L0,-46" stroke="#ff7a59" stroke-width="6" stroke-linecap="round"/>
+    <path d="M28,-62 L18,-40" stroke="#ff7a59" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <text x="480" y="350" text-anchor="middle" font-family="Segoe UI, Trebuchet MS, sans-serif" font-size="22" font-weight="700" fill="#4a342c">Change</text>
+  <text x="480" y="380" text-anchor="middle" font-family="Segoe UI, Trebuchet MS, sans-serif" font-size="16" fill="#6b5348">Lights, lock, charge</text>
 
-  <rect x="622" y="52" width="274" height="208" rx="10" fill="#fff8e8" stroke="#1c2430"/>
-  <text x="642" y="84" font-family="sans-serif" font-size="15" font-weight="700" fill="#1c2430">Safety first</text>
-  <text x="642" y="116" font-family="sans-serif" font-size="13" fill="#1c2430">Park and speed 0, or refuse</text>
-  <text x="642" y="146" font-family="sans-serif" font-size="13" fill="#1c2430">Parked commands are read back</text>
-  <text x="642" y="176" font-family="sans-serif" font-size="13" fill="#1c2430">wake skips this park check</text>
-  <text x="642" y="206" font-family="sans-serif" font-size="13" fill="#1c2430">Unlock and charging need</text>
-  <text x="642" y="236" font-family="sans-serif" font-size="13" fill="#1c2430">one fresh confirmation</text>
+  <rect x="644" y="120" width="280" height="300" rx="36" fill="#d9f3ee" stroke="#4a342c" stroke-width="3"/>
+  <g transform="translate(784,214)">
+    <rect x="-6" y="20" width="12" height="78" rx="4" fill="#4a342c"/>
+    <rect x="-46" y="-46" width="92" height="78" rx="18" fill="#5ec4bc" stroke="#4a342c" stroke-width="3"/>
+    <text x="0" y="8" text-anchor="middle" font-family="Segoe UI, Trebuchet MS, sans-serif" font-size="42" font-weight="700" fill="#4a342c">P</text>
+    <circle cx="58" cy="78" r="18" fill="#fff8ef" stroke="#4a342c" stroke-width="3"/>
+    <path d="M48,78 L56,86 L70,68" fill="none" stroke="#2f8f62" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="784" y="350" text-anchor="middle" font-family="Segoe UI, Trebuchet MS, sans-serif" font-size="22" font-weight="700" fill="#4a342c">Parked</text>
+  <text x="784" y="380" text-anchor="middle" font-family="Segoe UI, Trebuchet MS, sans-serif" font-size="16" fill="#6b5348">You confirm the big ones</text>
 </svg>

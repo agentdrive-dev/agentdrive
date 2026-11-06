@@ -8,7 +8,7 @@ To the maximum extent permitted by law, the software and the documentation are p
 
 A command that changes the vehicle is sent only when the shift state is Park and the speed is zero. After every command, AgentDrive reads the vehicle again and reports that observed state. Unlock, remote start, opening the front trunk, opening the rear trunk, turning sentry mode off, and any charging change each require a fresh explicit confirmation. That confirmation covers that single action and then expires. It is never reused, and a schedule cannot supply it or skip it. These checks also apply to trunk, frunk, and remote start when those commands are added.
 
-Follow Tesla's current safety guidance, developer terms, and Fleet API terms. Where those terms and this project differ, the terms win. Obey the road rules that apply where you are, and do not interact with the assistant while you are driving.
+Follow Tesla's current safety guidance, developer terms, and Fleet API terms. Where those terms and this project differ, the terms win. Obey the road rules that apply where you are, and do not interact with the AI agent while you are driving.
 
 A private key together with an access token can operate the vehicle inside the scopes you approved. Keep both of them private. The author is not responsible if they leak, or if a command is sent in error.
 

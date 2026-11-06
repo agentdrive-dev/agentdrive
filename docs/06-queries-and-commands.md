@@ -4,11 +4,11 @@
 
 ![Park check, one-time confirmation for sensitive actions, then one send and a fresh read](images/command-safety.svg)
 
-Reads use the Fleet API: the vehicle list, `vehicle_data`, and wake. Location on firmware 2023.38 and later needs the `location_data` endpoint and the `vehicle_location` scope. `status` and `check` do not request that endpoint. `where` requests it only when the vehicle list already says the car is online. Coordinates are not copied into assistant memory.
+Reads use the Fleet API: the vehicle list, `vehicle_data`, and wake. Location on firmware 2023.38 and later needs the `location_data` endpoint and the `vehicle_location` scope. `status` and `check` do not request that endpoint. `where` requests it only when the vehicle list already says the car is online. Coordinates are not copied into the AI agent's memory.
 
 `agentdrive status` reads charge, climate, and vehicle state, including tyre pressures and TPMS warnings. If the vehicle list says the car is asleep, status sends one wake and then polls for up to 45 seconds. The VIN is masked. Tokens are not printed. When the account has more than one vehicle, set `AGENTDRIVE_VIN` to choose one. Otherwise the first vehicle on the account is used.
 
-`agentdrive check` is the read-only health check for a schedule. It reads the vehicle list first and does not wake a sleeping car. If the car is not online, the command skips, prints that it skipped, and exits 0. If the car is online it reports actionable alerts and exits 1: a TPMS warning, a tyre below the configured bar threshold, a low battery that is not charging, the car unlocked or open while parked, or a charge error. `--json` prints a short object for a bot. Thresholds come from `--tyre-threshold`, `--battery-threshold`, or the `tyre_pressure_bar` and `low_battery_percent` habits in the profile. The default tyre line is 2.5 bar and the default battery line is 30 percent. The check does not request location.
+`agentdrive check` is the read-only health check for a schedule. It reads the vehicle list first and does not wake a sleeping car. If the car is not online, the command skips, prints that it skipped, and exits 0. If the car is online it reports actionable alerts and exits 1: a TPMS warning, a tyre below the configured bar threshold, a low battery that is not charging, the car unlocked or open while parked, or a charge error. `--json` prints a short object for the AI agent. Thresholds come from `--tyre-threshold`, `--battery-threshold`, or the `tyre_pressure_bar` and `low_battery_percent` habits in the profile. The default tyre line is 2.5 bar and the default battery line is 30 percent. The check does not request location.
 
 `agentdrive where` is a read-only coarse area. It reads the vehicle list first. If the car is asleep or offline, it skips with the same kind of message as `check`, does not wake the car, and exits 0. If the car is already online, it calls `vehicle_data` with `endpoints=location_data` only.
 
@@ -18,9 +18,9 @@ The command prints a suburb or locality, a state or region, and a country. The t
 
 A location read needs the official `vehicle_location` scope. The owner sign-in scope list is `openid`, `offline_access`, `user_data`, `vehicle_device_data`, `vehicle_location`, and `vehicle_cmds`. If the token lacks `vehicle_location`, or the firmware refuses the read until that scope is granted, the command tells you to re-authorize and include `vehicle_location`, and it exits 1. Sign in again so the new token carries that scope. `status` and `check` stay free of location.
 
-`agentdrive report` is the daily briefing. It uses that same parked snapshot (`charge_state`, `climate_state`, `vehicle_state`, and `drive_state`). It does not request `location_data` and it does not print coordinates. It does not call wake. If the vehicle list says the car is asleep, offline, or otherwise not online, it prints the same skip line as `check` and exits 0. A timeout or HTTP 408 is the same skip. When the car is online the briefing includes battery, charge connection, lock, gear, doors, windows, trunk, sentry, climate, tyres, and TPMS. `--json` prints the same briefing as an object. The assistant sends that output every time. Exit 0 here is not a reason to stay quiet.
+`agentdrive report` is the daily briefing. It uses that same parked snapshot (`charge_state`, `climate_state`, `vehicle_state`, and `drive_state`). It does not request `location_data` and it does not print coordinates. It does not call wake. If the vehicle list says the car is asleep, offline, or otherwise not online, it prints the same skip line as `check` and exits 0. A timeout or HTTP 408 is the same skip. When the car is online the briefing includes battery, charge connection, lock, gear, doors, windows, trunk, sentry, climate, tyres, and TPMS. `--json` prints the same briefing as an object. The AI agent sends that output every time. Exit 0 here is not a reason to stay quiet.
 
-`agentdrive report-schedule` shows the daily time. The default is 07:30 local time and enabled, even when `runtime.yaml` has no `report_schedule` key. `agentdrive report-schedule set HH:MM` stores a 24-hour time. `disable` and `enable` store the on/off state. The file is `$AGENTDRIVE_HOME/runtime.yaml` (or `~/.config/agentdrive/runtime.yaml`). Writing it does not change the assistant's job. After a change, the assistant updates the job. The command also prints a crontab example, such as `30 7 * * * agentdrive report`. AgentDrive does not install that line and does not install a systemd timer.
+`agentdrive report-schedule` shows the daily time. The default is 07:30 local time and enabled, even when `runtime.yaml` has no `report_schedule` key. `agentdrive report-schedule set HH:MM` stores a 24-hour time. `disable` and `enable` store the on/off state. The file is `$AGENTDRIVE_HOME/runtime.yaml` (or `~/.config/agentdrive/runtime.yaml`). Writing it does not change the AI agent's job. After a change, the AI agent updates the job. The command also prints a crontab example, such as `30 7 * * * agentdrive report`. AgentDrive does not install that line and does not install a systemd timer.
 
 Commands:
 
@@ -57,7 +57,7 @@ agentdrive charge-schedule remove 1700000000 --confirm "I confirm charging sched
 
 `show` calls `vehicle_data` with the endpoint `charge_schedule_data`. If the vehicle list says the car is asleep, offline, or otherwise not online, the command skips, prints that it skipped, and exits 0. It does not send a wake. `--json` prints `state`, `skipped`, and `schedules`.
 
-`set` and `remove` are charging changes. Each one needs a confirmation sentence that includes `confirm` and the action name (`charging schedule set` or `charging schedule remove`). An assistant schedule cannot supply that sentence. If the vehicle list says the car is not online, these two commands wake it, the same way the other parked commands do. The car must then be in Park at speed 0. The command is sent once, then the timetable is read again.
+`set` and `remove` are charging changes. Each one needs a confirmation sentence that includes `confirm` and the action name (`charging schedule set` or `charging schedule remove`). A scheduled job cannot supply that sentence. If the vehicle list says the car is not online, these two commands wake it, the same way the other parked commands do. The car must then be in Park at speed 0. The command is sent once, then the timetable is read again.
 
 | Argument | Value |
 | --- | --- |
@@ -94,7 +94,7 @@ agentdrive update
 
 ## Expected result
 
-A status question returns a short readout with tyre pressures, no coordinates, and a masked VIN. `agentdrive where` returns a suburb, region, and country, or says that it skipped when the car is asleep. A parked lights flash runs once and is followed by another read. A sleeping car makes `agentdrive check`, `agentdrive report`, `agentdrive where`, and `agentdrive charge-schedule show` exit 0 without a wake. The assistant still sends the report, including that skip line.
+A status question returns a short readout with tyre pressures, no coordinates, and a masked VIN. `agentdrive where` returns a suburb, region, and country, or says that it skipped when the car is asleep. A parked lights flash runs once and is followed by another read. A sleeping car makes `agentdrive check`, `agentdrive report`, `agentdrive where`, and `agentdrive charge-schedule show` exit 0 without a wake. The AI agent still sends the report, including that skip line.
 
 Illustrative sample. These figures are sample data, not a vehicle reading:
 

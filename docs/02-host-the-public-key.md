@@ -2,15 +2,15 @@
 
 [Back to the checklist](00-before-you-start.md)
 
-You need a GitHub account. You do not buy a domain. After you approve `gh auth login` once, the assistant publishes the key. The click-by-click version is [Public-key host](prerequisites/public-key-host.md).
+You need a GitHub account. You do not buy a domain. After you approve `gh auth login` once, the AI agent publishes the key. The click-by-click version is [Public-key host](prerequisites/public-key-host.md).
 
-![The assistant publishes the key and returns a github.io URL](images/public-key-host-2.svg)
+![The AI agent publishes the key and returns a github.io URL](images/public-key-host-2.svg)
 
 ## What you do
 
-Approve `gh auth login` once when the assistant asks. Then stop.
+Approve `gh auth login` once when the AI agent asks. Then stop.
 
-## What the assistant does
+## What the AI agent does
 
 ```text
 1. I have a GitHub account. Run gh auth login if gh auth status is not already logged in, and wait while I approve it once.

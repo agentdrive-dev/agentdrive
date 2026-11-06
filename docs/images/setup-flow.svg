@@ -9,13 +9,13 @@
 <rect x="24" y="132" width="832" height="34" rx="8" fill="#e7eefc" stroke="#1c2430"/>
 <text x="44" y="154" font-family="sans-serif" font-size="14" fill="#1c2430">3. You: GitHub account and one login</text>
 <rect x="24" y="174" width="832" height="34" rx="8" fill="#e7f0ea" stroke="#1c2430"/>
-<text x="44" y="196" font-family="sans-serif" font-size="14" fill="#1c2430">4. Bot: Publish the public key and return the URL</text>
+<text x="44" y="196" font-family="sans-serif" font-size="14" fill="#1c2430">4. AI agent: Publish the public key and return the URL</text>
 <rect x="24" y="216" width="832" height="34" rx="8" fill="#e7eefc" stroke="#1c2430"/>
 <text x="44" y="238" font-family="sans-serif" font-size="14" fill="#1c2430">5. You: Developer application, card, and billing limit</text>
 <rect x="24" y="258" width="832" height="34" rx="8" fill="#e7f0ea" stroke="#1c2430"/>
-<text x="44" y="280" font-family="sans-serif" font-size="14" fill="#1c2430">6. Bot: Register the domain and start sign-in</text>
+<text x="44" y="280" font-family="sans-serif" font-size="14" fill="#1c2430">6. AI agent: Register the domain and start sign-in</text>
 <rect x="24" y="300" width="832" height="34" rx="8" fill="#e7eefc" stroke="#1c2430"/>
 <text x="44" y="322" font-family="sans-serif" font-size="14" fill="#1c2430">7. You: Approve scopes, then pair the key in the app</text>
 <rect x="24" y="342" width="832" height="34" rx="8" fill="#e7f0ea" stroke="#1c2430"/>
-<text x="44" y="364" font-family="sans-serif" font-size="14" fill="#1c2430">8. Bot: Doctor, status, and a parked lights flash</text>
+<text x="44" y="364" font-family="sans-serif" font-size="14" fill="#1c2430">8. AI agent: Doctor, status, and a parked lights flash</text>
 </svg>

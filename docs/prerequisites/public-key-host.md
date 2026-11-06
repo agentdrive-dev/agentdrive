@@ -2,7 +2,7 @@
 
 [Back to the checklist](../00-before-you-start.md)
 
-You need a GitHub account. You do not buy a domain. The assistant logs in with `gh auth login`. You approve that login once. It then publishes the public key to a user or organization site named `<username>.github.io`.
+You need a GitHub account. You do not buy a domain. The AI agent logs in with `gh auth login`. You approve that login once. It then publishes the public key to a user or organization site named `<username>.github.io`.
 
 The key has to sit at the domain root:
 
@@ -18,9 +18,9 @@ The site template includes an empty `.nojekyll` file so GitHub Pages serves `.we
 
 ## Step 1 — Approve GitHub login once
 
-![Diagram: you approve GitHub login once so the assistant may publish](../images/public-key-host-1.svg)
+![Diagram: you approve GitHub login once so the AI agent may publish](../images/public-key-host-1.svg)
 
-Create a GitHub account if you do not have one, at <https://github.com/signup>. You do not buy a domain. On the computer, the assistant runs:
+Create a GitHub account if you do not have one, at <https://github.com/signup>. You do not buy a domain. On the computer, the AI agent runs:
 
 ```bash
 gh auth login
@@ -28,11 +28,11 @@ gh auth login
 
 Approve the browser prompt once. When it finishes, `gh auth status` shows the account. That is the only login this host needs.
 
-## Step 2 — Let the assistant publish the key
+## Step 2 — Let the AI agent publish the key
 
-![Diagram: the assistant publishes the key and gets a github.io URL](../images/public-key-host-2.svg)
+![Diagram: the AI agent publishes the key and gets a github.io URL](../images/public-key-host-2.svg)
 
-The assistant generates a P-256 (prime256v1) key pair, the curve Tesla requires, in `~/.config/agentdrive` (or `$AGENTDRIVE_HOME`), with mode 600 on the private key (readable only by your user; run chmod 600 on the file). It publishes only the public key:
+The AI agent generates a P-256 (prime256v1) key pair, the curve Tesla requires, in `~/.config/agentdrive` (or `$AGENTDRIVE_HOME`), with mode 600 on the private key (readable only by your user; run chmod 600 on the file). It publishes only the public key:
 
 ```bash
 bash setup/publish-public-key.sh --owner <username> --public-key ~/.config/agentdrive/public-key.pem
@@ -46,7 +46,7 @@ If that repository already has a site, the script adds the key file and does not
 
 ## Step 3 — Check the URL before you leave the step
 
-![Diagram: the assistant curls the well-known path and expects HTTP 200 and a public key](../images/public-key-host-3.svg)
+![Diagram: the AI agent curls the well-known path and expects HTTP 200 and a public key](../images/public-key-host-3.svg)
 
 The same script curls the URL. GitHub Pages can take a few minutes the first time. You can repeat the check:
 
@@ -88,9 +88,9 @@ The body contains a private key. Remove that file from the site, rotate the key 
 
 Partner registration or the application form says the domain is invalid. Keep the error. A project subpath will not fix it. Any other HTTPS host at a domain root, for example a custom domain, can serve the same file.
 
-## Bot prompt
+## Prompt for the AI agent
 
-Copy this only when you want the assistant to do the part below. It must not invent approvals.
+Copy this only when you want the AI agent to do the part below. It must not invent approvals.
 
 ```text
 1. I have a GitHub account. Run gh auth login if gh auth status is not already logged in, and wait while I approve it once.

@@ -32,7 +32,7 @@ def _files():
 def test_homepage_how_to_start_leads_with_the_paste_prompt():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     how_at = readme.index("## How to start")
-    runs_at = readme.index("## What the assistant runs")
+    runs_at = readme.index("## What the AI agent runs")
     assert how_at < readme.index("## How it works")
     assert how_at < readme.index("## What this version does")
     assert how_at < readme.index("## Illustrative example")
@@ -48,7 +48,9 @@ def test_homepage_how_to_start_leads_with_the_paste_prompt():
         "DISCLAIMER.md",
         "SECURITY.md",
         "I have read, understood, and accept the AgentDrive disclaimer and security reminder",
-        "What the assistant runs",
+        "What the AI agent runs",
+        "You just chat in plain words.",
+        "You do not need to learn, memorize, or type the CLI commands.",
         "~/.config/agentdrive",
         "$AGENTDRIVE_HOME",
         "Same-turn acceptance is rejected",
@@ -95,6 +97,9 @@ def test_readme_next_lists_planned_work_in_positive_language():
     assert "unconfirmed against a live response" in lowered
     assert "revised design" in lowered
     commands = readme[readme.index("## What this version does"):next_at]
+    before_table = commands.split("| Command |", 1)[0]
+    assert "reference, not homework" in before_table.lower()
+    assert "you do not need to learn, memorize, or type them" in before_table.lower()
     assert "| `where`" in commands
     assert "agentdrive where" in commands
     assert "charge-schedule show" in commands

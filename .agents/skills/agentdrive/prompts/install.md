@@ -31,5 +31,5 @@ Create a daily job at that time that runs `agentdrive report` and send every res
 If I later ask for a different time, run `agentdrive report-schedule set HH:MM` and update the job.
 If I ask to turn the report off, run `agentdrive report-schedule disable` and remove the job.
 AgentDrive stores the time and does not run in the background.
-The same daily job is used for every shell-capable assistant.
+The same daily job is used for every shell-capable AI agent.
 Keep every secret in the config home or in the existing key and token files.
