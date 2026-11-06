@@ -9,7 +9,8 @@ Phase 1 answers a question you just asked, or sends a parked command you just as
 - **Status** answers a question you just asked. It does not push a notification and it does not include coordinates or a VIN.
 - **Flash lights** requires Park and speed 0, sends one signed command, and reads the car again.
 - **Climate on or off** uses the same park rule and checks the climate flag afterward.
-- **`agentdrive check`** is the health check. It does not wake a sleeping car. On install, set that routine up by default and notify only when it exits 1. See [Assistants](07-assistants.md). It is not an automatic morning reminder.
+- **`agentdrive check`** is the health check. It does not wake a sleeping car. On install, set that routine up by default and notify only when it exits 1. See [Assistants](07-assistants.md).
+- **`agentdrive report`** is the daily briefing. On install, create a daily job at the time in `agentdrive report-schedule` (default 07:30 local time, enabled). Run `agentdrive report` and send the result every time, including the skip line. AgentDrive does not run that job itself. It is separate from the health check.
 
 These are stubs with a TODO for Phase 2: onboarding, trip advisor, charging tips, and news watch. News watch, when it exists, is still supposed to stay quiet unless you need to act.
 

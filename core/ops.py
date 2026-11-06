@@ -1,8 +1,8 @@
 """Vehicle reads and signed commands used by the command line.
 
 Status wakes a sleeping vehicle and polls for up to 45 seconds. The health
-check never wakes. Unlock and other sensitive commands go through the safety
-gateway, which asks for a one-time confirmation.
+check and the daily report never wake. Unlock and other sensitive commands
+go through the safety gateway, which asks for a one-time confirmation.
 """
 
 from __future__ import annotations
@@ -24,8 +24,9 @@ from core.fleet.health import (
     report_from_observation,
     skipped_report,
 )
-from core.fleet.http import UrllibClient
-from core.fleet.queries import FleetReader, QueryError
+from core.fleet.http import HttpError, UrllibClient
+from core.fleet.queries import FleetReader, QueryError, VehicleAsleep
+from core.fleet.report import VehicleReport, skipped_vehicle_report, skip_text, vehicle_report
 from core.fleet.snapshot import Observation, from_vehicle_data
 from core.fleet.tokens import AtomicTokenStore, FleetTokenRefresher, TokenManager, audience_for
 from core.paths import resolve_key, resolve_token_file
@@ -174,6 +175,34 @@ class App:
         observation = from_vehicle_data(payload)
         return report_from_observation(observation, tyre_bar=tyre_bar, low_battery_percent=low_battery_percent)
 
+    def report(self, *, preferred: str | None) -> VehicleReport:
+        """Read-only briefing. A car that is not online, a timeout, or HTTP 408 is a skip.
+
+        This never calls wake.
+        """
+        try:
+            chosen = select_vehicle(self.reader.list_vehicles(), preferred)
+        except (VehicleAsleep, TimeoutError, HttpError, QueryError) as exc:
+            state = _report_skip_state(exc)
+            if state is None:
+                raise
+            return skipped_vehicle_report(state)
+        state = vehicle_state_name(chosen) or "unknown"
+        if state != "online":
+            return skipped_vehicle_report(state)
+        try:
+            payload = self.reader.vehicle_data(vehicle_key(chosen), DATA_ENDPOINTS)
+        except (VehicleAsleep, TimeoutError, HttpError, QueryError) as exc:
+            skipped = _report_skip_state(exc)
+            if skipped is None:
+                raise
+            return skipped_vehicle_report(skipped)
+        observation = from_vehicle_data(payload)
+        name = str(chosen.get("display_name") or "Vehicle")
+        briefing = vehicle_report(name, observation)
+        secrets = [item for item in (str(chosen.get("vin") or ""), preferred or "") if item]
+        return _redact_report(briefing, secrets)
+
     def command(self, name: str, *, preferred: str | None, argument: str | None, statement: str | None, sleep=time.sleep) -> str:
         spec = PUBLIC_COMMANDS.get(name)
         if spec is None:
@@ -272,9 +301,31 @@ def format_status(vehicle: dict, observation: Observation, vin: str) -> str:
     return "\n".join(lines)
 
 
+def _report_skip_state(exc: BaseException) -> str | None:
+    """Map a timeout or HTTP 408 to a skip. Other failures stay failures."""
+    if isinstance(exc, VehicleAsleep):
+        return "asleep"
+    if isinstance(exc, TimeoutError):
+        return "timeout"
+    if isinstance(exc, HttpError) and exc.timed_out:
+        return "timeout"
+    if isinstance(exc, QueryError) and exc.status == 408:
+        return "asleep"
+    return None
+
+
+def _redact_report(report: VehicleReport, secrets: list[str]) -> VehicleReport:
+    if not secrets:
+        return report
+    fields = dict(report.fields)
+    if "name" in fields:
+        fields["name"] = redact(str(fields["name"]), secrets)
+    return VehicleReport(skipped=report.skipped, state=report.state, text=redact(report.text, secrets), fields=fields)
+
+
 def format_check(report: CheckReport) -> str:
     if report.skipped:
-        return f"state: {report.state}\nskipped: the vehicle is not online, so it was not woken"
+        return skip_text(report.state)
     if not report.alerts:
         return "state: online\nno alerts"
     lines = ["state: online"]

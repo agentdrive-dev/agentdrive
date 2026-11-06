@@ -19,9 +19,10 @@ USER_AGENT = f"AgentDrive/{__version__} (+https://github.com/agentdrive-dev/agen
 
 
 class HttpError(AgentDriveError):
-    def __init__(self, message: str, status: int | None = None):
+    def __init__(self, message: str, status: int | None = None, *, timed_out: bool = False):
         super().__init__(message)
         self.status = status
+        self.timed_out = timed_out
 
 
 class HttpClient(Protocol):
@@ -117,7 +118,11 @@ class UrllibClient:
         except HTTPError as exc:
             raw = exc.read().decode("utf-8", errors="replace")
             status = exc.code
-        except (URLError, TimeoutError) as exc:
+        except TimeoutError:
+            raise HttpError("Fleet API request timed out", timed_out=True) from None
+        except URLError as exc:
+            if isinstance(getattr(exc, "reason", None), TimeoutError):
+                raise HttpError("Fleet API request timed out", timed_out=True) from None
             raise HttpError("Fleet API request failed") from None
         try:
             payload = json.loads(raw) if raw else {}

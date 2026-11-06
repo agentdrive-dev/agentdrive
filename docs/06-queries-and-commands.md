@@ -10,6 +10,10 @@ Reads use the Fleet API: the vehicle list, `vehicle_data`, and wake. Location on
 
 `agentdrive check` is the read-only health check for a schedule. It reads the vehicle list first and does not wake a sleeping car. If the car is not online, the command skips, prints that it skipped, and exits 0. If the car is online it reports actionable alerts and exits 1: a TPMS warning, a tyre below the configured bar threshold, a low battery that is not charging, the car unlocked or open while parked, or a charge error. `--json` prints a short object for a bot. Thresholds come from `--tyre-threshold`, `--battery-threshold`, or the `tyre_pressure_bar` and `low_battery_percent` habits in the profile. The default tyre line is 2.5 bar and the default battery line is 30 percent.
 
+`agentdrive report` is the daily briefing. It uses that same parked snapshot (`charge_state`, `climate_state`, `vehicle_state`, and `drive_state`). It does not request `location_data` and it does not print coordinates. It does not call wake. If the vehicle list says the car is asleep, offline, or otherwise not online, it prints the same skip line as `check` and exits 0. A timeout or HTTP 408 is the same skip. When the car is online the briefing includes battery, charge connection, lock, gear, doors, windows, trunk, sentry, climate, tyres, and TPMS. `--json` prints the same briefing as an object. The assistant sends that output every time. Exit 0 here is not a reason to stay quiet.
+
+`agentdrive report-schedule` shows the daily time. The default is 07:30 local time and enabled, even when `runtime.yaml` has no `report_schedule` key. `agentdrive report-schedule set HH:MM` stores a 24-hour time. `disable` and `enable` store the on/off state. The file is `$AGENTDRIVE_HOME/runtime.yaml` (or `~/.config/agentdrive/runtime.yaml`). Writing it does not change the assistant's job. After a change, the assistant updates the job. The command also prints a crontab example, such as `30 7 * * * agentdrive report`. AgentDrive does not install that line and does not install a systemd timer.
+
 Commands:
 
 | Command | What it sends | Confirmation |
@@ -32,6 +36,9 @@ Signed commands run `tesla-control` with `TESLA_TOKEN_FILE`, `TESLA_KEY_FILE`, a
 
 ```bash
 agentdrive check
+agentdrive report
+agentdrive report-schedule
+agentdrive report-schedule set 07:30
 agentdrive update
 ```
 
@@ -39,4 +46,20 @@ The command line does not include scheduled charging, charging history, charging
 
 ## Expected result
 
-A status question returns a short readout with tyre pressures, no coordinates, and a masked VIN. A parked lights flash runs once and is followed by another read. A sleeping car makes `agentdrive check` exit 0 without a wake.
+A status question returns a short readout with tyre pressures, no coordinates, and a masked VIN. A parked lights flash runs once and is followed by another read. A sleeping car makes `agentdrive check` exit 0 without a wake. A sleeping car makes `agentdrive report` print that same skip line, exit 0, and still leave a message for the assistant to send.
+
+Illustrative sample. These figures are sample data, not a vehicle reading:
+
+```text
+Vehicle report: Example
+Battery: 80% | Range: 161 km | Limit: 80%
+Charge connection: Disconnected
+Locked: yes
+Gear: P (parked)
+Doors, windows, and trunk: closed
+Sentry: on
+Climate: off (set 21.0°C)
+Inside: 20.0°C | Outside: 15.0°C
+Tyres (bar): FL 2.9 FR 2.9 RL 2.9 RR 2.9
+TPMS: ok
+```

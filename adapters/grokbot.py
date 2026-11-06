@@ -7,6 +7,7 @@ one at a time and are not cached.
 from __future__ import annotations
 
 from adapters.files import FileBackedAdapter
+from core.report_schedule import DAILY_REPORT_NOTE
 
 # Printed when this adapter is installed, and repeated in the assistant docs.
 # The routine is read-only: `agentdrive check` must not wake a sleeping car.
@@ -15,7 +16,8 @@ INSTALL_NOTE = (
     "Schedule a routine that runs `agentdrive check --json` every few hours. "
     "The check is read-only and does not wake a sleeping car. "
     "Exit 0 means there is nothing to report, including when the vehicle is asleep. "
-    "Exit 1 means an alert the owner should hear. Notify only when the exit code is 1."
+    "Exit 1 means an alert the owner should hear. Notify only when the exit code is 1. "
+    + DAILY_REPORT_NOTE
 )
 
 

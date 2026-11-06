@@ -1,13 +1,13 @@
 ---
 name: agentdrive
-description: Use AgentDrive to read a personal vehicle and send parked commands through the agentdrive program. Use when the user asks about battery, climate, lock state, tyre pressure, a health check, or a parked command such as flash lights, lock, or charging. Do not sign vehicle commands in this skill.
+description: Use AgentDrive to read a personal vehicle and send parked commands through the agentdrive program. Use when the user asks about battery, climate, lock state, tyre pressure, a health check, the daily vehicle report, or a parked command such as flash lights, lock, or charging. Do not sign vehicle commands in this skill.
 ---
 
-# AgentDrive for Muse
+# AgentDrive
 
 AgentDrive is unofficial. It is not affiliated with, endorsed by, or supported by Tesla.
 
-This skill tells Muse how to install and run AgentDrive. Memory, schedules, confirmations, and secret files go through the Muse adapter. Signing stays in the shared core (`core/fleet/commands.py`). Do not call `tesla-control` from this skill, and do not reimplement request signing.
+This skill tells a shell-capable assistant how to install and run AgentDrive. Grok Bot, Muse, and any other agent that can run shell commands use the same commands. Memory, schedules, confirmations, and secret files go through the host adapter. Signing stays in the shared core (`core/fleet/commands.py`). Do not call `tesla-control` from this skill, and do not reimplement request signing.
 
 The install prompt is `prompts/install.md` in this folder. The path example is `config/runtime.example.yaml`.
 
@@ -44,8 +44,16 @@ Security trade-off of a shared key: every agent that can read the private key fi
 
 ## Health check
 
-On install, schedule a routine that runs `agentdrive check --json` every few hours. Exit 0 means there is nothing to report, including when the vehicle is asleep, so stay quiet. Exit 1 means an alert the user should hear. Notify only when the exit code is 1. Do not schedule unlock or a charging change.
+On install, schedule a routine that runs `agentdrive check --json` every few hours. Exit 0 means there is nothing to report, including when the vehicle is asleep, so stay quiet. Exit 1 means an alert the user should hear. Notify only when the exit code is 1. Do not schedule unlock or a charging change. Do not put `agentdrive report` on that health-check loop.
+
+## Daily vehicle report
+
+On install, also create one daily job. Run `agentdrive report-schedule`. The default is 07:30 local time and enabled, until the user changes it. The job runs `agentdrive report` and you send the printed result to the user every time. Send the skip line too when the vehicle is asleep, offline, or the read times out. The command is read-only and does not wake the vehicle.
+
+If the user asks for a different time, run `agentdrive report-schedule set HH:MM` and move the job to that time. If the user asks to turn the report off, run `agentdrive report-schedule disable` and remove the job. `agentdrive report-schedule enable` turns it back on. AgentDrive only stores the time in the private config home. It does not run in the background and it does not update the job for you. A host cron can use the example line the schedule command prints. Do not install a crontab unless the user asked for cron.
+
+The same job is used for every shell-capable assistant. Do not invent a second report command.
 
 ## Secrets
 
-Never put a private key, token, client secret, authorization code, or VIN in this skill, in Muse memory, or in chat.
+Never put a private key, token, client secret, authorization code, or VIN in this skill, in assistant memory, or in chat.

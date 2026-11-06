@@ -21,7 +21,7 @@
 5. Sign in to Tesla in your browser when the assistant gives you a link.
 6. Approve the key in the Tesla app on your phone. See [Virtual key](prerequisites/virtual-key.md).
 
-Everything else (installing, publishing the key, registering, tokens, doctor, test command) your assistant does and reports back.
+Everything else (installing, publishing the key, registering, tokens, doctor, the daily report, test command) your assistant does and reports back.
 
 ## Full step-by-step guide
 

@@ -10,6 +10,7 @@ from pathlib import Path
 
 from adapters.files import FileBackedAdapter
 from core.config import repo_root
+from core.report_schedule import DAILY_REPORT_NOTE
 
 # Printed when this adapter is installed. The health check matches the Grok
 # Bot note: `agentdrive check` is read-only and must not wake a sleeping car.
@@ -27,7 +28,8 @@ INSTALL_NOTE = (
     "Point AGENTDRIVE_KEY_FILE or runtime.yaml key_file at the existing private key, "
     "for example C:\\Users\\<you>\\agentdrive-key\\private-key.pem. "
     "Point AGENTDRIVE_TOKEN_FILE or runtime.yaml token_file at the existing token file. "
-    "Do not sign commands in this adapter. Use the agentdrive command, which calls the shared core."
+    "Do not sign commands in this adapter. Use the agentdrive command, which calls the shared core. "
+    + DAILY_REPORT_NOTE
 )
 
 

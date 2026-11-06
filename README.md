@@ -21,7 +21,7 @@ The assistant invokes AgentDrive on your computer. Reads use the Tesla Fleet API
 
 These are the commands in `agentdrive` today. Grok Bot and Muse have been used for basic real-car commands. That trial does not cover every command in this repository.
 
-`agentdrive status` may wake a sleeping car. `agentdrive check` never wakes. `agentdrive wake` is a separate command. A parked command is sent only in Park at speed 0, then the car is read once. `wake` does not use that park check. The VIN in a status reading is masked. Status does not request location.
+`agentdrive status` may wake a sleeping car. `agentdrive check` and `agentdrive report` never wake. `agentdrive wake` is a separate command. A parked command is sent only in Park at speed 0, then the car is read once. `wake` does not use that park check. The VIN in a status reading is masked. Status and the daily report do not request location.
 
 `agentdrive doctor` checks the local setup. `agentdrive refresh` refreshes the access token. A later command refreshes on its own when fewer than 30 minutes remain.
 
@@ -37,14 +37,23 @@ These are the commands in `agentdrive` today. Grok Bot and Muse have been used f
 
 Unlock and charging changes are immediate commands. A schedule cannot run them or confirm them. This version has no trunk, frunk, or remote-start command.
 
-### Check and update
+### Check, daily report, and update
 
 ```bash
 agentdrive check
+agentdrive report
+agentdrive report-schedule
+agentdrive report-schedule set 07:30
+agentdrive report-schedule disable
+agentdrive report-schedule enable
 agentdrive update
 ```
 
 `agentdrive check` prints that it skipped, and exits 0, when the car is not online. When the car is online it exits 1 for a TPMS warning, a tyre below the threshold, a low battery that is not charging, the car unlocked or open while parked, or a charge error. `agentdrive check --json` prints a short object. On install, the assistant is asked to run that check every few hours and to notify only when the exit code is 1.
+
+`agentdrive report` prints a short briefing the assistant should send to you: battery, charge connection, lock, gear, doors, windows, trunk, sentry, climate, tyres, and TPMS. It reads the same parked snapshot as `check` and does not request location. If the vehicle list says the car is asleep, offline, or otherwise not online, it prints the same skip line as `check` and exits 0. A timeout or HTTP 408 is the same skip. It never wakes the car. `--json` prints that briefing as an object. This is a report to send every time, including the skip line. It is not an alerts-only health check.
+
+The default schedule is 07:30 in your local timezone, and it is enabled. `agentdrive report-schedule` shows that time. The setting is stored in the private config home (`$AGENTDRIVE_HOME/runtime.yaml`, or `~/.config/agentdrive` when the variable is unset) only after you change it. After install, the assistant creates a daily job at the configured time, runs `agentdrive report`, and sends you the result. Say when you want a different time, or when you want the report off. The assistant then runs `report-schedule set HH:MM`, `disable`, or `enable`, and updates its own job. AgentDrive does not run in the background, and it does not rewrite that job, a crontab, or a systemd timer. The schedule command prints a crontab example for a host that prefers cron. The recommended setup is this 07:30 local daily report. It still needs the assistant, or a cron line you add yourself, to start it.
 
 `agentdrive update` updates this checkout from the latest `main` and leaves private config in `~/.config/agentdrive` (or `$AGENTDRIVE_HOME`).
 
@@ -53,7 +62,6 @@ agentdrive update
 - No scheduled charging.
 - No charging history, charging invoices, or telemetry stream.
 - No where command and no location readout.
-- No automatic morning reminder.
 - No trunk, frunk, or remote-start command.
 - No China-region account.
 - Onboarding, trip advisor, charging tips, and news watch are stubs.
@@ -107,6 +115,10 @@ After that, follow the Quick start in the README one step at a time,
 tell me whenever a step needs me (GitHub login, forms, billing, browser sign-in, key pairing),
 and keep every secret in ~/.config/agentdrive (or $AGENTDRIVE_HOME), never in chat or in the repo.
 The same install is used for every shell agent. Do not invent a second installer.
+After install, run agentdrive report-schedule. The default is 07:30 local time and enabled.
+Create a daily job at that time that runs agentdrive report and send me the result every day,
+including the skip line when the car is asleep. If I later ask for a different time or to turn
+the report off, update the stored schedule and update that job. AgentDrive does not run it itself.
 ```
 
 </details>
@@ -132,7 +144,7 @@ The same install is used for every shell agent. Do not invent a second installer
 5. Sign in to Tesla in your browser when the assistant gives you a link.
 6. Approve the key in the Tesla app on your phone. See [Virtual key](docs/prerequisites/virtual-key.md).
 
-Everything else (installing, publishing the key, registering, tokens, doctor, test command) your assistant does and reports back.
+Everything else (installing, publishing the key, registering, tokens, doctor, the daily report, test command) your assistant does and reports back.
 
 [Full step-by-step guide](docs/00-before-you-start.md#full-step-by-step-guide)
 

@@ -25,4 +25,11 @@ The token file rotates when it is refreshed. Point at the existing file. A secon
 Then run `agentdrive doctor` and a read-only vehicle status check before any command.
 The read-only check is `agentdrive check`. It does not wake a sleeping vehicle and it does not send a command.
 Do not flash, lock, unlock, or change climate or charging until doctor and that check have finished.
+
+Then read `agentdrive report-schedule`. The default is 07:30 local time and enabled.
+Create a daily job at that time that runs `agentdrive report` and send every result to me, including the skip line when the vehicle is asleep.
+If I later ask for a different time, run `agentdrive report-schedule set HH:MM` and update the job.
+If I ask to turn the report off, run `agentdrive report-schedule disable` and remove the job.
+AgentDrive stores the time and does not run in the background.
+The same daily job is used for every shell-capable assistant.
 Keep every secret in the config home or in the existing key and token files.

@@ -28,6 +28,10 @@ Override a wrong detection with `bash setup/install.sh --adapter template`.
 
 A state-changing command is sent only when the shift state is Park and the speed is 0. Unlock, remote start, the front trunk, the rear trunk, sentry off, and charging changes each need an explicit confirmation for that action. The next action needs a new one. A schedule cannot supply it. These checks also apply if such commands are added later; this version has no trunk, frunk, or remote-start command.
 
+## After install — daily report
+
+AgentDrive does not run in the background. After `setup/install.sh` finishes, the assistant reads `agentdrive report-schedule`. The default is 07:30 local time and enabled. The assistant creates a daily job at that time, runs `agentdrive report`, and sends the output every time, including the skip line when the car is not online. A later request to change the time or turn the report off is `agentdrive report-schedule set HH:MM`, `disable`, or `enable`. The assistant then updates its job. The command only writes private config under `$AGENTDRIVE_HOME`. It does not edit the assistant's routine and it does not install cron.
+
 ## Update an existing install
 
 `agentdrive update` brings the checkout in line with the latest `main` and re-runs the install steps, including the `tesla-control` build. It does not modify private configuration under `$AGENTDRIVE_HOME`: tokens, keys, client credentials, `host.yaml`, or vehicle files. `setup/install.sh --update` is the same tooling step without the adapter detection that writes `host.yaml`.
