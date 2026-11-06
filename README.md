@@ -9,6 +9,49 @@ AgentDrive is unofficial. It is not affiliated with, endorsed by, or supported b
 
 You register your own developer application, publish your own public key, and keep every secret on your own machine. The public key is hosted on GitHub Pages (`<username>.github.io`). You do not buy a domain. Docs are published at <https://agentdrive-dev.github.io/agentdrive>.
 
+## How to start
+
+You already have an assistant that can run shell commands on a computer. Grok Bot brings its own computer. Muse or any other shell-capable agent uses this same path.
+
+Copy this prompt and paste it to your assistant. Then do only the approvals it asks for.
+
+```text
+Install AgentDrive from https://github.com/agentdrive-dev/agentdrive.
+Clone it to ~/agentdrive and read README.md, DISCLAIMER.md, and SECURITY.md.
+Show me the disclaimer and the security reminder in full, then stop and wait.
+Do not install anything until I reply in a later message with this sentence:
+I have read, understood, and accept the AgentDrive disclaimer and security reminder
+After that, follow "What the assistant runs" in the README one step at a time,
+tell me whenever a step needs me (GitHub login, the Tesla developer app and billing, browser Tesla sign-in, the virtual key in the Tesla phone app),
+and keep every secret in ~/.config/agentdrive (or $AGENTDRIVE_HOME), never in chat or in the repo.
+The same install is used for every shell agent. Do not invent a second installer.
+```
+
+After you paste it, the assistant shows [DISCLAIMER.md](DISCLAIMER.md) and [SECURITY.md](SECURITY.md) in full, then stops. You reply in a later message with the acceptance sentence below. Same-turn acceptance is rejected. The installer checks the stamp and will not create it. The assistant then installs one step at a time and interrupts only for the approvals in [What you will do](#what-you-will-do).
+
+### What you need
+
+- A [Tesla account that owns the car](docs/prerequisites/vehicle-account.md).
+- A [Tesla that supports virtual keys](docs/prerequisites/vehicle-compatibility.md) (most cars from 2021 on do).
+- An [assistant](docs/prerequisites/assistant.md) that can run shell commands on a [computer](docs/prerequisites/computer.md), for example Grok Bot (brings its own computer), Muse, or any shell-capable agent.
+- A [Tesla developer account](docs/prerequisites/developer-app.md) with a [payment method and a billing limit above 0](docs/prerequisites/billing.md). It uses the same Tesla login, not a new account. Tesla bills API use. A $10 monthly credit is published for individual developers.
+- A [GitHub account](docs/prerequisites/public-key-host.md), used to host the public key on GitHub Pages. You do not buy a domain.
+
+### What you will do
+
+[About an hour, mostly approvals.](docs/prerequisites/time.md)
+
+1. Paste the prompt above to your assistant.
+2. Read the [disclaimer](DISCLAIMER.md) and the [security reminder](SECURITY.md), then reply in a separate message with: `I have read, understood, and accept the AgentDrive disclaimer and security reminder`
+3. Approve GitHub login once when asked.
+4. Create the Tesla developer app and add billing when asked. The assistant tells you what to fill in. Put the secret in a file, never in chat.
+5. Sign in to Tesla in your browser when the assistant gives you a link.
+6. Approve the key in the Tesla app on your phone. See [Virtual key](docs/prerequisites/virtual-key.md).
+
+Everything else (installing, publishing the key, registering, tokens, doctor, test command) your assistant does and reports back.
+
+[Full step-by-step guide](docs/00-before-you-start.md#full-step-by-step-guide)
+
 ## How it works
 
 ![How it works. You ask in plain words. The assistant invokes AgentDrive. AgentDrive reads the Tesla Fleet API and signs parked commands for the vehicle.](docs/images/how-it-works.svg)
@@ -63,15 +106,15 @@ agentdrive update
 
 ![Illustrative example — sample data. A sample chat about battery and a lights flash. The figures are sample data, not a vehicle reading or a transcript.](docs/images/ask-in-plain-words.svg)
 
+The figures are sample data, not a vehicle reading or a transcript.
+
 ## Disclaimer
 
-Experimental and testing purposes only. AgentDrive is unofficial and is not a Tesla product. Use it only on a vehicle you own, or a vehicle you are explicitly allowed to control.
+Experimental and testing purposes only. AgentDrive is unofficial and is not a Tesla product. Use it only on a vehicle you own, or a vehicle you are explicitly allowed to control. To the maximum extent permitted by law the software is provided as is, and the author's liability is excluded. Nothing here excludes a right under the Australian Consumer Law that cannot be excluded. The full text is in [DISCLAIMER.md](DISCLAIMER.md). Read [SECURITY.md](SECURITY.md) before you install.
 
-To the maximum extent permitted by law the software is provided as is, and the author's liability is excluded. Nothing here excludes a right under the Australian Consumer Law that cannot be excluded. The full text is in [DISCLAIMER.md](DISCLAIMER.md). Read [SECURITY.md](SECURITY.md) before you install.
+## What the assistant runs
 
-## Quick start
-
-Grok Bot, Muse, and any other agent that can run shell commands use this same install.
+Your assistant runs this install after you paste the prompt in [How to start](#how-to-start) and send the acceptance sentence in a later message. Grok Bot, Muse, and any other agent that can run shell commands use this same install.
 
 1. Get the code.
 
@@ -93,48 +136,6 @@ bash setup/install.sh
 ```
 
 `gate-present` prints the disclaimer and the security file in full.
-
-<details>
-<summary>Prompt you can paste to a shell agent</summary>
-
-```text
-Install AgentDrive from https://github.com/agentdrive-dev/agentdrive.
-Clone it to ~/agentdrive and read README.md, DISCLAIMER.md, and SECURITY.md.
-Show me the disclaimer and the security reminder in full, then stop and wait.
-Do not install anything until I reply in a later message with this sentence:
-I have read, understood, and accept the AgentDrive disclaimer and security reminder
-After that, follow the Quick start in the README one step at a time,
-tell me whenever a step needs me (GitHub login, forms, billing, browser sign-in, key pairing),
-and keep every secret in ~/.config/agentdrive (or $AGENTDRIVE_HOME), never in chat or in the repo.
-The same install is used for every shell agent. Do not invent a second installer.
-```
-
-</details>
-
-## Before you start
-
-### What you need
-
-- A [Tesla account that owns the car](docs/prerequisites/vehicle-account.md).
-- A [Tesla that supports virtual keys](docs/prerequisites/vehicle-compatibility.md) (most cars from 2021 on do).
-- An [assistant](docs/prerequisites/assistant.md) that can run shell commands on a [computer](docs/prerequisites/computer.md), for example Grok Bot (brings its own computer), Muse, or any shell-capable agent.
-- A [Tesla developer account](docs/prerequisites/developer-app.md) with a [payment method and a billing limit above 0](docs/prerequisites/billing.md). It uses the same Tesla login, not a new account. Tesla bills API use. A $10 monthly credit is published for individual developers.
-- A [GitHub account](docs/prerequisites/public-key-host.md), used to host the public key on GitHub Pages. You do not buy a domain.
-
-### What you will do
-
-[About an hour, mostly approvals.](docs/prerequisites/time.md)
-
-1. Follow the [Quick start](#quick-start).
-2. Read the [disclaimer](DISCLAIMER.md) and the [security reminder](SECURITY.md), then reply in a separate message with: `I have read, understood, and accept the AgentDrive disclaimer and security reminder`
-3. Approve GitHub login once when asked.
-4. Create the Tesla developer app and add billing when asked. The assistant tells you what to fill in. Put the secret in a file, never in chat.
-5. Sign in to Tesla in your browser when the assistant gives you a link.
-6. Approve the key in the Tesla app on your phone. See [Virtual key](docs/prerequisites/virtual-key.md).
-
-Everything else (installing, publishing the key, registering, tokens, doctor, test command) your assistant does and reports back.
-
-[Full step-by-step guide](docs/00-before-you-start.md#full-step-by-step-guide)
 
 ## Supported agents
 

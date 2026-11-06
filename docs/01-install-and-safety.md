@@ -2,6 +2,8 @@
 
 [Back to the checklist](00-before-you-start.md)
 
+A beginner pastes the prompt in [How to start](../README.md#how-to-start). This page is what the assistant runs after that person accepts in a later message.
+
 Installation is two turns. The first turn shows the documents. A later turn records your acceptance. The installer will not create that acceptance for you.
 
 ![Every state-changing command is parked, confirmed when sensitive, sent once, and read back](images/command-safety.svg)
