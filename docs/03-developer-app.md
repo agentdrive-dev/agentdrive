@@ -9,7 +9,7 @@ The full form steps are in [Developer application](prerequisites/developer-app.m
 ## What you type
 
 1. Sign in at <https://developer.tesla.com> with the vehicle account.
-2. Create an application with a unique English name and a description of personal use of your own car.
+2. Create an application with a unique English name and a description of personal use of your own car. Grant `openid`, `offline_access`, `user_data`, `vehicle_device_data`, `vehicle_location`, and `vehicle_cmds`. `vehicle_location` is required for a location read.
 3. Set the allowed origin to the bare hostname, such as `your-username.github.io`.
 4. Set the redirect to `https://your-username.github.io/callback`.
 5. Save the client id and client secret into `~/.config/agentdrive/client.json` (or `$AGENTDRIVE_HOME/client.json`) with keys `client_id` and `client_secret`, mode 0600, or into mode 0600 files under `~/.config/agentdrive/secrets/` (or `$AGENTDRIVE_HOME/secrets/`). The command line also reads `AGENTDRIVE_CLIENT_ID` and `AGENTDRIVE_CLIENT_SECRET`. Do not paste the secret into chat. A secret can contain `&`; the token request is form-encoded.

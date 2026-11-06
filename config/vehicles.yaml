@@ -9,8 +9,10 @@ protocol:
   location_note: >
     On firmware that hides coordinates unless location_data is requested,
     a plain vehicle_data call returns no position. Coordinates, when
-    returned, appear on the drive state. Do not copy them into assistant
-    memory.
+    returned, appear on the drive state. status and check do not request
+    location_data. The where command requests that endpoint only when the
+    vehicle is already online, rounds the point before it leaves the
+    process, and does not copy coordinates into assistant memory or output.
 
 models:
   - id: model_s
@@ -34,6 +36,7 @@ capabilities:
     - vehicle_state
     - vehicle_config
     - location_data
+    - charge_schedule_data
   phase_1_commands:
     - flash_lights
     - climate_on
@@ -52,6 +55,8 @@ capabilities:
     - charging_stop
     - charging_set_limit
     - charging_set_amps
+    - charging_schedule_set
+    - charging_schedule_remove
   charging_reads:
     - nearby_charging_sites
     - charging_history

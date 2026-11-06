@@ -14,8 +14,8 @@
 
 [About an hour, mostly approvals.](prerequisites/time.md)
 
-1. Follow the Quick start in the README. The long agent prompt is folded there.
-2. Read the [disclaimer](../DISCLAIMER.md) and the [security reminder](../SECURITY.md), then reply in a separate message with: `I have read, understood, and accept the AgentDrive disclaimer and security reminder`
+1. Paste the prompt in [How to start](../README.md#how-to-start) to your assistant. The prompt is on that page in full. Your assistant gets the code and follows [What the assistant runs](../README.md#what-the-assistant-runs).
+2. Read the [disclaimer](../DISCLAIMER.md) and the [security reminder](../SECURITY.md) when the assistant shows them, then reply in a separate message with: `I have read, understood, and accept the AgentDrive disclaimer and security reminder`
 3. Approve GitHub login once when asked.
 4. Create the Tesla developer app and add billing when asked. The assistant tells you what to fill in. Put the secret in a file, never in chat.
 5. Sign in to Tesla in your browser when the assistant gives you a link.
