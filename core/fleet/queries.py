@@ -17,13 +17,43 @@ WAKE_PAUSE_SECONDS = 3.0
 
 
 class VehicleAsleep(AgentDriveError):
-    """vehicle_data returned 408. Wake once, then read again. Do not loop."""
+    """vehicle_data returned 408. Do not loop on it, and do not wake from a where read."""
 
 
 class QueryError(AgentDriveError):
-    def __init__(self, message: str, status: int | None = None):
+    def __init__(self, message: str, status: int | None = None, *, location_scope: bool = False):
         super().__init__(message)
         self.status = status
+        self.location_scope = location_scope
+
+
+def location_scope_denied(payload: object) -> bool:
+    """True when an error string says location needs the vehicle_location scope.
+
+    Only error text is read. The payload is not copied into a message, so a
+    body that also contains coordinates cannot leak through this check.
+    """
+    texts: list[str] = []
+    _collect_error_text(payload, texts)
+    if isinstance(payload, dict):
+        _collect_error_text(payload.get("response"), texts)
+    blob = " ".join(texts).casefold()
+    if "vehicle_location" in blob:
+        return True
+    if "location" in blob and "scope" in blob:
+        return True
+    if "location_data" in blob and any(word in blob for word in ("required", "must", "firmware", "scope", "endpoint")):
+        return True
+    return False
+
+
+def _collect_error_text(payload: object, texts: list[str]) -> None:
+    if not isinstance(payload, dict):
+        return
+    for key in ("error", "error_description", "message"):
+        value = payload.get(key)
+        if isinstance(value, str) and value.strip():
+            texts.append(value)
 
 
 def _check_vehicle_id(vehicle_id: str) -> str:
@@ -54,7 +84,11 @@ class FleetReader:
         if status == 408:
             raise VehicleAsleep("The vehicle is asleep")
         if status >= 400:
-            raise QueryError("Fleet API read failed", status=status)
+            raise QueryError(
+                "Fleet API read failed",
+                status=status,
+                location_scope=location_scope_denied(payload),
+            )
         return payload
 
     def _post(self, path: str) -> dict:

@@ -1,4 +1,5 @@
-# OAuth scope sets. Charging management is omitted until the owner asks for it.
+# OAuth scope sets. vehicle_location is the Fleet API scope for a location read.
+# Charging management is omitted until the owner asks for it.
 version: 1
 
 default:

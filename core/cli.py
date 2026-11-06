@@ -12,6 +12,7 @@ from adapters.muse import INSTALL_NOTE as MUSE_INSTALL_NOTE
 from core.config import repo_root
 from core.doctor import run_doctor
 from core.errors import AgentDriveError, AmbiguousAdapter, ConfigError
+from core.fleet.area import format_where, format_where_json
 from core.fleet.http import UrllibClient
 from core.fleet.charge_schedule import format_schedule_report, format_schedule_report_json, parse_schedule_id, parse_schedule_write
 from core.ops import PUBLIC_COMMANDS, build_app, format_check, format_check_json, parse_limit, parse_temp, preferred_vin, resolve_thresholds
@@ -85,6 +86,9 @@ def build_parser() -> argparse.ArgumentParser:
     check.add_argument("--battery-threshold", type=int, default=None)
     check.add_argument("--profile", default="")
 
+    where = sub.add_parser("where", help="Print a coarse area. Does not wake the vehicle or print coordinates.")
+    where.add_argument("--json", action="store_true")
+
     sub.add_parser("update")
     return parser
 
@@ -113,6 +117,8 @@ def main(argv: list[str] | None = None) -> int:
             return _update(home)
         if args.command == "check":
             return _check(args, home)
+        if args.command == "where":
+            return _where(args, home)
         if args.command == "charge-schedule":
             return _charge_schedule(args, home)
         if args.command in {"refresh", "status", *PUBLIC_COMMANDS}:
@@ -203,6 +209,13 @@ def _check(args, home: Path) -> int:
         print(scrub(format_check_json(report)))
     else:
         print(scrub(format_check(report)))
+    return report.exit_code
+
+
+def _where(args, home: Path) -> int:
+    report = build_app(home).where(preferred=preferred_vin())
+    rendered = format_where_json(report) if args.json else format_where(report)
+    print(scrub(rendered))
     return report.exit_code
 
 

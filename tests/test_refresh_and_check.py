@@ -469,6 +469,7 @@ def test_cli_rejects_trunk_and_bad_ranges(tmp_path, capsys):
         "charge-stop",
         "charge-limit",
         "check",
+        "where",
         "update",
         "refresh",
     ):
