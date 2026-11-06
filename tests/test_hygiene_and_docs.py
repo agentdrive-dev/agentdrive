@@ -71,6 +71,32 @@ def test_homepage_how_to_start_leads_with_the_paste_prompt():
     assert "sample data" in readme.lower()
 
 
+def test_readme_next_lists_planned_work_in_positive_language():
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "## Not in this version" not in readme
+    assert "### Not in this version" not in readme
+    next_at = readme.index("## Next")
+    assert readme.index("## What this version does") < next_at < readme.index("## Illustrative example")
+    section = readme[next_at:readme.index("## Illustrative example")]
+    lowered = section.lower()
+    for banned in ("no scheduled", "no where", "no automatic", "no trunk", "no china", "not in this version"):
+        assert banned not in lowered
+    assert "supercharger" not in lowered
+    assert "china-region" not in lowered
+    assert "charging timetable" in lowered
+    assert "coarse area" in lowered
+    assert "morning report" in lowered
+    assert "trunk" in lowered and "frunk" in lowered and "remote start" in lowered
+    for skill in ("onboarding", "trip advisor", "charging tips", "news watch"):
+        assert skill in lowered
+    assert "unconfirmed against a live response" in lowered
+    assert "revised design" in lowered
+    commands = readme[readme.index("## What this version does"):next_at]
+    assert "| `where`" not in commands
+    assert "charge-schedule" not in commands
+    assert "morning report" not in commands.lower()
+
+
 def test_guides_and_checklist_links():
     checklist = (ROOT / "docs" / "00-before-you-start.md").read_text(encoding="utf-8")
     readme = (ROOT / "README.md").read_text(encoding="utf-8")

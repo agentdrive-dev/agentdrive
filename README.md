@@ -78,7 +78,7 @@ These are the commands in `agentdrive` today. Grok Bot and Muse have been used f
 | `charge-start`, `charge-stop` | yes, one time |
 | `charge-limit <percent>` | yes, one time, and only 50 to 100 |
 
-Unlock and charging changes are immediate commands. A schedule cannot run them or confirm them. This version has no trunk, frunk, or remote-start command.
+Unlock and charging changes are immediate commands. A schedule cannot run them or confirm them.
 
 ### Check and update
 
@@ -91,16 +91,16 @@ agentdrive update
 
 `agentdrive update` updates this checkout from the latest `main` and leaves private config in `~/.config/agentdrive` (or `$AGENTDRIVE_HOME`).
 
-### Not in this version
+## Next
 
-- No scheduled charging.
-- No charging history, charging invoices, or telemetry stream.
-- No where command and no location readout.
-- No automatic morning reminder.
-- No trunk, frunk, or remote-start command.
-- No China-region account.
-- Onboarding, trip advisor, charging tips, and news watch are stubs.
-- No live Supercharger pricing. The business-only charging sessions route is refused.
+Work we intend to add:
+
+- A charging timetable on the vehicle. Setting it uses the same one-time confirmation and park check as a charging change. An assistant schedule cannot supply that confirmation.
+- A where readout that names a coarse area. Raw coordinates stay out of the reply and out of assistant memory.
+- An automatic morning report, scheduled by the assistant, with a default time the owner can change. It stays quiet unless something needs attention before departure.
+- Trunk, frunk, and remote start on the command line. The signed-command path, the park check, and the one-time confirmation already cover those actions.
+- Onboarding, trip advisor, charging tips, and news watch. Onboarding walks registration after the disclaimer gate. Trip advisor compares a planned drive with current range from a saved suburb, and keeps live coordinates out of assistant memory. Charging tips turns charging history and nearby stall counts into a short suggestion. News watch speaks only when a public recall or safety notice needs the owner to act.
+- An investigation of charging history, and later of Fleet Telemetry for historical queries. History field names in the client are still unconfirmed against a live response. How telemetry readings would be received and stored still needs a revised design.
 
 ## Illustrative example
 
