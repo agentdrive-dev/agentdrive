@@ -8,9 +8,9 @@ Partner registration tells Tesla to fetch the public key. Owner sign-in is a sep
 
 ## Order
 
-1. The assistant requests a partner token and calls the partner registration endpoint for your region (`na` or `eu`) with the github.io hostname. Register the region you actually use. Tesla says to repeat registration for each region you operate in.
-2. The bot gives you an authorize URL. Open it in your own browser. Approve the scopes. Save the returned address in a local file. Do not paste the code into chat.
-3. The bot exchanges the code and stores the tokens.
+1. The AI agent requests a partner token and calls the partner registration endpoint for your region (`na` or `eu`) with the github.io hostname. Register the region you actually use. Tesla says to repeat registration for each region you operate in.
+2. The AI agent gives you an authorize URL. Open it in your own browser. Approve the scopes. Save the returned address in a local file. Do not paste the code into chat.
+3. The AI agent exchanges the code and stores the tokens.
 4. Open `https://tesla.com/_ak/<your-hostname>` in the phone's own browser, not an in-app browser, with the Tesla app installed, while you are near the car. Approve the key there. An example is `https://tesla.com/_ak/your-username.github.io` (the hostname you published).
 
 After you approve the scopes, the browser opens the redirect URI. A page that says Not found is expected. The authorization code is in the address bar. Save that address in a mode 600 file. Do not paste it into chat.

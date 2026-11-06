@@ -4,7 +4,7 @@
 
 Tesla's getting-started page says to create an application and to provide the details the form asks for, including legal business details, a name, a description, and a purpose. A duplicate application name is rejected automatically. The form can also reject a domain as invalid. Creating the application is not a charge from AgentDrive. API use is billed on the billing page.
 
-You submit the form. The bot may draft the description. It must not see the client secret.
+You submit the form. The AI agent may draft the description. It must not see the client secret.
 
 ## Step 1 — Sign in to the developer portal
 
@@ -22,7 +22,7 @@ Create an application with a unique English name. Describe personal use of your 
 
 ![Diagram: you enter the github.io hostname so the origin matches the key host](../images/developer-app-3.svg)
 
-Use the hostname the assistant already published, such as `your-username.github.io`. Tesla's partner docs say the registered domain must be lowercase and must share a root with an allowed origin. Their example is `123.abc.com` with an origin of `www.abc.com`. Put the hostname, with no path and no trailing slash, in the allowed origin. Put `https://your-username.github.io/callback` as the redirect. The static site includes that path so the browser can land somewhere after you approve. A project subpath does not work.
+Use the hostname the AI agent already published, such as `your-username.github.io`. Tesla's partner docs say the registered domain must be lowercase and must share a root with an allowed origin. Their example is `123.abc.com` with an origin of `www.abc.com`. Put the hostname, with no path and no trailing slash, in the allowed origin. Put `https://your-username.github.io/callback` as the redirect. The static site includes that path so the browser can land somewhere after you approve. A project subpath does not work.
 
 ## Step 4 — Store the client secret in a file
 
@@ -42,9 +42,9 @@ The dashboard shows the application, the allowed origin is the github.io hostnam
 
 The secret was pasted into chat. Treat it as exposed. Regenerate it in the portal, store the new value in the file, and do not repeat the old value.
 
-## Bot prompt
+## Prompt for the AI agent
 
-Copy this only when you want the bot to do the part below. It must not invent approvals.
+Copy this only when you want the AI agent to do the part below. It must not invent approvals.
 
 ```text
 Draft a short English description of a personal application that reads my own car and sends occasional commands. Do not submit the form. Do not ask me to paste the client secret. After I tell you the github.io hostname, tell me the exact allowed origin and redirect URI to type. Then stop.

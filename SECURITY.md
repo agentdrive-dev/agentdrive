@@ -1,6 +1,6 @@
 # Security
 
-Read this file, and `DISCLAIMER.md`, before you install AgentDrive. An assistant must show both documents in full and then wait. Installation starts only after you confirm them in a later message. A vague reply does not count.
+Read this file, and `DISCLAIMER.md`, before you install AgentDrive. An AI agent must show both documents in full and then wait. Installation starts only after you confirm them in a later message. A vague reply does not count.
 
 AgentDrive is unofficial. It is not affiliated with, endorsed by, or supported by Tesla.
 
@@ -8,7 +8,7 @@ AgentDrive is unofficial. It is not affiliated with, endorsed by, or supported b
 
 Use this toolkit on a vehicle you own, or one you are explicitly allowed to control, with your own developer application, your own domain, and your own key pair. Do not point it at someone else's vehicle, do not collect other people's tokens or keys, and do not run it as a service for other people.
 
-Turn on multi-factor authentication for the vehicle account, the code host that publishes your public key, and the assistant account. Review third-party access and the keys enrolled on the vehicle, and remove anything you do not recognise.
+Turn on multi-factor authentication for the vehicle account, the code host that publishes your public key, and the AI agent account. Review third-party access and the keys enrolled on the vehicle, and remove anything you do not recognise.
 
 ## Secrets stay off this repository
 
@@ -44,8 +44,8 @@ Do not send credentials to GitHub Issues, private vulnerability reporting, or em
 
 ## Install gate
 
-The assistant presents `DISCLAIMER.md` and this file, then stops. In a later turn you confirm with this sentence:
+The AI agent presents `DISCLAIMER.md` and this file, then stops. In a later turn you confirm with this sentence:
 
 `I have read, understood, and accept the AgentDrive disclaimer and security reminder`
 
-Only after that separate confirmation may the assistant record acceptance and run `setup/install.sh`. The installer checks the acceptance stamp and will not create it for you.
+Only after that separate confirmation may the AI agent record acceptance and run `setup/install.sh`. The installer checks the acceptance stamp and will not create it for you.

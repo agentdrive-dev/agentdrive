@@ -1,39 +1,75 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="920" height="308" viewBox="0 0 920 308" role="img">
-  <title>How it works</title>
-  <rect width="920" height="308" fill="#f7f8fb"/>
-  <text x="24" y="32" font-family="sans-serif" font-size="16" font-weight="700" fill="#1c2430">How it works</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" role="img">
+  <title>How it works. You chat in plain words. The AI agent runs AgentDrive for your parked car.</title>
+  <rect width="960" height="560" fill="#fff4e8"/>
+  <circle cx="880" cy="64" r="32" fill="#ffd56a"/>
+  <circle cx="842" cy="46" r="7" fill="#ffe7a3"/>
+  <path d="M0 470 Q240 430 480 470 T960 458 V560 H0 Z" fill="#f6d3b0"/>
+  <path d="M0 500 Q280 468 520 508 T960 488 V560 H0 Z" fill="#f3c094"/>
 
-  <rect x="24" y="64" width="185" height="120" rx="10" fill="#ffffff" stroke="#1c2430"/>
-  <text x="116" y="104" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="700" fill="#1c2430">You</text>
-  <text x="116" y="128" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1c2430">Ask in plain words</text>
-  <text x="116" y="150" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1c2430">about your own car</text>
+  <text x="48" y="58" font-family="Segoe UI, Trebuchet MS, sans-serif" font-size="28" font-weight="700" fill="#4a342c">How it works</text>
+  <text x="48" y="90" font-family="Segoe UI, Trebuchet MS, sans-serif" font-size="16" fill="#6b5348">You chat. The AI agent does the rest.</text>
 
-  <polygon points="215,118 233,118 233,110 249,124 233,138 233,130 215,130" fill="#1c2430"/>
+  <g transform="translate(170,300)">
+    <ellipse cx="0" cy="150" rx="70" ry="14" fill="#e7c2a4"/>
+    <path d="M-46,28 Q-54,110 -32,128 H32 Q54,110 46,28 Q24,8 0,8 Q-24,8 -46,28" fill="#ff7a59" stroke="#4a342c" stroke-width="3" stroke-linejoin="round"/>
+    <circle cx="0" cy="-28" r="40" fill="#ffd0b5" stroke="#4a342c" stroke-width="3"/>
+    <path d="M-34,-40 Q-36,-82 0,-84 Q36,-82 34,-40 Q20,-56 0,-52 Q-20,-56 -34,-40" fill="#6b3f2a" stroke="#4a342c" stroke-width="3" stroke-linejoin="round"/>
+    <circle cx="-14" cy="-30" r="4" fill="#4a342c"/>
+    <circle cx="14" cy="-30" r="4" fill="#4a342c"/>
+    <path d="M-14,-14 Q0,0 14,-14" fill="none" stroke="#4a342c" stroke-width="3" stroke-linecap="round"/>
+    <ellipse cx="-24" cy="-16" rx="6" ry="3.5" fill="#ffb199"/>
+    <ellipse cx="24" cy="-16" rx="6" ry="3.5" fill="#ffb199"/>
+  </g>
+  <g transform="translate(36,76)">
+    <path d="M20,70 Q20,20 70,20 H210 Q250,20 250,58 Q250,96 210,96 H48 L20,118 Z" fill="#ffffff" stroke="#4a342c" stroke-width="3" stroke-linejoin="round"/>
+    <text x="135" y="66" text-anchor="middle" font-family="Segoe UI, Trebuchet MS, sans-serif" font-size="16" font-weight="700" fill="#4a342c">How's the battery?</text>
+  </g>
+  <text x="170" y="478" text-anchor="middle" font-family="Segoe UI, Trebuchet MS, sans-serif" font-size="20" font-weight="700" fill="#4a342c">You</text>
+  <text x="170" y="502" text-anchor="middle" font-family="Segoe UI, Trebuchet MS, sans-serif" font-size="15" fill="#6b5348">plain words</text>
 
-  <rect x="253" y="64" width="185" height="120" rx="10" fill="#e7eefc" stroke="#1c2430"/>
-  <text x="345" y="104" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="700" fill="#1c2430">Assistant</text>
-  <text x="345" y="128" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1c2430">Invokes AgentDrive</text>
-  <text x="345" y="150" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1c2430">Any shell agent</text>
+  <path d="M300,350 H360" fill="none" stroke="#ff7a59" stroke-width="8" stroke-linecap="round"/>
+  <path d="M348,334 L372,350 L348,366" fill="none" stroke="#ff7a59" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
 
-  <polygon points="444,118 462,118 462,110 478,124 462,138 462,130 444,130" fill="#1c2430"/>
+  <g transform="translate(490,300)">
+    <ellipse cx="0" cy="150" rx="74" ry="14" fill="#e7c2a4"/>
+    <rect x="-48" y="18" width="96" height="108" rx="36" fill="#5ec4bc" stroke="#4a342c" stroke-width="3"/>
+    <rect x="-26" y="48" width="52" height="36" rx="14" fill="#fff8ef" stroke="#4a342c" stroke-width="3"/>
+    <circle cx="-10" cy="66" r="4" fill="#ff7a59"/>
+    <circle cx="10" cy="66" r="4" fill="#ffc857"/>
+    <rect x="-44" y="-70" width="88" height="78" rx="34" fill="#7fd4cc" stroke="#4a342c" stroke-width="3"/>
+    <line x1="0" y1="-70" x2="0" y2="-96" stroke="#4a342c" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="0" cy="-104" r="10" fill="#ffc857" stroke="#4a342c" stroke-width="3"/>
+    <circle cx="-16" cy="-40" r="10" fill="#ffffff" stroke="#4a342c" stroke-width="3"/>
+    <circle cx="16" cy="-40" r="10" fill="#ffffff" stroke="#4a342c" stroke-width="3"/>
+    <circle cx="-13" cy="-38" r="4" fill="#4a342c"/>
+    <circle cx="19" cy="-38" r="4" fill="#4a342c"/>
+    <path d="M-14,-18 Q0,-6 14,-18" fill="none" stroke="#4a342c" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  <text x="490" y="478" text-anchor="middle" font-family="Segoe UI, Trebuchet MS, sans-serif" font-size="20" font-weight="700" fill="#4a342c">AI agent</text>
+  <text x="490" y="502" text-anchor="middle" font-family="Segoe UI, Trebuchet MS, sans-serif" font-size="15" fill="#6b5348">runs AgentDrive</text>
 
-  <rect x="482" y="64" width="185" height="120" rx="10" fill="#e7f0ea" stroke="#1c2430"/>
-  <text x="574" y="104" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="700" fill="#1c2430">AgentDrive</text>
-  <text x="574" y="128" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1c2430">Reads the Fleet API</text>
-  <text x="574" y="150" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1c2430">Signs each command</text>
+  <path d="M620,350 H680" fill="none" stroke="#ff7a59" stroke-width="8" stroke-linecap="round"/>
+  <path d="M668,334 L692,350 L668,366" fill="none" stroke="#ff7a59" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
 
-  <polygon points="673,118 691,118 691,110 707,124 691,138 691,130 673,130" fill="#1c2430"/>
+  <g transform="translate(800,336)">
+    <ellipse cx="10" cy="118" rx="90" ry="14" fill="#e7c2a4"/>
+    <path d="M-90,20 Q-80,-8 -40,-10 H-10 Q6,-52 48,-54 H90 Q120,-50 132,-8 L142,18 Q148,36 128,42 H-78 Q-104,36 -90,20 Z" fill="#ffb703" stroke="#4a342c" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M4,-8 Q16,-40 48,-42 H86 Q108,-38 116,-12 H2 Z" fill="#c9eef8" stroke="#4a342c" stroke-width="3" stroke-linejoin="round"/>
+    <circle cx="-48" cy="44" r="20" fill="#4a342c"/>
+    <circle cx="62" cy="44" r="20" fill="#4a342c"/>
+    <circle cx="-48" cy="44" r="8" fill="#fff6ee"/>
+    <circle cx="62" cy="44" r="8" fill="#fff6ee"/>
+    <circle cx="126" cy="8" r="6" fill="#fff6ee" stroke="#4a342c" stroke-width="2"/>
+    <path d="M-70,8 Q-40,22 -10,8" fill="none" stroke="#4a342c" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(690,218)">
+    <rect x="0" y="18" width="8" height="70" rx="3" fill="#4a342c"/>
+    <rect x="-22" y="-8" width="52" height="40" rx="10" fill="#5ec4bc" stroke="#4a342c" stroke-width="3"/>
+    <text x="4" y="20" text-anchor="middle" font-family="Segoe UI, Trebuchet MS, sans-serif" font-size="22" font-weight="700" fill="#4a342c">P</text>
+  </g>
+  <text x="810" y="478" text-anchor="middle" font-family="Segoe UI, Trebuchet MS, sans-serif" font-size="20" font-weight="700" fill="#4a342c">Your car</text>
+  <text x="810" y="502" text-anchor="middle" font-family="Segoe UI, Trebuchet MS, sans-serif" font-size="15" fill="#6b5348">while it is parked</text>
 
-  <rect x="711" y="64" width="185" height="120" rx="10" fill="#fff8e8" stroke="#1c2430"/>
-  <text x="803" y="104" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="700" fill="#1c2430">Vehicle</text>
-  <text x="803" y="128" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1c2430">Lights, climate, charge</text>
-  <text x="803" y="150" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1c2430">Parked commands only</text>
-
-  <rect x="24" y="220" width="430" height="64" rx="10" fill="#e7f0ea" stroke="#1c2430"/>
-  <text x="44" y="246" font-family="sans-serif" font-size="13" font-weight="700" fill="#1c2430">Secrets stay with you</text>
-  <text x="44" y="267" font-family="sans-serif" font-size="13" fill="#1c2430">Private key and tokens stay on your computer.</text>
-
-  <rect x="466" y="220" width="430" height="64" rx="10" fill="#fff8e8" stroke="#1c2430"/>
-  <text x="486" y="246" font-family="sans-serif" font-size="13" font-weight="700" fill="#1c2430">Reads and signed commands</text>
-  <text x="486" y="267" font-family="sans-serif" font-size="13" fill="#1c2430">Reads use the Tesla Fleet API. Commands are signed.</text>
+  <rect x="180" y="516" width="600" height="32" rx="16" fill="#ffffff" stroke="#4a342c" stroke-width="2"/>
+  <text x="480" y="538" text-anchor="middle" font-family="Segoe UI, Trebuchet MS, sans-serif" font-size="15" font-weight="700" fill="#4a342c">You do not type the commands.</text>
 </svg>

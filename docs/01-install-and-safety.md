@@ -2,7 +2,7 @@
 
 [Back to the checklist](00-before-you-start.md)
 
-A beginner pastes the prompt in [How to start](../README.md#how-to-start). This page is what the assistant runs after that person accepts in a later message.
+A beginner pastes the prompt in [How to start](../README.md#how-to-start). This page is what the AI agent runs after that person accepts in a later message.
 
 Installation is two turns. The first turn shows the documents. A later turn records your acceptance. The installer will not create that acceptance for you.
 
@@ -32,7 +32,7 @@ A state-changing command is sent only when the shift state is Park and the speed
 
 ## After install — daily report
 
-AgentDrive does not run in the background. After `setup/install.sh` finishes, the assistant reads `agentdrive report-schedule`. The default is 07:30 local time and enabled. The assistant creates a daily job at that time, runs `agentdrive report`, and sends the output every time, including the skip line when the car is not online. A later request to change the time or turn the report off is `agentdrive report-schedule set HH:MM`, `disable`, or `enable`. The assistant then updates its job. The command only writes private config under `$AGENTDRIVE_HOME`. It does not edit the assistant's routine and it does not install cron.
+AgentDrive does not run in the background. After `setup/install.sh` finishes, the AI agent reads `agentdrive report-schedule`. The default is 07:30 local time and enabled. The AI agent creates a daily job at that time, runs `agentdrive report`, and sends the output every time, including the skip line when the car is not online. A later request to change the time or turn the report off is `agentdrive report-schedule set HH:MM`, `disable`, or `enable`. The AI agent then updates its job. The command only writes private config under `$AGENTDRIVE_HOME`. It does not edit the AI agent's routine and it does not install cron.
 
 ## Update an existing install
 

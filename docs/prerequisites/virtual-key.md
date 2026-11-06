@@ -4,13 +4,13 @@
 
 Tesla's virtual-key guide says a personal vehicle does not receive the key from Tesla's servers. A person with access adds it in the official app. Do this only after the public key is online and you have granted `vehicle_device_data`, `vehicle_cmds`, or `vehicle_location`.
 
-The link format is `https://tesla.com/_ak/<your-hostname>`. You open it on the phone. The bot only builds the link. Pairing is free.
+The link format is `https://tesla.com/_ak/<your-hostname>`. You open it on the phone. The AI agent only builds the link. Pairing is free.
 
 ## Step 1 — Grant scopes before you open the link
 
 ![Diagram: you approve the application so the account has granted access](../images/virtual-key-1.svg)
 
-Finish owner sign-in first. If you open the pairing link before the account has granted a scope, the app can refuse. The bot should give you the link only after token exchange succeeds.
+Finish owner sign-in first. If you open the pairing link before the account has granted a scope, the app can refuse. The AI agent should give you the link only after token exchange succeeds.
 
 ## Step 2 — Open the pairing link on the phone
 
@@ -36,9 +36,9 @@ The car already has 20 keys. Remove one you recognize before adding this one.
 
 An unfamiliar key is already listed. Treat that as a reason to check the car before you add another. See SECURITY.md.
 
-## Bot prompt
+## Prompt for the AI agent
 
-Copy this only when you want the bot to do the part below. It must not invent approvals.
+Copy this only when you want the AI agent to do the part below. It must not invent approvals.
 
 ```text
 After token exchange has succeeded, build the pairing link from the hostname in ~/.config/agentdrive/public-key-url (or $AGENTDRIVE_HOME/public-key-url). The link looks like https://tesla.com/_ak/your-username.github.io (the hostname you published). Give me that link and stop. Do not claim the key is paired until I tell you I approved it in the official app. Do not send a vehicle command in this turn.
