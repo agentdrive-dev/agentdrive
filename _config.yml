@@ -1,0 +1,4 @@
+# Primer is the GitHub Pages default. title is the HTML document title only.
+# The theme's site-title link is left out of _layouts/default.html.
+theme: jekyll-theme-primer
+title: AgentDrive

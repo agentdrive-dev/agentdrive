@@ -133,6 +133,19 @@ def test_guides_and_checklist_links():
 ALLOWED_EMAIL = "agentdrivedev@gmail.com"
 
 
+def test_pages_site_title_is_metadata_and_not_a_visible_header():
+    config = (ROOT / "_config.yml").read_text(encoding="utf-8")
+    assert re.search(r"(?m)^theme:\s*jekyll-theme-primer\s*$", config)
+    assert re.search(r"(?m)^title:\s*AgentDrive\s*$", config)
+    layout = (ROOT / "_layouts" / "default.html").read_text(encoding="utf-8")
+    assert "site.title" not in layout
+    assert "{{ content }}" in layout
+    assert "markdown-body" in layout
+    assert "/assets/css/style.css" in layout
+    assert "{% seo %}" in layout
+    assert "This site is open source." in layout
+
+
 def test_contact_email_is_the_only_published_address():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     security = (ROOT / "SECURITY.md").read_text(encoding="utf-8")
