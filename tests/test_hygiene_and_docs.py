@@ -84,7 +84,8 @@ def test_readme_next_lists_planned_work_in_positive_language():
     assert "supercharger" not in lowered
     assert "china-region" not in lowered
     assert "charging timetable" in lowered
-    assert "coarse area" in lowered
+    assert "where" not in lowered
+    assert "coarse area" not in lowered
     assert "morning report" in lowered
     assert "trunk" in lowered and "frunk" in lowered and "remote start" in lowered
     for skill in ("onboarding", "trip advisor", "charging tips", "news watch"):
@@ -92,7 +93,8 @@ def test_readme_next_lists_planned_work_in_positive_language():
     assert "unconfirmed against a live response" in lowered
     assert "revised design" in lowered
     commands = readme[readme.index("## What this version does"):next_at]
-    assert "| `where`" not in commands
+    assert "| `where`" in commands
+    assert "agentdrive where" in commands
     assert "charge-schedule" not in commands
     assert "morning report" not in commands.lower()
 
