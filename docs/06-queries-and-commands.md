@@ -24,7 +24,7 @@ Commands:
 | `charge-start`, `charge-stop` | signed charging command | yes, one time |
 | `charge-limit <percent>` | signed `charging-set-limit` | yes, one time, and only 50 to 100 |
 
-This version has no trunk, frunk, or remote-start command. Unlock and every charging change go through the existing confirmation layer. A schedule cannot confirm them. State-changing commands are sent only in Park at speed 0, then read back once.
+Unlock and every charging change go through the existing confirmation layer. A schedule cannot confirm them. State-changing commands are sent only in Park at speed 0, then read back once. Trunk, frunk, and remote start are planned on that same gate. See [Next](../README.md#next).
 
 Signed commands run `tesla-control` with `TESLA_TOKEN_FILE`, `TESLA_KEY_FILE`, and `TESLA_VIN` set in the environment. Those names are what the tool requires. The access token is written to a mode 0600 file and deleted in a `finally` block. It is never placed on the argument list. The tool is invoked once. If it fails, it is not launched again until a read shows whether the car already changed.
 
@@ -35,7 +35,7 @@ agentdrive check
 agentdrive update
 ```
 
-The command line does not include scheduled charging, charging history, charging invoices, a telemetry stream, or a where command. `agentdrive status` does not request location. The sessions route is refused. There is no live Supercharger pricing.
+`agentdrive status` does not request location. The client refuses the business-only charging sessions route. Nearby charging reads keep location and stall counts. Further commands we intend to add are listed under [Next](../README.md#next).
 
 ## Expected result
 

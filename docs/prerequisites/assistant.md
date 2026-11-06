@@ -4,7 +4,7 @@
 
 Works with Grok Bot, Muse, or any agent that can run shell commands.
 
-The assistant has to read these docs, run shell commands, store files on the machine, and wait when a step needs you. You choose the assistant. AgentDrive does not add a fee on top of whatever that assistant already costs. Everyone follows the same Quick start prompt.
+The assistant has to read these docs, run shell commands, store files on the machine, and wait when a step needs you. You choose the assistant. AgentDrive does not add a fee on top of whatever that assistant already costs. Everyone pastes the same prompt in [How to start](../../README.md#how-to-start).
 
 ## Step 1 — Choose an assistant that can run commands
 

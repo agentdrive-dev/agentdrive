@@ -29,6 +29,74 @@ def _files():
         yield path
 
 
+def test_homepage_how_to_start_leads_with_the_paste_prompt():
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    how_at = readme.index("## How to start")
+    runs_at = readme.index("## What the assistant runs")
+    assert how_at < readme.index("## How it works")
+    assert how_at < readme.index("## What this version does")
+    assert how_at < readme.index("## Illustrative example")
+    assert readme.index("## Disclaimer") < runs_at < readme.index("## Supported agents")
+    how = readme[how_at:readme.index("## How it works")]
+    before_prompt = how.split("```text", 1)[0]
+    for banned in ("git clone", "PYTHONPATH", "gate-present", "gate-accept", "setup/install.sh"):
+        assert banned not in before_prompt
+        assert banned not in how
+    assert "<details>" not in how
+    assert "```text" in how
+    for required in (
+        "DISCLAIMER.md",
+        "SECURITY.md",
+        "I have read, understood, and accept the AgentDrive disclaimer and security reminder",
+        "What the assistant runs",
+        "~/.config/agentdrive",
+        "$AGENTDRIVE_HOME",
+        "Same-turn acceptance is rejected",
+        "will not create it",
+    ):
+        assert required in how
+    technical = readme[runs_at:readme.index("## Supported agents")]
+    assert "git clone https://github.com/agentdrive-dev/agentdrive.git ~/agentdrive" in technical
+    assert "PYTHONPATH=. python3 -m core gate-present --turn-id 1" in technical
+    assert 'gate-accept --turn-id 2 --statement "I have read, understood, and accept the AgentDrive disclaimer and security reminder"' in technical
+    assert "bash setup/install.sh" in technical
+    assert "Same-turn acceptance is rejected" in technical
+    assert "will not create it" in technical
+    for image in (
+        "docs/images/how-it-works.svg",
+        "docs/images/what-it-does.svg",
+        "docs/images/ask-in-plain-words.svg",
+    ):
+        assert image in readme
+    assert "sample data" in readme.lower()
+
+
+def test_readme_next_lists_planned_work_in_positive_language():
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "## Not in this version" not in readme
+    assert "### Not in this version" not in readme
+    next_at = readme.index("## Next")
+    assert readme.index("## What this version does") < next_at < readme.index("## Illustrative example")
+    section = readme[next_at:readme.index("## Illustrative example")]
+    lowered = section.lower()
+    for banned in ("no scheduled", "no where", "no automatic", "no trunk", "no china", "not in this version"):
+        assert banned not in lowered
+    assert "supercharger" not in lowered
+    assert "china-region" not in lowered
+    assert "charging timetable" in lowered
+    assert "coarse area" in lowered
+    assert "morning report" in lowered
+    assert "trunk" in lowered and "frunk" in lowered and "remote start" in lowered
+    for skill in ("onboarding", "trip advisor", "charging tips", "news watch"):
+        assert skill in lowered
+    assert "unconfirmed against a live response" in lowered
+    assert "revised design" in lowered
+    commands = readme[readme.index("## What this version does"):next_at]
+    assert "| `where`" not in commands
+    assert "charge-schedule" not in commands
+    assert "morning report" not in commands.lower()
+
+
 def test_guides_and_checklist_links():
     checklist = (ROOT / "docs" / "00-before-you-start.md").read_text(encoding="utf-8")
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
