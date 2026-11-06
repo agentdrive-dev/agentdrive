@@ -28,7 +28,7 @@ Choose Update Limit and set a ceiling you are willing to hit. Tesla says usage c
 
 ![Diagram: you keep use light because status codes under 500 are billed and 5xx is not](../images/billing-4.svg)
 
-Wakes, data reads, and commands are billed. A 500-and-above response is not. The published $10 monthly discount may cover light personal use. It is per account, and Tesla can change it. This toolkit avoids polling loops for that reason. `agentdrive check` does not wake a sleeping car, which keeps the call count down.
+Wakes, data reads, and commands are billed. A 500-and-above response is not. The published $10 monthly discount may cover light personal use. It is per account, and Tesla can change it. This toolkit avoids polling loops for that reason. `agentdrive check` and `agentdrive where` do not wake a sleeping car, which keeps the call count down. The daily `agentdrive report` is one read when the assistant runs it, and it does not wake a sleeping car either. `agentdrive charge-schedule show` does not wake a sleeping car.
 
 ## Expected result
 

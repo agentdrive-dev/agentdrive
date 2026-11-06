@@ -34,6 +34,22 @@ Installing an assistant includes this instruction: set up a recurring health che
 Schedule a routine named health-check that runs `agentdrive check --json` every few hours. Notify me only when the exit code is 1. Do not wake the car from that routine. Do not schedule unlock or a charging change.
 ```
 
+## Daily vehicle report by default
+
+The daily report is a second job, separate from the health check. The health check stays quiet unless it exits 1. The daily report is sent every time.
+
+The default is 07:30 in the local timezone, and the report is enabled. `agentdrive report-schedule` prints that. The time is stored in `$AGENTDRIVE_HOME/runtime.yaml` under `report_schedule` when you change it. With no `report_schedule` key, the default above is what the command shows.
+
+After install, the assistant creates one daily job at the configured time. The job runs `agentdrive report`, and the assistant sends the printed briefing to the user, including the skip line when the vehicle is not online. The command is read-only. It does not wake the car. A timeout or HTTP 408 is a skip, the same as a car that is already asleep or offline.
+
+When you ask for a different time, the assistant runs `agentdrive report-schedule set HH:MM` and moves the job to that time. When you ask to turn the report off, the assistant runs `agentdrive report-schedule disable` and removes the job. `agentdrive report-schedule enable` turns it back on. AgentDrive does not update the job itself. The same steps apply to Grok Bot, Muse, and any agent that can run shell commands.
+
+A host that uses cron can copy the example line printed by `agentdrive report-schedule`. AgentDrive does not install that line or a systemd timer. This is the recommended setup. It is not zero-setup: something outside AgentDrive has to run the command.
+
+```text
+Read `agentdrive report-schedule`. If it is enabled, create a daily job at that local time that runs `agentdrive report` and send me the output every day. If I change the time or turn the report off, update the job to match the command. Do not wake the car from that job.
+```
+
 ## Using more than one assistant
 
 Most people run one assistant. Two assistants can share one private key that is already paired with the car. Do not enroll a second key for that case.

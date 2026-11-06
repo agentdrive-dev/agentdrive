@@ -87,7 +87,8 @@ def test_readme_next_lists_planned_work_in_positive_language():
     assert "charge-schedule" not in lowered
     assert "where" not in lowered
     assert "coarse area" not in lowered
-    assert "morning report" in lowered
+    assert "morning report" not in lowered
+    assert "stays quiet unless something needs attention" not in lowered
     assert "trunk" in lowered and "frunk" in lowered and "remote start" in lowered
     for skill in ("onboarding", "trip advisor", "charging tips", "news watch"):
         assert skill in lowered
@@ -99,7 +100,9 @@ def test_readme_next_lists_planned_work_in_positive_language():
     assert "charge-schedule show" in commands
     assert "charge-schedule set" in commands
     assert "charge-schedule remove" in commands
-    assert "morning report" not in commands.lower()
+    assert "agentdrive report" in commands
+    assert "report-schedule" in commands
+    assert "stays quiet unless something needs attention" not in commands.lower()
 
 
 def test_guides_and_checklist_links():

@@ -18,6 +18,10 @@ The command prints a suburb or locality, a state or region, and a country. The t
 
 A location read needs the official `vehicle_location` scope. The owner sign-in scope list is `openid`, `offline_access`, `user_data`, `vehicle_device_data`, `vehicle_location`, and `vehicle_cmds`. If the token lacks `vehicle_location`, or the firmware refuses the read until that scope is granted, the command tells you to re-authorize and include `vehicle_location`, and it exits 1. Sign in again so the new token carries that scope. `status` and `check` stay free of location.
 
+`agentdrive report` is the daily briefing. It uses that same parked snapshot (`charge_state`, `climate_state`, `vehicle_state`, and `drive_state`). It does not request `location_data` and it does not print coordinates. It does not call wake. If the vehicle list says the car is asleep, offline, or otherwise not online, it prints the same skip line as `check` and exits 0. A timeout or HTTP 408 is the same skip. When the car is online the briefing includes battery, charge connection, lock, gear, doors, windows, trunk, sentry, climate, tyres, and TPMS. `--json` prints the same briefing as an object. The assistant sends that output every time. Exit 0 here is not a reason to stay quiet.
+
+`agentdrive report-schedule` shows the daily time. The default is 07:30 local time and enabled, even when `runtime.yaml` has no `report_schedule` key. `agentdrive report-schedule set HH:MM` stores a 24-hour time. `disable` and `enable` store the on/off state. The file is `$AGENTDRIVE_HOME/runtime.yaml` (or `~/.config/agentdrive/runtime.yaml`). Writing it does not change the assistant's job. After a change, the assistant updates the job. The command also prints a crontab example, such as `30 7 * * * agentdrive report`. AgentDrive does not install that line and does not install a systemd timer.
+
 Commands:
 
 | Command | What it sends | Confirmation |
@@ -78,7 +82,11 @@ Signed commands run `tesla-control` with `TESLA_TOKEN_FILE`, `TESLA_KEY_FILE`, a
 
 ```bash
 agentdrive check
+agentdrive report
+agentdrive report-schedule
+agentdrive report-schedule set 07:30
 agentdrive where
+agentdrive charge-schedule show
 agentdrive update
 ```
 
@@ -86,4 +94,20 @@ agentdrive update
 
 ## Expected result
 
-A status question returns a short readout with tyre pressures, no coordinates, and a masked VIN. `agentdrive where` returns a suburb, region, and country, or says that it skipped when the car is asleep. A parked lights flash runs once and is followed by another read. A sleeping car makes `agentdrive check`, `agentdrive where`, and `agentdrive charge-schedule show` exit 0 without a wake.
+A status question returns a short readout with tyre pressures, no coordinates, and a masked VIN. `agentdrive where` returns a suburb, region, and country, or says that it skipped when the car is asleep. A parked lights flash runs once and is followed by another read. A sleeping car makes `agentdrive check`, `agentdrive report`, `agentdrive where`, and `agentdrive charge-schedule show` exit 0 without a wake. The assistant still sends the report, including that skip line.
+
+Illustrative sample. These figures are sample data, not a vehicle reading:
+
+```text
+Vehicle report: Example
+Battery: 80% | Range: 161 km | Limit: 80%
+Charge connection: Disconnected
+Locked: yes
+Gear: P (parked)
+Doors, windows, and trunk: closed
+Sentry: on
+Climate: off (set 21.0°C)
+Inside: 20.0°C | Outside: 15.0°C
+Tyres (bar): FL 2.9 FR 2.9 RL 2.9 RR 2.9
+TPMS: ok
+```

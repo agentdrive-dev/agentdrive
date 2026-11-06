@@ -14,6 +14,8 @@ The assistant follows these docs and runs commands on your computer. It can use 
 
 On install, set up a recurring health check by default. Schedule a routine that runs `agentdrive check --json` every few hours. The check is read-only and does not wake a sleeping car. Exit 0 means there is nothing to report, including when the vehicle is asleep. Exit 1 means an alert the owner should hear. Notify only when the exit code is 1. Do not put that check on a schedule that wakes the car, and do not schedule unlock or a charging change.
 
+On install, also set up the daily vehicle report. Read `agentdrive report-schedule`. The default is 07:30 local time and enabled. Create a daily job at that time that runs `agentdrive report` and send the result every time, including when the car is asleep. If the user asks for a different time or to turn the report off, update the stored schedule and update the job. AgentDrive does not run in the background. The same job is used for Grok Bot, Muse, and any other shell-capable agent.
+
 ## Step 2 — Use two turns for the disclaimer
 
 ![Diagram: you read the disclaimer in one turn and accept it in a later turn, so install stays blocked](../images/assistant-2.svg)

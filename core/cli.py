@@ -13,9 +13,11 @@ from core.config import repo_root
 from core.doctor import run_doctor
 from core.errors import AgentDriveError, AmbiguousAdapter, ConfigError
 from core.fleet.area import format_where, format_where_json
-from core.fleet.http import UrllibClient
 from core.fleet.charge_schedule import format_schedule_report, format_schedule_report_json, parse_schedule_id, parse_schedule_write
+from core.fleet.http import UrllibClient
+from core.fleet.report import format_report, format_report_json
 from core.ops import PUBLIC_COMMANDS, build_app, format_check, format_check_json, parse_limit, parse_temp, preferred_vin, resolve_thresholds
+from core.report_schedule import DAILY_REPORT_NOTE, format_schedule, load_report_schedule, set_report_enabled, set_report_time
 from core.paths import resolve_home, resolve_key, resolve_token_file
 from core.redact import scrub
 from core.safety.install_gate import accept, assert_install_allowed, present
@@ -86,6 +88,16 @@ def build_parser() -> argparse.ArgumentParser:
     check.add_argument("--battery-threshold", type=int, default=None)
     check.add_argument("--profile", default="")
 
+    report = sub.add_parser("report")
+    report.add_argument("--json", action="store_true")
+
+    report_schedule = sub.add_parser("report-schedule")
+    report_action = report_schedule.add_subparsers(dest="report_action")
+    set_time = report_action.add_parser("set")
+    set_time.add_argument("time")
+    report_action.add_parser("enable")
+    report_action.add_parser("disable")
+
     where = sub.add_parser("where", help="Print a coarse area. Does not wake the vehicle or print coordinates.")
     where.add_argument("--json", action="store_true")
 
@@ -117,6 +129,10 @@ def main(argv: list[str] | None = None) -> int:
             return _update(home)
         if args.command == "check":
             return _check(args, home)
+        if args.command == "report":
+            return _report(args, home)
+        if args.command == "report-schedule":
+            return _report_schedule(args, home)
         if args.command == "where":
             return _where(args, home)
         if args.command == "charge-schedule":
@@ -143,8 +159,10 @@ def _adapter(args, home: Path) -> int:
         print("No host bot was detected. Runtime will use the template adapter.")
     if args.action == "install" and choice.adapter == "grokbot":
         print(GROK_INSTALL_NOTE)
-    if args.action == "install" and choice.adapter == "muse":
+    elif args.action == "install" and choice.adapter == "muse":
         print(MUSE_INSTALL_NOTE)
+    elif args.action == "install":
+        print(DAILY_REPORT_NOTE)
     return 0
 
 
@@ -210,6 +228,30 @@ def _check(args, home: Path) -> int:
     else:
         print(scrub(format_check(report)))
     return report.exit_code
+
+
+def _report(args, home: Path) -> int:
+    briefing = build_app(home).report(preferred=preferred_vin())
+    if args.json:
+        print(scrub(format_report_json(briefing)))
+    else:
+        print(scrub(format_report(briefing)))
+    return briefing.exit_code
+
+
+def _report_schedule(args, home: Path) -> int:
+    action = args.report_action
+    if action == "set":
+        schedule = set_report_time(home, args.time)
+    elif action == "enable":
+        schedule = set_report_enabled(home, True)
+    elif action == "disable":
+        schedule = set_report_enabled(home, False)
+    else:
+        schedule = load_report_schedule(home)
+        action = None
+    print(format_schedule(schedule, action=action))
+    return 0
 
 
 def _where(args, home: Path) -> int:

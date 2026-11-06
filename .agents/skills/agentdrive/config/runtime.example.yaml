@@ -12,3 +12,10 @@
 
 key_file: 'C:\Users\<you>\agentdrive-key\private-key.pem'
 token_file: 'C:\Users\<you>\agentdrive-key\tokens.json'
+
+# Daily vehicle report. Leave this out to keep the default: 07:30 local time, enabled.
+# Set it with `agentdrive report-schedule`. The assistant updates its own job afterward.
+# AgentDrive does not run the job and does not install cron.
+# report_schedule:
+#   enabled: true
+#   time: "07:30"
