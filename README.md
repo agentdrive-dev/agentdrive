@@ -21,12 +21,13 @@ The assistant invokes AgentDrive on your computer. Reads use the Tesla Fleet API
 
 These are the commands in `agentdrive` today. Grok Bot and Muse have been used for basic real-car commands. That trial does not cover every command in this repository.
 
-`agentdrive status` may wake a sleeping car. `agentdrive check` never wakes. `agentdrive wake` is a separate command. A parked command is sent only in Park at speed 0, then the car is read once. `wake` does not use that park check. The VIN in a status reading is masked. Status does not request location.
+`agentdrive status` may wake a sleeping car. `agentdrive check` and `agentdrive where` never wake. `agentdrive wake` is a separate command. A parked command is sent only in Park at speed 0, then the car is read once. `wake` does not use that park check. The VIN in a status reading is masked. Status and check do not request location. `where` requests location only when the car is already online, and it prints a coarse area rather than coordinates.
 
 `agentdrive doctor` checks the local setup. `agentdrive refresh` refreshes the access token. A later command refreshes on its own when fewer than 30 minutes remain.
 
 | Command | Confirmation |
 | --- | --- |
+| `where` | no, and it does not wake the car |
 | `wake` | no, and it does not use the park check |
 | `flash`, `honk`, `lock` | no |
 | `climate-on`, `climate-off` | no |
@@ -41,10 +42,13 @@ Unlock and charging changes are immediate commands. A schedule cannot run them o
 
 ```bash
 agentdrive check
+agentdrive where
 agentdrive update
 ```
 
 `agentdrive check` prints that it skipped, and exits 0, when the car is not online. When the car is online it exits 1 for a TPMS warning, a tyre below the threshold, a low battery that is not charging, the car unlocked or open while parked, or a charge error. `agentdrive check --json` prints a short object. On install, the assistant is asked to run that check every few hours and to notify only when the exit code is 1.
+
+`agentdrive where` prints a suburb or locality, a state or region, and a country. It skips, and does not wake the car, when the car is asleep or offline. A rounded point (two decimal places, about 1 km) is sent to OpenStreetMap Nominatim so the place name can be resolved. The precise point is not sent. Coordinates are not printed. If the token lacks the `vehicle_location` scope, the command says to re-authorize with that scope.
 
 `agentdrive update` updates this checkout from the latest `main` and leaves private config in `~/.config/agentdrive` (or `$AGENTDRIVE_HOME`).
 
@@ -52,7 +56,7 @@ agentdrive update
 
 - No scheduled charging.
 - No charging history, charging invoices, or telemetry stream.
-- No where command and no location readout.
+- No precise location readout. `where` prints a coarse area only.
 - No automatic morning reminder.
 - No trunk, frunk, or remote-start command.
 - No China-region account.

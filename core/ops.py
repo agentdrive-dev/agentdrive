@@ -1,8 +1,8 @@
 """Vehicle reads and signed commands used by the command line.
 
 Status wakes a sleeping vehicle and polls for up to 45 seconds. The health
-check never wakes. Unlock and other sensitive commands go through the safety
-gateway, which asks for a one-time confirmation.
+check and the where command never wake. Unlock and other sensitive commands
+go through the safety gateway, which asks for a one-time confirmation.
 """
 
 from __future__ import annotations
@@ -15,6 +15,7 @@ from pathlib import Path
 from adapters.template import TemplateAdapter
 from core.config import load_regions
 from core.errors import ConfigError, ConfirmationRequired, TokenError
+from core.fleet.area import WhereReport, area_from_vehicle_payload
 from core.fleet.commands import TeslaControl
 from core.fleet.credentials import load_client_credentials
 from core.fleet.health import (
@@ -25,7 +26,7 @@ from core.fleet.health import (
     skipped_report,
 )
 from core.fleet.http import UrllibClient
-from core.fleet.queries import FleetReader, QueryError
+from core.fleet.queries import FleetReader, QueryError, VehicleAsleep
 from core.fleet.snapshot import Observation, from_vehicle_data
 from core.fleet.tokens import AtomicTokenStore, FleetTokenRefresher, TokenManager, audience_for
 from core.paths import resolve_key, resolve_token_file
@@ -35,6 +36,7 @@ from core.safety.gateway import Gateway
 
 MILES_TO_KM = 1.609344
 DATA_ENDPOINTS = ["charge_state", "climate_state", "vehicle_state", "drive_state"]
+LOCATION_ENDPOINTS = ["location_data"]
 
 PUBLIC_COMMANDS = {
     "wake": "wake",
@@ -173,6 +175,27 @@ class App:
         payload = self.reader.vehicle_data(vehicle_key(chosen), DATA_ENDPOINTS)
         observation = from_vehicle_data(payload)
         return report_from_observation(observation, tyre_bar=tyre_bar, low_battery_percent=low_battery_percent)
+
+    def where(self, *, preferred: str | None) -> WhereReport:
+        """Coarse area. A sleeping or offline vehicle is skipped and is not woken."""
+        try:
+            chosen = select_vehicle(self.reader.list_vehicles(), preferred)
+        except VehicleAsleep:
+            return WhereReport(kind="skipped", state="asleep")
+        state = vehicle_state_name(chosen) or "unknown"
+        if state != "online":
+            return WhereReport(kind="skipped", state=state)
+        try:
+            payload = self.reader.vehicle_data(vehicle_key(chosen), LOCATION_ENDPOINTS)
+        except VehicleAsleep:
+            return WhereReport(kind="skipped", state="asleep")
+        except QueryError as exc:
+            if exc.status in (401, 403) or exc.location_scope:
+                return WhereReport(kind="scope")
+            return WhereReport(kind="unavailable")
+        except Exception:
+            return WhereReport(kind="unavailable")
+        return area_from_vehicle_payload(self.reader.http, payload)
 
     def command(self, name: str, *, preferred: str | None, argument: str | None, statement: str | None, sleep=time.sleep) -> str:
         spec = PUBLIC_COMMANDS.get(name)

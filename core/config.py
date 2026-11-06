@@ -92,6 +92,8 @@ def load_scopes(path: Path | None = None) -> dict[str, Any]:
     default = document.get("default")
     if not isinstance(default, list) or "offline_access" not in default or "vehicle_cmds" not in default:
         raise ConfigError("scopes.yaml is missing the default owner scopes")
+    if "vehicle_location" not in default:
+        raise ConfigError("scopes.yaml is missing the vehicle_location scope")
     return document
 
 
