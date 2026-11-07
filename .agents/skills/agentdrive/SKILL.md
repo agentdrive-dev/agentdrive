@@ -1,6 +1,6 @@
 ---
 name: agentdrive
-description: Use AgentDrive to read a personal vehicle and send parked commands through the agentdrive program. Use when the user asks about battery, climate, lock state, tyre pressure, a health check, the daily vehicle report, a coarse area, an in-car charging timetable, or a parked command such as flash lights, lock, or charging. Do not sign vehicle commands in this skill.
+description: Use AgentDrive to read a personal vehicle and send parked commands through the agentdrive program. Use when the user asks about battery, climate, lock state, tyre pressure, a health check, the daily vehicle report, a coarse area, an in-car charging timetable, sentry mode, seat or steering heat, defrost, cabin preconditioning, the rear trunk, the front trunk, remote start, or a parked command such as flash lights, lock, or charging. Do not sign vehicle commands in this skill.
 ---
 
 # AgentDrive
@@ -39,7 +39,11 @@ Security trade-off of a shared key: every agent that can read the private key fi
 1. `agentdrive doctor`
 2. `agentdrive check` — the read-only vehicle status check. It does not wake a sleeping vehicle and it does not send a command.
 3. `agentdrive where` — a coarse area only: suburb or locality, state or region, and country. It does not wake a sleeping vehicle, it does not print coordinates, and it does not send a command. A rounded point is sent to Nominatim. Do not copy coordinates into memory.
-4. A vehicle command only after doctor and check have finished, and only when the user asks. Park and speed 0 are required. Unlock, the rear trunk, the front trunk, remote start, and charging changes need a fresh confirmation. A schedule cannot supply that confirmation and cannot run the trunk, the front trunk, or remote start.
+4. A vehicle command only after doctor and check have finished, and only when the user asks. Park and speed 0 are required. Unlock, turning sentry off, the rear trunk, the front trunk, remote start, and charging changes need a fresh confirmation. A schedule cannot supply that confirmation and cannot run sentry off, the trunk, the front trunk, or remote start.
+
+`agentdrive sentry-on` and `agentdrive sentry-off` change sentry mode. Both wake a sleeping car: if the vehicle list says the car is not online, they send one wake and poll for up to 45 seconds, then send the signed command. `sentry-off` needs a fresh confirmation that names turning sentry off, for example `I confirm turn sentry off`. A schedule cannot supply that confirmation and cannot run `sentry-off`. `agentdrive check`, `agentdrive report`, `agentdrive where`, and history do not wake a sleeping car.
+
+`agentdrive seat-heat`, `agentdrive steering-heat`, `agentdrive defrost-on`, `agentdrive defrost-off`, and `agentdrive precondition` are parked climate commands. They use the same confirmation pattern as climate on, climate off, and set temperature. `seat-heat` takes a seat the signed tool accepts (`front-left`, `front-right`, `2nd-row-left`, `2nd-row-center`, `2nd-row-right`, `3rd-row-left`, `3rd-row-right`) and a level (`off`, `low`, `medium`, or `high`). `steering-heat` is `on` or `off`. Defrost is max defrost, on or off, for the front and rear together. `precondition` starts cabin preconditioning now. It does not add a departure schedule.
 
 `agentdrive charge-schedule show` reads the in-car charging timetable and does not wake a sleeping vehicle. `agentdrive charge-schedule set` and `agentdrive charge-schedule remove` change that timetable. They are charging commands. Each one needs a fresh confirmation. A scheduled job cannot supply that confirmation.
 
@@ -49,7 +53,7 @@ Security trade-off of a shared key: every agent that can read the private key fi
 
 ## Health check
 
-On install, schedule a routine that runs `agentdrive check --json` every 30 minutes. Exit 0 means there is nothing new to report, including when the vehicle is asleep and when the same alerts are still active, so stay quiet. Exit 1 means a new alert the user should hear. Notify only when the exit code is 1. The same alert stays quiet until it clears and later returns. Do not schedule unlock, the trunk, the front trunk, remote start, or a charging change. `charge-schedule set` and `charge-schedule remove` are charging changes. Do not put `agentdrive report` or `agentdrive history due` on that health-check loop. When the car is already online, `check` also saves local history, including when there is nothing new to notify. It does not wake the car to do that. AgentDrive does not run that job and does not install cron.
+On install, schedule a routine that runs `agentdrive check --json` every 30 minutes. Exit 0 means there is nothing new to report, including when the vehicle is asleep and when the same alerts are still active, so stay quiet. Exit 1 means a new alert the user should hear. Notify only when the exit code is 1. The same alert stays quiet until it clears and later returns. Do not schedule unlock, turning sentry off, the trunk, the front trunk, remote start, or a charging change. `charge-schedule set` and `charge-schedule remove` are charging changes. `sentry-off` is a sensitive command. Do not put `agentdrive report` or `agentdrive history due` on that health-check loop. When the car is already online, `check` also saves local history, including when there is nothing new to notify. It does not wake the car to do that. AgentDrive does not run that job and does not install cron.
 
 ## Morning history
 

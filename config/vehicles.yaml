@@ -45,6 +45,12 @@ capabilities:
     - lock
     - honk
     - climate_set_temp
+    - sentry_on
+    - seat_heater
+    - steering_wheel_heater
+    - defrost_on
+    - defrost_off
+    - cabin_precondition
   sensitive_commands:
     - unlock
     - remote_start

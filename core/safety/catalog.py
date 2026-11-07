@@ -11,6 +11,9 @@ from core.errors import ConfigError
 # Remote start is that tool's `drive` command (keyless-driving enablement). It takes no password.
 # The rear trunk can open (`trunk-open`) and, on vehicles that can close it, `trunk-close`.
 # The front trunk can open. The signed tool has no command that closes it.
+# Cabin preconditioning now is `climate-on` (auto conditioning start).
+# Max defrost is `preconditioning-max`, added to the local tesla-control build because
+# upstream does not register SetPreconditioningMax. The manual override is not sent.
 TOOL_ARGS: dict[str, tuple[str, ...]] = {
     "flash_lights": ("flash-lights",),
     "climate_on": ("climate-on",),
@@ -23,7 +26,13 @@ TOOL_ARGS: dict[str, tuple[str, ...]] = {
     "frunk_open": ("frunk-open",),
     "trunk_open": ("trunk-open",),
     "trunk_close": ("trunk-close",),
+    "sentry_on": ("sentry-mode", "on"),
     "sentry_off": ("sentry-mode", "off"),
+    "seat_heater": ("seat-heater",),
+    "steering_wheel_heater": ("steering-wheel-heater",),
+    "defrost_on": ("preconditioning-max", "on"),
+    "defrost_off": ("preconditioning-max", "off"),
+    "cabin_precondition": ("climate-on",),
     "charging_start": ("charging-start",),
     "charging_stop": ("charging-stop",),
     "charging_set_limit": ("charging-set-limit",),
@@ -44,7 +53,13 @@ VERIFY_KIND = {
     "frunk_open": "frunk_open",
     "trunk_open": "trunk_open",
     "trunk_close": "trunk_closed",
+    "sentry_on": "sentry_on",
     "sentry_off": "sentry_off",
+    "seat_heater": "seat_heater",
+    "steering_wheel_heater": "steering_heater",
+    "defrost_on": "defrost_on",
+    "defrost_off": "defrost_off",
+    "cabin_precondition": "climate_on",
     "charging_start": "charging",
     "charging_stop": "not_charging",
     "charging_set_limit": "charge_limit",
@@ -60,6 +75,7 @@ ACTION_NAMES = {
     "trunk_close": "close rear trunk",
     "frunk_open": "open frunk",
     "remote_start": "enable remote start",
+    "sentry_off": "turn sentry off",
 }
 
 # Normalized command strings a schedule must not store. `drive` is the signed remote-start command.

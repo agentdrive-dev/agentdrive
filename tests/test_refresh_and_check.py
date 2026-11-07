@@ -557,6 +557,13 @@ def test_cli_lists_parked_commands_and_rejects_bad_ranges(tmp_path, capsys):
         "where",
         "update",
         "refresh",
+        "sentry-on",
+        "sentry-off",
+        "seat-heat",
+        "steering-heat",
+        "defrost-on",
+        "defrost-off",
+        "precondition",
         "trunk-open",
         "trunk-close",
         "frunk-open",
@@ -565,6 +572,7 @@ def test_cli_lists_parked_commands_and_rejects_bad_ranges(tmp_path, capsys):
         assert name in choices
     assert "frunk-close" not in choices
     assert "close-frunk" not in choices
+    assert "precondition-schedule" not in choices
     with pytest.raises(SystemExit) as caught:
         main(["--home", str(tmp_path), "frunk-close"])
     assert caught.value.code == 2
@@ -629,6 +637,8 @@ def test_install_script_builds_the_signed_command_tool_from_source():
     text = Path("setup/install.sh").read_text(encoding="utf-8")
     assert "go build ./cmd/tesla-control" in text
     assert "github.com/teslamotors/vehicle-command" in text
+    assert "setup/patch_tesla_control_defrost.py" in text
+    assert "python3 -m core gate-check" in text
     for line in text.splitlines():
         if line.strip().startswith("#"):
             continue

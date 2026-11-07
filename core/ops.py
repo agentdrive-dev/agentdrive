@@ -41,7 +41,7 @@ from core.fleet.health import (
 from core.fleet.http import HttpError, UrllibClient
 from core.fleet.queries import FleetReader, QueryError, VehicleAsleep
 from core.fleet.report import VehicleReport, skipped_vehicle_report, skip_text, vehicle_report
-from core.fleet.snapshot import Observation, from_vehicle_data
+from core.fleet.snapshot import SEAT_API_FIELDS, SEAT_HEATER_LEVELS, Observation, from_vehicle_data, seat_heater_names
 from core.fleet.tokens import AtomicTokenStore, FleetTokenRefresher, TokenManager, audience_for
 from core.paths import resolve_key, resolve_token_file
 from core.profile.owner import load_profile
@@ -65,6 +65,13 @@ PUBLIC_COMMANDS = {
     "charge-start": "charging_start",
     "charge-stop": "charging_stop",
     "charge-limit": "charging_set_limit",
+    "sentry-on": "sentry_on",
+    "sentry-off": "sentry_off",
+    "seat-heat": "seat_heater",
+    "steering-heat": "steering_wheel_heater",
+    "defrost-on": "defrost_on",
+    "defrost-off": "defrost_off",
+    "precondition": "cabin_precondition",
     "trunk-open": "trunk_open",
     "trunk-close": "trunk_close",
     "frunk-open": "frunk_open",
@@ -83,6 +90,25 @@ def parse_temp(value: str) -> str:
     if number == int(number):
         return str(int(number))
     return str(number)
+
+
+def parse_seat_heat(seat: str, level: str) -> tuple[str, str]:
+    """Accept only the seat names and levels tesla-control `seat-heater` accepts."""
+    seat_name = " ".join(str(seat).strip().lower().split())
+    level_name = str(level).strip().lower()
+    allowed = ", ".join(seat_heater_names())
+    if seat_name not in SEAT_API_FIELDS.values():
+        raise ConfigError(f"seat must be one the signed tool accepts: {allowed}")
+    if level_name not in SEAT_HEATER_LEVELS:
+        raise ConfigError("seat heater level must be off, low, medium, or high")
+    return seat_name, level_name
+
+
+def parse_on_off(value: str, label: str) -> str:
+    text = str(value).strip().lower()
+    if text not in {"on", "off"}:
+        raise ConfigError(f"{label} must be on or off")
+    return text
 
 
 def parse_limit(value: str) -> str:
@@ -314,11 +340,20 @@ class App:
             sleep=sleep,
         )
 
-    def command(self, name: str, *, preferred: str | None, argument: str | None, statement: str | None, sleep=time.sleep) -> str:
+    def command(
+        self,
+        name: str,
+        *,
+        preferred: str | None,
+        argument: str | None,
+        statement: str | None,
+        extra: list[str] | None = None,
+        sleep=time.sleep,
+    ) -> str:
         spec = PUBLIC_COMMANDS.get(name)
         if spec is None:
             raise ConfigError("unknown command")
-        extra = _extra(name, argument)
+        extra_args = list(extra) if extra is not None else _extra(name, argument)
         if name == "wake":
             chosen = select_vehicle(self.reader.list_vehicles(), preferred)
             key = vehicle_key(chosen)
@@ -341,10 +376,10 @@ class App:
             vin=_key,
             access_token=token,
             observe=observe,
-            extra_args=extra,
+            extra_args=extra_args,
         )
-        if extra:
-            return f"OK: {name} {' '.join(extra)}"
+        if extra_args:
+            return f"OK: {name} {' '.join(extra_args)}"
         return f"OK: {name}"
 
     def _remember(self, payload, observation, *, tyre_bar=None, low_battery_percent=None) -> None:
@@ -415,6 +450,10 @@ class App:
 
 
 def _extra(name: str, argument: str | None) -> list[str] | None:
+    if name == "seat-heat":
+        raise ConfigError("seat and level are required")
+    if name == "steering-heat":
+        raise ConfigError("steering heat must be on or off")
     if name == "set-temp":
         if argument is None:
             raise ConfigError("temp must be 15-28 C")
@@ -437,9 +476,9 @@ def _action_phrase(challenge) -> str:
 
 def _cli_adapter(statement: str | None):
     def prompter(challenge) -> str:
+        phrase = _action_phrase(challenge)
         if statement is not None:
             return statement
-        phrase = _action_phrase(challenge)
         if not sys.stdin.isatty():
             raise ConfirmationRequired(
                 f"This action needs an explicit confirmation. Pass --confirm with a sentence that includes confirm and {phrase}."

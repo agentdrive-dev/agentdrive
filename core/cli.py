@@ -20,7 +20,18 @@ from core.fleet.report import format_report, format_report_json
 from core.history.official import render_news
 from core.history.service import perform_log, render_service_status
 from core.history.usage import render_briefing, render_list, render_tips
-from core.ops import PUBLIC_COMMANDS, build_app, format_check, format_check_json, parse_limit, parse_temp, preferred_vin, resolve_thresholds
+from core.ops import (
+    PUBLIC_COMMANDS,
+    build_app,
+    format_check,
+    format_check_json,
+    parse_limit,
+    parse_on_off,
+    parse_seat_heat,
+    parse_temp,
+    preferred_vin,
+    resolve_thresholds,
+)
 from core.report_schedule import DAILY_REPORT_NOTE, format_schedule, load_report_schedule, set_report_enabled, set_report_time
 from core.paths import resolve_home, resolve_key, resolve_token_file
 from core.redact import scrub
@@ -60,7 +71,22 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("refresh")
     sub.add_parser("status")
-    for name in ("wake", "flash", "honk", "lock", "unlock", "climate-on", "climate-off", "charge-start", "charge-stop"):
+    for name in (
+        "wake",
+        "flash",
+        "honk",
+        "lock",
+        "unlock",
+        "climate-on",
+        "climate-off",
+        "charge-start",
+        "charge-stop",
+        "sentry-on",
+        "sentry-off",
+        "defrost-on",
+        "defrost-off",
+        "precondition",
+    ):
         sub.add_parser(name, parents=[confirmed])
     sub.add_parser("trunk-open", parents=[confirmed], help="Open the rear trunk. Needs a confirmation.")
     sub.add_parser("trunk-close", parents=[confirmed], help="Close the rear trunk when the vehicle can. Needs a confirmation.")
@@ -72,6 +98,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     set_temp = sub.add_parser("set-temp", parents=[confirmed])
     set_temp.add_argument("celsius")
+    seat_heat = sub.add_parser("seat-heat", parents=[confirmed])
+    seat_heat.add_argument("seat")
+    seat_heat.add_argument("level")
+    steering_heat = sub.add_parser("steering-heat", parents=[confirmed])
+    steering_heat.add_argument("state")
     charge_limit = sub.add_parser("charge-limit", parents=[confirmed])
     charge_limit.add_argument("percent")
 
@@ -385,12 +416,17 @@ def _charge_schedule(args, home: Path) -> int:
 
 def _vehicle(args, home: Path) -> int:
     argument = None
+    extra = None
     if args.command == "set-temp":
         argument = args.celsius
         parse_temp(argument)
     elif args.command == "charge-limit":
         argument = args.percent
         parse_limit(argument)
+    elif args.command == "seat-heat":
+        extra = list(parse_seat_heat(args.seat, args.level))
+    elif args.command == "steering-heat":
+        extra = [parse_on_off(args.state, "steering heat")]
     app = build_app(home)
     if args.command == "refresh":
         print(scrub(app.refresh()))
@@ -399,7 +435,17 @@ def _vehicle(args, home: Path) -> int:
         print(scrub(app.status(preferred=preferred_vin())))
         return 0
     statement = getattr(args, "confirm", None)
-    print(scrub(app.command(args.command, preferred=preferred_vin(), argument=argument, statement=statement)))
+    print(
+        scrub(
+            app.command(
+                args.command,
+                preferred=preferred_vin(),
+                argument=argument,
+                statement=statement,
+                extra=extra,
+            )
+        )
+    )
     return 0
 
 

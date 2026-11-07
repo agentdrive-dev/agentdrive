@@ -84,6 +84,6 @@ class AdapterBase:
 
 
 def _schedule_command_is_sensitive(command, sensitive: set[str]) -> bool:
-    # Sensitive spec names, the charge-schedule family, and trunk, frunk, and remote start.
+    # Sensitive spec names, the charge-schedule family, sentry off, and trunk, frunk, and remote start.
     # `check` and `history` stay allowed for the health check and the morning report.
     return schedule_blocks(command, sensitive)

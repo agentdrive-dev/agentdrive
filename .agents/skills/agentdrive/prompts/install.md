@@ -31,7 +31,7 @@ The check does not wake a sleeping vehicle.
 Exit 0 means there is nothing new to report, including when the vehicle is asleep and when the same alerts are still active.
 Exit 1 means a new alert. Notify only when the exit code is 1.
 The same alert stays quiet until it clears and later returns.
-Do not schedule unlock, the trunk, the front trunk, remote start, or a charging change on that routine.
+Do not schedule unlock, turning sentry off, the trunk, the front trunk, remote start, or a charging change on that routine.
 Do not put `agentdrive report` or `agentdrive history due` on that health-check loop.
 AgentDrive does not run that job and does not install cron.
 
