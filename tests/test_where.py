@@ -361,7 +361,9 @@ def test_scope_list_includes_vehicle_location():
     readme = Path("README.md").read_text(encoding="utf-8")
     guide = Path("docs/06-queries-and-commands.md").read_text(encoding="utf-8")
     security = Path("SECURITY.md").read_text(encoding="utf-8")
-    for text in (readme, guide, security):
+    assert "Nominatim" not in readme
+    assert "vehicle_location" not in readme
+    for text in (guide, security):
         assert "Nominatim" in text
         assert "vehicle_location" in text
     assert "rounded" in guide.lower()

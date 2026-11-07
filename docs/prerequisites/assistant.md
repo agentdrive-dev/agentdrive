@@ -4,7 +4,7 @@
 
 Works with Grok Bot, Muse, or any shell-capable AI agent.
 
-The AI agent has to read these docs, run shell commands, store files on the machine, and wait when a step needs you. You choose the AI agent. AgentDrive does not add a fee on top of whatever that AI agent already costs. Everyone pastes the same prompt in [How to start](../../README.md#how-to-start).
+The AI agent has to read these docs, run shell commands, store files on the machine, and wait when a step needs you. You choose the AI agent. AgentDrive does not add a fee on top of whatever that AI agent already costs. Everyone pastes the same short prompt in [How to start](../../README.md#how-to-start). That prompt opens [Before you start](../00-before-you-start.md), which has the full install instructions.
 
 ## Step 1 — Choose an AI agent that can run commands
 

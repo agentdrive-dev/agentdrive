@@ -24,18 +24,20 @@ A location read needs the official `vehicle_location` scope. The owner sign-in s
 
 `agentdrive history` reads the encrypted history file in the config home. `history due` is the morning usage briefing. On 1 January it covers the previous calendar year. On any other 1st it covers the previous calendar month. On Monday it covers the previous seven days, Monday through Sunday. Every other morning it covers the previous local day. Only one of those is sent. `history daily`, `weekly`, `monthly`, and `yearly` print that period when you ask. `history trips`, `history charges`, and `history snapshots` list the saved rows. `--json` prints the same facts as an object. These commands do not call the car.
 
-A parked snapshot is saved when `check` or `report` already has a reading and the car is online. A check that finds nothing new to notify still saves that snapshot. Repeated checks that find the same parked condition update that snapshot's last time, sample count, battery, and tyre readings. A new snapshot starts when the car leaves Park, charging changes, the lock, sentry, doors, windows, or trunk change, a new alert appears, or the odometer moves. Charge readings are kept with the charge session, about once a minute when a reading was seen. The database is encrypted with AES-256-GCM. The key is `$AGENTDRIVE_HOME/history.key`, created on first save, mode 600 on macOS and Linux. The Python dependency is `cryptography`.
+A parked snapshot is saved when `check` or `report` already has a reading and the car is online. A check that finds nothing new to notify still saves that snapshot. Repeated checks that find the same parked condition update that snapshot's last time, sample count, battery, and tyre readings. A new snapshot starts when the car leaves Park, charging changes, the lock, sentry, doors, windows, or trunk change, a new alert appears, or the odometer moves. Charge readings are kept with the charge session, about once a minute when a reading was seen. The database is encrypted with AES-256-GCM. The key is `$AGENTDRIVE_HOME/history.key`, created on first save, mode 600 on macOS and Linux. The Python dependency is `cryptography`. SQLCipher is not required. The key is not in the git repo and must not be pasted into chat.
+
+What is saved: trip summaries (time, distance from the odometer change, battery, lock, gear, and sentry), charge sessions (time, start and end percent, energy added when the car sent it, and whether it was plugged in), those charge readings, parked snapshots, alerts when they appear, and software or unit settings when they change. A service you mention, such as a tyre rotation, is stored against the last saved odometer. How full the charge curve looks depends on how often the usual check runs while the car is already online or charging. AgentDrive does not run in the background to fill the gaps.
 
 `agentdrive news` prints one new official item from `https://www.tesla.com` for the profile country, or for the computer's timezone when the profile has no country. The Monday weekly briefing includes that same item: a short summary and the official link. A safety notice is preferred. The same item is not shown again for two calendar months. When there is nothing new, the command prints nothing and the briefing leaves that part out. It does not wake the car.
 
-`agentdrive tips` says whether one short tip is included this morning. Tips are shown on Monday, Wednesday, Friday, and the 1st. The same tip is not shown again for two calendar months. A usage tip is not a stand-in for an empty official check. `agentdrive service` shows kilometres since a logged tyre rotation, tyre replacement, or other service. `service log rotation`, `service log replacement`, and `service log maintenance` record that event against the latest saved odometer. Tyre service uses 10,000 km (6,250 miles) unless you set `--interval-km`. Replacing tyres depends on tread. A due reminder is added to the morning briefing, and that same reminder waits two calendar months before it is sent again.
+`agentdrive tips` says whether one short tip is included this morning. Tips are shown on Monday, Wednesday, Friday, and the 1st. The same tip is not shown again for two calendar months. A usage tip is not a stand-in for an empty official check. `agentdrive service` shows kilometres since a logged tyre rotation, tyre replacement, or other service. `service log rotation`, `service log replacement`, and `service log maintenance` record that event against the latest saved odometer. Tyre service uses 10,000 km (6,250 miles) unless you set `--interval-km`. Replacing tyres depends on tread. A `--note` can name the service, such as a cabin filter. A due reminder is added to the morning briefing, and that same reminder waits two calendar months before it is sent again. `tips`, `news`, and `service` do not wake the car.
 
 Commands:
 
 | Command | What it sends | Confirmation |
 | --- | --- | --- |
 | `where` | no signed command; one `location_data` read when the car is already online | no |
-| `wake` | signed `wake` | no |
+| `wake` | signed `wake` | no, and it does not use the park check |
 | `flash` | signed `flash-lights` | no |
 | `honk` | signed `honk` | no |
 | `lock` | signed `lock` | no |
@@ -47,8 +49,13 @@ Commands:
 | `charge-schedule show` | read `charge_schedule_data` | no, and it does not wake |
 | `charge-schedule set <days> <time> <latitude> <longitude>` | signed `charging-schedule-add` | yes, one time |
 | `charge-schedule remove <id>` | signed `charging-schedule-remove` | yes, one time |
+| `history trips`, `history charges`, `history snapshots` | no signed command; saved history only | no, and it does not contact the car |
+| `history due`, `history daily`, `history weekly`, `history monthly`, `history yearly` | no signed command; saved history only | no |
+| `tips` | no signed command | no, and it does not contact the car |
+| `news` | no signed command; reads the official Tesla site for the owner's country | no, and it does not wake the car |
+| `service`, `service log rotation`, `service log replacement`, `service log maintenance` | no signed command; uses the saved odometer | no, and it does not wake the car |
 
-Unlock and every charging change go through the existing confirmation layer. A schedule cannot confirm them. State-changing commands are sent only in Park at speed 0, then read back once. Trunk, frunk, and remote start are planned on that same gate. See [Next](../README.md#next).
+Unlock and every charging change go through the existing confirmation layer. A schedule cannot confirm them. State-changing commands are sent only in Park at speed 0, then read back once.
 
 ## In-car charging timetable
 
@@ -93,12 +100,14 @@ agentdrive check
 agentdrive report
 agentdrive report-schedule
 agentdrive report-schedule set 07:30
+agentdrive report-schedule disable
+agentdrive report-schedule enable
 agentdrive where
 agentdrive charge-schedule show
 agentdrive update
 ```
 
-`agentdrive status` does not request location. The client refuses the business-only charging sessions route. Nearby charging reads keep location and stall counts. Further commands we intend to add are listed under [Next](../README.md#next).
+`agentdrive status` does not request location. The client refuses the business-only charging sessions route. Nearby charging reads keep location and stall counts.
 
 ## Expected result
 

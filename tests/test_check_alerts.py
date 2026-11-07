@@ -17,7 +17,7 @@ TOKEN = "access-token"
 ROOT = Path(__file__).resolve().parents[1]
 
 THIRTY_MINUTES = (
-    "README.md",
+    "docs/00-before-you-start.md",
     "docs/01-install-and-safety.md",
     "docs/06-queries-and-commands.md",
     "docs/07-assistants.md",

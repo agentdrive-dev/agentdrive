@@ -2,7 +2,7 @@
 
 [Back to the checklist](00-before-you-start.md)
 
-A beginner pastes the prompt in [How to start](../README.md#how-to-start). This page is what the AI agent runs after that person accepts in a later message.
+A beginner pastes the short prompt in [How to start](../README.md#how-to-start). That prompt sends the AI agent to [Before you start](00-before-you-start.md), where the full install prompt lives. This page is what the AI agent runs after that person accepts in a later message.
 
 Installation is two turns. The first turn shows the documents. A later turn records your acceptance. The installer will not create that acceptance for you.
 
@@ -28,7 +28,7 @@ Override a wrong detection with `bash setup/install.sh --adapter template`.
 
 ## Step 3 — What the safety gate will refuse
 
-A state-changing command is sent only when the shift state is Park and the speed is 0. Unlock, remote start, the front trunk, the rear trunk, sentry off, and charging changes each need an explicit confirmation for that action. The next action needs a new one. A schedule cannot supply it. Trunk, frunk, and remote start, when added, use this same gate. See [Next](../README.md#next).
+A state-changing command is sent only when the shift state is Park and the speed is 0. Unlock, remote start, the front trunk, the rear trunk, sentry off, and charging changes each need an explicit confirmation for that action. The next action needs a new one. A schedule cannot supply it.
 
 ## After install — health check
 
