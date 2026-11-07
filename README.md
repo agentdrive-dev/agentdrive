@@ -12,221 +12,70 @@ Source, issues, and the project page are on [GitHub](https://github.com/agentdri
 
 AgentDrive is unofficial. It is not affiliated with, endorsed by, or supported by Tesla.
 
-You chat in plain words with an AI agent. That AI agent translates the chat into AgentDrive commands. You do not learn or type those commands. Grok Bot, Muse, or any shell-capable AI agent uses this same path. You register your own developer application, publish your own public key, and keep every secret on your own machine. The public key is hosted on GitHub Pages (`<username>.github.io`). You do not buy a domain. Docs are published at <https://agentdrive-dev.github.io/agentdrive>.
-
-## How to start
-
 **You just chat in plain words. The AI agent translates that into AgentDrive commands. You do not need to learn, memorize, or type the CLI commands.**
 
-You already have an AI agent that can run shell commands on a computer. Grok Bot brings its own computer. Muse or any other shell-capable AI agent uses this same path.
+Grok Bot, Muse, or any shell-capable AI agent uses this same path.
 
-Copy this prompt and paste it to your AI agent. Then do only the approvals it asks for.
-
-```text
-Install AgentDrive from https://github.com/agentdrive-dev/agentdrive.
-Clone it to ~/agentdrive and read README.md, DISCLAIMER.md, and SECURITY.md.
-Show me the disclaimer and the security reminder in full, then stop and wait.
-Do not install anything until I reply in a later message with this sentence:
-I have read, understood, and accept the AgentDrive disclaimer and security reminder
-After that, follow "What the AI agent runs" in the README one step at a time,
-tell me whenever a step needs me (GitHub login, the Tesla developer app and billing, browser Tesla sign-in, the virtual key in the Tesla phone app),
-and keep every secret in ~/.config/agentdrive (or $AGENTDRIVE_HOME), never in chat or in the repo.
-The same install is used for every shell-capable AI agent. Do not invent a second installer.
-After install, run agentdrive report-schedule. The default is 07:30 local time and enabled.
-Create one daily job at that time that runs agentdrive history due and send me that usage briefing.
-On Monday send the previous week, on the 1st the previous month, and on 1 January the previous year.
-Every other morning send the previous day. That one job is the whole morning briefing:
-the usage report, a short tip on some mornings, a service reminder when one is due, and
-on a Monday weekly briefing one official Tesla note only when the local Tesla site has
-something new. If it does not, leave that part out. Do not add a second morning job.
-Also schedule a health check that runs agentdrive check --json every 30 minutes.
-Notify me only when it exits 1. Exit 0 means nothing new, including when the car
-is asleep and when the same alert is still active. That alert stays quiet until
-it clears and later returns. Do not wake the car from that check, and do not
-schedule unlock or a charging change. This check is separate from the one daily
-morning job above. AgentDrive does not run it itself.
-agentdrive report is the live snapshot when I want the car's current status, including
-the skip line when the car is asleep. If I later ask for a different time or to turn the
-briefing off, update the stored schedule and update that job.
-AgentDrive does not run it itself.
-```
-
-After you paste it, the AI agent shows [DISCLAIMER.md](DISCLAIMER.md) and [SECURITY.md](SECURITY.md) in full, then stops. You reply in a later message with the acceptance sentence below. Same-turn acceptance is rejected. The installer checks the stamp and will not create it. The AI agent then installs one step at a time and interrupts only for the approvals in [What you will do](#what-you-will-do).
-
-### What you need
-
-- A [Tesla account that owns the car](docs/prerequisites/vehicle-account.md).
-- A [Tesla that supports virtual keys](docs/prerequisites/vehicle-compatibility.md) (most cars from 2021 on do).
-- An [AI agent](docs/prerequisites/assistant.md) that can run shell commands on a [computer](docs/prerequisites/computer.md), for example Grok Bot (brings its own computer), Muse, or any shell-capable AI agent.
-- A [Tesla developer account](docs/prerequisites/developer-app.md) with a [payment method and a billing limit above 0](docs/prerequisites/billing.md). It uses the same Tesla login, not a new account. Tesla bills API use. A $10 monthly credit is published for individual developers.
-- A [GitHub account](docs/prerequisites/public-key-host.md), used to host the public key on GitHub Pages. You do not buy a domain.
-
-### What you will do
-
-[About an hour, mostly approvals.](docs/prerequisites/time.md)
-
-1. Paste the prompt above to your AI agent.
-2. Read the [disclaimer](DISCLAIMER.md) and the [security reminder](SECURITY.md), then reply in a separate message with: `I have read, understood, and accept the AgentDrive disclaimer and security reminder`
-3. Approve GitHub login once when asked.
-4. Create the Tesla developer app and add billing when asked. The AI agent tells you what to fill in. Put the secret in a file, never in chat.
-5. Sign in to Tesla in your browser when the AI agent gives you a link.
-6. Approve the key in the Tesla app on your phone. See [Virtual key](docs/prerequisites/virtual-key.md).
-
-Everything else (installing, publishing the key, registering, tokens, doctor, the daily report, test command) your AI agent does and reports back.
-
-[Full step-by-step guide](docs/00-before-you-start.md#full-step-by-step-guide)
+You chat normally with an AI agent to control a parked Tesla. This is conversational parked-car control, not an official Tesla product.
 
 ## How it works
 
 ![How it works. You chat in plain words. The AI agent runs AgentDrive. AgentDrive reads the Tesla Fleet API and signs parked commands for the vehicle.](docs/images/how-it-works.svg)
 
-The AI agent runs AgentDrive on your computer after you chat. Reads use the Tesla Fleet API. Parked commands are signed with your key. Those commands act while the vehicle is parked. AgentDrive does not drive the vehicle.
+You say what you want. The AI agent runs AgentDrive on your computer. Reads use the Tesla Fleet API. Parked commands are signed with your key. Those commands act while the vehicle is parked.
 
-## What this version does
+## What you can do
 
 ![What it does. A friendly picture of reads, parked changes, and safety checks. The AI agent runs these after you chat.](docs/images/what-it-does.svg)
 
-**This table is a reference, not homework. You chat in plain words. The AI agent runs these commands for you. You do not need to learn, memorize, or type them.**
+Say it in a sentence. The AI agent does the rest.
 
-These are the commands the AI agent can run in `agentdrive` today. Grok Bot and Muse have been used for basic real-car commands. That trial does not cover every command in this repository.
+**Run the parked car from the chat.** Lock or unlock it, turn the climate on or off, set the temperature, start or stop charging, and set a charge limit. Flash the lights or honk. Unlock and charging each wait for a confirmation. You can also set the car's own charging timetable, or ask which area the car is parked in.
 
-`agentdrive status` may wake a sleeping car. `agentdrive check`, `agentdrive report`, `agentdrive where`, `agentdrive charge-schedule show`, `agentdrive history`, `agentdrive tips`, and `agentdrive service` never wake. `agentdrive wake` is a separate command. A parked command is sent only in Park at speed 0, then the car is read once. `wake` does not use that park check. The VIN in a status reading is masked. Status, check, the daily report, and history do not request location. `where` requests location only when the car is already online, and it prints a coarse area rather than coordinates.
+**Get a health alert when something new needs you.** Tyre pressure, a low battery, a charge problem, or the car left unlocked or open. You hear about it when it is new. The same alert then stays quiet until it clears and comes back.
 
-`agentdrive doctor` checks the local setup. `agentdrive refresh` refreshes the access token. A later command refreshes on its own when fewer than 30 minutes remain.
+**Review how the car was used.** Ask for a usage review, or receive a morning briefing: the previous day, the previous week on Monday, the previous month on the 1st, and the previous year on 1 January. Some mornings include a short tip, a service reminder when one is due, and on Monday one official Tesla note when there is something new.
 
-| Command | Confirmation |
-| --- | --- |
-| `where` | no, and it does not wake the car |
-| `wake` | no, and it does not use the park check |
-| `flash`, `honk`, `lock` | no |
-| `climate-on`, `climate-off` | no |
-| `set-temp <C>` | no, and only 15 to 28 C |
-| `unlock` | yes, one time |
-| `charge-start`, `charge-stop` | yes, one time |
-| `charge-limit <percent>` | yes, one time, and only 50 to 100 |
-| `charge-schedule show` | no. It does not wake a sleeping car |
-| `charge-schedule set <days> <time> <latitude> <longitude>` | yes, one time |
-| `charge-schedule remove <id>` | yes, one time |
-| `history trips`, `history charges`, `history snapshots` | no. Saved history only. It does not contact the car |
-| `history due`, `history daily`, `history weekly`, `history monthly`, `history yearly` | no. Saved history only |
-| `tips` | no. It does not contact the car |
-| `news` | no. It reads the official Tesla site for the owner's country and does not wake the car |
-| `service`, `service log rotation`, `service log replacement`, `service log maintenance` | no. It uses the saved odometer and does not wake the car |
-
-Unlock and charging changes are immediate commands. A scheduled job cannot run them or confirm them.
-
-### In-car charging timetable
-
-```bash
-agentdrive charge-schedule show
-agentdrive charge-schedule show --json
-agentdrive charge-schedule set weekdays 22:00-06:00 1 2 --confirm "I confirm charging schedule set"
-agentdrive charge-schedule set all 23:30- --once --confirm "I confirm charging schedule set"
-agentdrive charge-schedule set Mon,Wed -06:00 1 2 --enabled false --confirm "I confirm charging schedule set"
-agentdrive charge-schedule remove 1700000000 --confirm "I confirm charging schedule remove"
-```
-
-`charge-schedule show` reads the in-car timetable (`charge_schedule_data`) and leaves a sleeping or offline car asleep. `set` adds one schedule. `remove` deletes one id. `set` and `remove` are charging changes: they wake a sleeping car, then require Park, speed 0, and a fresh confirmation. A scheduled job cannot confirm them. The coordinates `1` and `2`, and the id `1700000000`, are placeholders.
-
-`days` is `all`, `weekdays`, or a comma-separated list of `Sun`, `Mon`, `Tues`, `Wed`, `Thurs`, `Fri`, `Sat` (full names are accepted). `time` is a 24-hour window in the vehicle's local time: `22:00-06:00`, a start only (`22:00-`), or an end only (`-06:00`). The end may fall on the next day. Latitude and longitude are the charging-site coordinates in decimal degrees, from -180 to 180. `--once` runs the schedule one time; omit it to repeat every week. `--enabled false` adds the schedule turned off. The default is on.
-
-`show` prints the id, whether the row is enabled, the days, the start and end, weekly or once, the charging-site coordinates, and a name when the car sends one. The field list and the firmware note are in [Queries and commands](docs/06-queries-and-commands.md#in-car-charging-timetable).
-
-### Check, daily report, and update
-
-```bash
-agentdrive check
-agentdrive report
-agentdrive report-schedule
-agentdrive report-schedule set 07:30
-agentdrive report-schedule disable
-agentdrive report-schedule enable
-agentdrive where
-agentdrive update
-```
-
-`agentdrive check` prints that it skipped, and exits 0, when the car is not online. A skip does not change the alerts already remembered. When the car is online it looks for a TPMS warning, a tyre below the threshold, a low battery that is not charging, sentry off while the battery is low and the vehicle is not charging, the car unlocked or open while parked, or a charge error. It exits 1 only when an alert is new, and it prints those new alerts. The same alert exits 0, and is not printed again, until it clears and later returns. A different new alert still exits 1 while an older one continues. `agentdrive check --json` prints a short object. On install, the AI agent is asked to run that check every 30 minutes and to notify only when the exit code is 1. AgentDrive does not run that job and does not install cron. The morning usage briefing stays the separate daily job. Remembered alert codes stay in the private config home. They are not written into the git checkout.
-
-`agentdrive report` prints a short briefing the AI agent should send to you: battery, charge connection, lock, gear, doors, windows, trunk, sentry, climate, tyres, and TPMS. It reads the same parked snapshot as `check` and does not request location. If the vehicle list says the car is asleep, offline, or otherwise not online, it prints the same skip line as `check` and exits 0. A timeout or HTTP 408 is the same skip. It never wakes the car. `--json` prints that briefing as an object. This is a report to send every time, including the skip line. It is not an alerts-only health check.
-
-The default schedule is 07:30 in your local timezone, and it is enabled. `agentdrive report-schedule` shows that time. The setting is stored in the private config home (`$AGENTDRIVE_HOME/runtime.yaml`, or `~/.config/agentdrive` when the variable is unset) only after you change it. After install, the AI agent creates one daily job at the configured time. That job runs `agentdrive history due` and sends you the usage briefing. On Monday the briefing is the previous week (Monday through Sunday). On the 1st it is the previous month. On 1 January it is the previous year. Every other morning it is the previous day. Only one of those is sent. Say when you want a different time, or when you want the briefing off. The AI agent then runs `report-schedule set HH:MM`, `disable`, or `enable`, and updates its own job. AgentDrive does not run in the background, and it does not rewrite that job, a crontab, or a systemd timer. The schedule command prints a crontab example for a host that prefers cron. The job still needs the AI agent, or a cron line you add yourself, to start it.
-
-`agentdrive report` stays the live parked snapshot: battery, charge connection, lock, gear, doors, windows, trunk, sentry, climate, tyres, and TPMS, right now. Ask for it when you want the car's current status. It is separate from the morning history. It still skips, and does not wake the car, when the car is asleep.
-
-### History on this computer
-
-Ask how yesterday went, or how last month looked. The AI agent reads history saved on your computer. You do not type the commands, and the car is not woken to answer.
-
-`agentdrive check` and `agentdrive report` save a snapshot when the car is already online. A sleeping car is skipped, and nothing is written for that skip. A check that finds nothing new to notify still saves the snapshot. While the car stays parked and the meaningful state stays the same, later checks update that snapshot: first time, last time, how many checks were folded in, and the latest battery and tyre readings. A new snapshot starts when the car leaves Park, charging changes, the lock, sentry, doors, windows, or trunk change, a new alert appears, or the odometer moves. Charge readings stay with the charge session, about once a minute when a reading was seen. The file is encrypted. The key stays in the private config home (`history.key`). It is not in the git repo and it must not be pasted into chat. The Python package `cryptography` provides AES-256-GCM. SQLCipher is not required.
-
-What is saved: trip summaries (time, distance from the odometer change, battery, lock, gear, and sentry), charge sessions (time, start and end percent, energy added when the car sent it, and whether it was plugged in), those charge readings, parked snapshots, alerts when they appear, and software or unit settings when they change. A service you mention, such as a tyre rotation, is stored against the last saved odometer. How full the charge curve looks depends on how often the usual check runs while the car is already online or charging. AgentDrive does not run in the background to fill the gaps.
-
-```bash
-agentdrive history due
-agentdrive history trips
-agentdrive history charges --json
-agentdrive history snapshots
-agentdrive tips
-agentdrive news
-agentdrive service
-agentdrive service log rotation
-agentdrive service log replacement
-agentdrive service log maintenance --note "cabin filter" --interval-km 20000
-```
-
-`history due` is the morning briefing. After install, the AI agent creates one daily job at the report-schedule time and sends that briefing. There is no second morning routine. `history daily`, `weekly`, `monthly`, and `yearly` print that period when you ask. `tips` is the occasional usage tip already included on some mornings. The same tip is not repeated for two calendar months. `service` shows kilometres since a logged tyre change or service. Tyre service uses Tesla's published rotation interval of 6,250 miles / 10,000 km unless you set another interval. Replacing tyres depends on tread, not a fixed distance. If no odometer is saved yet, say so after the next online check. That check does not wake the car. A due reminder is included in the same morning briefing, and the same reminder is not repeated for two calendar months.
-
-On a Monday weekly briefing, `history due` also adds one official item from the Tesla site for the country in the private profile, or from the computer's timezone when the profile has no country. A safety notice comes before other owner updates. The note is a short summary and the official link. The same item is not repeated for two calendar months. When the site has nothing new, that part of the briefing is left out. `agentdrive news` prints the same item on demand. It does not wake the car.
-
-`agentdrive where` prints a suburb or locality, a state or region, and a country. It skips, and does not wake the car, when the car is asleep or offline. A rounded point (two decimal places, about 1 km) is sent to OpenStreetMap Nominatim so the place name can be resolved. The precise point is not sent. Coordinates are not printed. If the token lacks the `vehicle_location` scope, the command says to re-authorize with that scope.
-
-`agentdrive update` updates this checkout from the latest `main` and leaves private config in `~/.config/agentdrive` (or `$AGENTDRIVE_HOME`).
-
-## Next
-
-Work we intend to add:
-
-- Trunk, frunk, and remote start on the command line. The signed-command path, the park check, and the one-time confirmation already cover those actions.
-- Onboarding, trip advisor, and charging tips. Onboarding walks registration after the disclaimer gate. Trip advisor compares a planned drive with current range from a saved suburb, and keeps live coordinates out of the AI agent's memory. Charging tips turns saved charging history and nearby stall counts into a short suggestion.
-
-## Illustrative example
+## A conversation
 
 ![Illustrative example — sample data. A sample chat about battery and a lights flash. The figures are sample data, not a vehicle reading or a transcript.](docs/images/ask-in-plain-words.svg)
 
 The figures are sample data, not a vehicle reading or a transcript.
 
+## A morning report
+
+On a normal morning the AI agent can send a usage review like this. Illustrative sample. The figures are sample data, not a vehicle reading or a transcript.
+
+```text
+This morning's report is the daily vehicle history.
+Daily vehicle history for 2026-11-06
+Saved on this computer. This does not contact the car.
+Trips: 2, 48 km. Energy used 9.4 kWh.
+Charges: 1, energy added 18.2 kWh, 12 charge readings.
+Snapshots: 14
+Alerts: none
+Tip: You do not need to memorize commands. Say what you want in plain words. The AI agent turns that into AgentDrive.
+```
+
+## How to start
+
+Have an AI agent that can run shell commands. Paste the prompt below. Then only handle the confirmations it asks for. About an hour, mostly approvals: you accept the disclaimer, approve a GitHub login, create the Tesla developer app, sign in to Tesla in the browser, and approve the key in the Tesla app.
+
+[**Open the install page**](docs/00-before-you-start.md)
+
+Paste this to your AI agent:
+
+```text
+Install AgentDrive. Open the install instructions and follow them exactly:
+https://agentdrive-dev.github.io/agentdrive/docs/00-before-you-start.html
+That page is also docs/00-before-you-start.md in the repository after you clone.
+Do not invent a second installer or its own steps.
+Only ask me for the approvals those instructions say the human must do.
+```
+
 ## Disclaimer
 
 Experimental and testing purposes only. AgentDrive is unofficial and is not a Tesla product. Use it only on a vehicle you own, or a vehicle you are explicitly allowed to control. To the maximum extent permitted by law the software is provided as is, and the author's liability is excluded. Nothing here excludes a right under the Australian Consumer Law that cannot be excluded. The full text is in [DISCLAIMER.md](DISCLAIMER.md). Read [SECURITY.md](SECURITY.md) before you install.
-
-## What the AI agent runs
-
-Your AI agent runs this install after you paste the prompt in [How to start](#how-to-start) and send the acceptance sentence in a later message. Grok Bot, Muse, and any other AI agent that can run shell commands use this same install.
-
-1. Get the code.
-
-```bash
-git clone https://github.com/agentdrive-dev/agentdrive.git ~/agentdrive
-cd ~/agentdrive
-```
-
-2. Read [DISCLAIMER.md](DISCLAIMER.md) and [SECURITY.md](SECURITY.md) in full. The AI agent must show both documents and then stop. In a later message, reply with this sentence:
-
-`I have read, understood, and accept the AgentDrive disclaimer and security reminder`
-
-3. From the repository root, after that separate acceptance, record it and install. Use a different `--turn-id` for each chat message. Same-turn acceptance is rejected. The installer checks the stamp and will not create it.
-
-```bash
-PYTHONPATH=. python3 -m core gate-present --turn-id 1
-PYTHONPATH=. python3 -m core gate-accept --turn-id 2 --statement "I have read, understood, and accept the AgentDrive disclaimer and security reminder"
-bash setup/install.sh
-```
-
-`gate-present` prints the disclaimer and the security file in full.
-
-After install, the AI agent schedules `agentdrive check --json` every 30 minutes. Notify only when that command exits 1. Exit 0 means nothing new, including when the car is asleep and when the same alerts are still active. The same alert stays quiet until it clears and later returns. The check does not wake the car. Do not schedule unlock or a charging change on it. AgentDrive does not run that job. It is separate from the daily morning briefing.
-
-After install, the AI agent reads `agentdrive report-schedule`. The default is 07:30 local time and enabled. It creates one daily job at that time that runs `agentdrive history due` and sends that usage briefing. On Monday it sends the previous week, on the 1st the previous month, and on 1 January the previous year. Every other morning it sends the previous day. `agentdrive report` remains available when you want the car's current status, including the skip line when the car is asleep. A later change of time, or turning the briefing off, is `agentdrive report-schedule set HH:MM`, `disable`, or `enable`. The AI agent then updates its own job. AgentDrive does not install that job.
 
 ## Supported agents
 

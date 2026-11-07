@@ -29,41 +29,59 @@ def _files():
         yield path
 
 
+INSTALL_URL = "https://agentdrive-dev.github.io/agentdrive/docs/00-before-you-start.html"
+ACCEPTANCE = "I have read, understood, and accept the AgentDrive disclaimer and security reminder"
+
+
 def test_homepage_how_to_start_leads_with_the_paste_prompt():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     how_at = readme.index("## How to start")
-    runs_at = readme.index("## What the AI agent runs")
-    assert how_at < readme.index("## How it works")
-    assert how_at < readme.index("## What this version does")
-    assert how_at < readme.index("## Illustrative example")
-    assert readme.index("## Disclaimer") < runs_at < readme.index("## Supported agents")
-    how = readme[how_at:readme.index("## How it works")]
-    before_prompt = how.split("```text", 1)[0]
-    for banned in ("git clone", "PYTHONPATH", "gate-present", "gate-accept", "setup/install.sh"):
-        assert banned not in before_prompt
-        assert banned not in how
+    disclaimer_at = readme.index("## Disclaimer")
+    assert readme.index("## How it works") < readme.index("## What you can do") < how_at
+    assert readme.index("## A conversation") < readme.index("## A morning report") < how_at
+    assert how_at < disclaimer_at < readme.index("## Supported agents")
+    how = readme[how_at:disclaimer_at]
     assert "<details>" not in how
     assert "```text" in how
-    for required in (
-        "DISCLAIMER.md",
-        "SECURITY.md",
-        "I have read, understood, and accept the AgentDrive disclaimer and security reminder",
+    assert INSTALL_URL in how
+    assert "docs/00-before-you-start.md" in how
+    assert "follow them exactly" in how.lower()
+    assert "Do not invent a second installer or its own steps." in how
+    assert "Only ask me for the approvals those instructions say the human must do." in how
+    assert "[**Open the install page**](docs/00-before-you-start.md)" in how
+    assert "about an hour" in how.lower()
+    for banned in (
+        "git clone",
+        "PYTHONPATH",
+        "gate-present",
+        "gate-accept",
+        "setup/install.sh",
         "What the AI agent runs",
-        "You just chat in plain words.",
-        "You do not need to learn, memorize, or type the CLI commands.",
-        "~/.config/agentdrive",
-        "$AGENTDRIVE_HOME",
-        "Same-turn acceptance is rejected",
-        "will not create it",
+        "Get the code",
     ):
-        assert required in how
-    technical = readme[runs_at:readme.index("## Supported agents")]
-    assert "git clone https://github.com/agentdrive-dev/agentdrive.git ~/agentdrive" in technical
-    assert "PYTHONPATH=. python3 -m core gate-present --turn-id 1" in technical
-    assert 'gate-accept --turn-id 2 --statement "I have read, understood, and accept the AgentDrive disclaimer and security reminder"' in technical
-    assert "bash setup/install.sh" in technical
-    assert "Same-turn acceptance is rejected" in technical
-    assert "will not create it" in technical
+        assert banned not in how
+    for banned in (
+        "git clone",
+        "gate-present",
+        "TeslaMate",
+        "teslamate",
+        "trip advisor",
+        "charging tips",
+        "frunk",
+        "remote start",
+        "## Next",
+        "## What this version does",
+        "## Not in this version",
+        "### Not in this version",
+        "may wake a sleeping car",
+        "| Command |",
+    ):
+        assert banned not in readme
+    assert "**You just chat in plain words." in readme
+    assert "The AI agent translates that into AgentDrive commands." in readme
+    assert "You do not need to learn, memorize, or type the CLI commands." in readme
+    assert "Grok Bot, Muse, or any shell-capable AI agent uses this same path." in readme
+    assert "not an official tesla product" in readme.lower()
     for image in (
         "docs/images/how-it-works.svg",
         "docs/images/what-it-does.svg",
@@ -71,39 +89,69 @@ def test_homepage_how_to_start_leads_with_the_paste_prompt():
     ):
         assert image in readme
     assert "sample data" in readme.lower()
+    assert "not a vehicle reading or a transcript" in readme.lower()
 
 
-def test_readme_next_lists_planned_work_in_positive_language():
+def test_install_page_holds_the_full_prompt_and_agent_steps():
+    page = (ROOT / "docs" / "00-before-you-start.md").read_text(encoding="utf-8")
+    how_at = page.index("## How to start")
+    need_at = page.index("## What you need")
+    will_at = page.index("## What you will do")
+    runs_at = page.index("## What the AI agent runs")
+    guide_at = page.index("## Full step-by-step guide")
+    assert how_at < need_at < will_at < runs_at < guide_at
+    how = page[how_at:need_at]
+    prompt = how.split("```text", 1)[1].split("```", 1)[0]
+    assert "in the README" not in prompt
+    assert "docs/00-before-you-start.md" in prompt
+    assert "The prompt is on that page in full" not in page
+    assert "../README.md#what-the-ai-agent-runs" not in page
+    assert "../README.md#next" not in page
+    for required in (
+        "DISCLAIMER.md",
+        "SECURITY.md",
+        ACCEPTANCE,
+        "What the AI agent runs",
+        "You just chat in plain words.",
+        "You do not need to learn, memorize, or type the CLI commands.",
+        "~/.config/agentdrive",
+        "$AGENTDRIVE_HOME",
+        "Do not invent a second installer.",
+        "07:30",
+        "agentdrive history due",
+        "every 30 minutes",
+        "agentdrive check --json",
+        "agentdrive report",
+        "Same-turn acceptance is rejected",
+        "will not create it",
+        "the previous week",
+        "the previous month",
+        "the previous year",
+        "the previous day",
+    ):
+        assert required in how
+    technical = page[runs_at:guide_at]
+    assert "git clone https://github.com/agentdrive-dev/agentdrive.git ~/agentdrive" in technical
+    assert "PYTHONPATH=. python3 -m core gate-present --turn-id 1" in technical
+    assert f'gate-accept --turn-id 2 --statement "{ACCEPTANCE}"' in technical
+    assert "bash setup/install.sh" in technical
+    assert "Same-turn acceptance is rejected" in technical
+    assert "will not create it" in technical
+    assert "different `--turn-id`" in technical
+    for number in range(1, 10):
+        assert f"{number:02d}-" in page[guide_at:]
+
+
+def test_homepage_does_not_list_unfinished_work():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "## Next" not in readme
     assert "## Not in this version" not in readme
     assert "### Not in this version" not in readme
-    next_at = readme.index("## Next")
-    assert readme.index("## What this version does") < next_at < readme.index("## Illustrative example")
-    section = readme[next_at:readme.index("## Illustrative example")]
-    lowered = section.lower()
-    for banned in ("no scheduled", "no where", "no automatic", "no trunk", "no china", "not in this version"):
-        assert banned not in lowered
-    assert "supercharger" not in lowered
-    assert "china-region" not in lowered
-    assert "charging timetable" not in lowered
-    assert "charge-schedule" not in lowered
-    assert "where" not in lowered
-    assert "coarse area" not in lowered
-    assert "morning report" not in lowered
-    assert "stays quiet unless something needs attention" not in lowered
-    assert "trunk" in lowered and "frunk" in lowered and "remote start" in lowered
-    for skill in ("onboarding", "trip advisor", "charging tips"):
-        assert skill in lowered
-    assert "news watch" not in lowered
-    assert "saved charging history" in lowered
-    assert "nearby stall counts" in lowered
-    assert "telemetry" not in lowered
-    assert "unconfirmed against a live response" not in lowered
-    assert "revised design" not in lowered
-    commands = readme[readme.index("## What this version does"):next_at]
-    before_table = commands.split("| Command |", 1)[0]
-    assert "reference, not homework" in before_table.lower()
-    assert "you do not need to learn, memorize, or type them" in before_table.lower()
+    for path in [ROOT / "README.md", *(ROOT / "docs").rglob("*.md")]:
+        text = path.read_text(encoding="utf-8")
+        assert "Not in this version" not in text, path
+        assert "README.md#next" not in text, path
+    commands = (ROOT / "docs" / "06-queries-and-commands.md").read_text(encoding="utf-8")
     assert "| `where`" in commands
     assert "agentdrive where" in commands
     assert "charge-schedule show" in commands
@@ -111,6 +159,9 @@ def test_readme_next_lists_planned_work_in_positive_language():
     assert "charge-schedule remove" in commands
     assert "agentdrive report" in commands
     assert "report-schedule" in commands
+    assert "history due" in commands
+    assert "does not use the park check" in commands
+    assert "SQLCipher is not required" in commands
     assert "stays quiet unless something needs attention" not in commands.lower()
 
 
@@ -123,7 +174,6 @@ def test_guides_and_checklist_links():
         text = page.read_text(encoding="utf-8")
         assert "[Back to the checklist](../00-before-you-start.md)" in text
         assert f"prerequisites/{name}" in checklist
-        assert f"docs/prerequisites/{name}" in readme
         for section in re.findall(r"(## Step [\s\S]*?)(?=\n## |\Z)", text):
             assert "../images/" in section and ".svg" in section
     for number in range(10):
@@ -181,3 +231,42 @@ def test_repo_has_no_personal_data_or_secrets():
         if path.suffix == ".py" and "regions.yaml" not in relative:
             for host in ("fleet-api.prd", "developer.tesla.com", "auth.tesla.com", "fleet-auth", "tesla.cn"):
                 assert host not in text, relative
+
+
+def _without_fences(text: str) -> str:
+    return re.sub(r"(?s)```.*?```", "", text)
+
+
+def _heading_slugs(text: str) -> set[str]:
+    counts = {}
+    slugs = set()
+    for line in text.splitlines():
+        match = re.match(r"^#{1,6}\s+(.+?)\s*#*\s*$", line)
+        if not match:
+            continue
+        raw = re.sub(r"`([^`]*)`", r"\1", match.group(1).strip())
+        raw = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", raw)
+        slug = re.sub(r"[^\w\s-]", "", raw.lower(), flags=re.UNICODE)
+        slug = re.sub(r"\s+", "-", slug)
+        seen = counts.get(slug, 0)
+        counts[slug] = seen + 1
+        slugs.add(slug if seen == 0 else f"{slug}-{seen}")
+    return slugs
+
+
+def test_internal_markdown_links_resolve():
+    pages = [ROOT / "README.md", ROOT / "DISCLAIMER.md", ROOT / "SECURITY.md", * (ROOT / "docs").rglob("*.md")]
+    for path in pages:
+        visible = _without_fences(path.read_text(encoding="utf-8"))
+        for target in re.findall(r"\]\(([^)\s]+)\)", visible):
+            if target.startswith(("http://", "https://", "mailto:")):
+                continue
+            path_part, sep, anchor = target.partition("#")
+            if path_part:
+                resolved = (path.parent / path_part).resolve()
+                assert resolved.is_file(), f"{path.relative_to(ROOT)} -> {target}"
+                body = resolved.read_text(encoding="utf-8")
+            else:
+                body = path.read_text(encoding="utf-8")
+            if sep:
+                assert anchor in _heading_slugs(body), f"{path.relative_to(ROOT)} -> #{anchor}"
