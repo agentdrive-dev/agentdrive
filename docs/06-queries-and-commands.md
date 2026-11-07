@@ -44,6 +44,12 @@ Commands:
 | `unlock` | signed `unlock` | yes, one time |
 | `climate-on`, `climate-off` | signed climate command | no |
 | `set-temp <C>` | signed `climate-set-temp` | no, and only 15 to 28 C |
+| `sentry-on` | signed `sentry-mode on` | no |
+| `sentry-off` | signed `sentry-mode off` | yes, one time |
+| `seat-heat <seat> <level>` | signed `seat-heater` | no |
+| `steering-heat on` or `off` | signed `steering-wheel-heater` | no |
+| `defrost-on`, `defrost-off` | signed `preconditioning-max` | no |
+| `precondition` | signed `climate-on` | no |
 | `charge-start`, `charge-stop` | signed charging command | yes, one time |
 | `charge-limit <percent>` | signed `charging-set-limit` | yes, one time, and only 50 to 100 |
 | `charge-schedule show` | read `charge_schedule_data` | no, and it does not wake |
@@ -55,7 +61,31 @@ Commands:
 | `news` | no signed command; reads the official Tesla site for the owner's country | no, and it does not wake the car |
 | `service`, `service log rotation`, `service log replacement`, `service log maintenance` | no signed command; uses the saved odometer | no, and it does not wake the car |
 
-Unlock and every charging change go through the existing confirmation layer. A schedule cannot confirm them. State-changing commands are sent only in Park at speed 0, then read back once.
+Unlock, turning sentry off, and every charging change go through the existing confirmation layer. A schedule cannot confirm them. State-changing commands are sent only in Park at speed 0, then read back once.
+
+## Sentry and cabin climate
+
+`sentry-on` and `sentry-off` wake a sleeping car. If the vehicle list says the car is not online, they send one wake and poll for up to 45 seconds, then send the signed `sentry-mode` command. `check`, `report`, `where`, and history do not wake a sleeping car. Seat heat, steering-wheel heat, defrost, and precondition wake a sleeping car the same way the other parked commands do.
+
+`sentry-off` needs a confirmation sentence that includes `confirm` and the action, for example `I confirm turn sentry off`. A scheduled job cannot supply that sentence and cannot run `sentry-off`. `sentry-on` does not add a confirmation.
+
+```bash
+agentdrive sentry-on
+agentdrive sentry-off --confirm "I confirm turn sentry off"
+agentdrive seat-heat front-left medium
+agentdrive steering-heat on
+agentdrive defrost-on
+agentdrive defrost-off
+agentdrive precondition
+```
+
+`seat-heat` sends `seat-heater`. The seat is `front-left`, `front-right`, `2nd-row-left`, `2nd-row-center`, `2nd-row-right`, `3rd-row-left`, or `3rd-row-right`. The level is `off`, `low`, `medium`, or `high`. A backrest heater, a center seat the tool does not name, and a numeric level are refused before the command is sent.
+
+`steering-heat` sends `steering-wheel-heater` with `on` or `off`. A heat level is refused, because that signed command has no level.
+
+`defrost-on` and `defrost-off` send `preconditioning-max`. That is max defrost for the front and rear together. There is no separate front-only or rear-only command, and the manual override is not sent. Upstream `tesla-control` does not include that subcommand, so the installer adds it to the local build. `agentdrive update` rebuilds that binary.
+
+`precondition` sends `climate-on`, which starts cabin preconditioning now. It does not add a precondition schedule or a scheduled departure. `climate-off` stops the cabin climate.
 
 ## In-car charging timetable
 
@@ -87,7 +117,7 @@ agentdrive charge-schedule remove 1700000000 --confirm "I confirm charging sched
 
 `set` signs `charging-schedule-add`, which is `add_charge_schedule`. `remove` signs `charging-schedule-remove` with type `id`, which is `remove_charge_schedule`. Tesla's command reference says `set_scheduled_charging` is not recommended beginning with firmware version 2024.26, and that `add_charge_schedule` should be used instead. The older command takes one `time` in minutes after midnight. This command family sends `add_charge_schedule`, which carries the days, a start, an end, or both, the charging-site coordinates, `one_time`, and `enabled`.
 
-`set` adds a row. In the current `tesla-control` `charging-schedule-add` command, the optional id argument is not copied into the signed message. The tool stores the current unix time as the id. There is no update-by-id flag here. `--enabled false` adds a disabled row. It leaves rows that are already on the car as they are. `remove` is how you drop an id. One `set` is one window. Different hours on different days are separate schedules. Preconditioning and scheduled departure are separate commands and are not part of `charge-schedule`.
+`set` adds a row. In the current `tesla-control` `charging-schedule-add` command, the optional id argument is not copied into the signed message. The tool stores the current unix time as the id. There is no update-by-id flag here. `--enabled false` adds a disabled row. It leaves rows that are already on the car as they are. `remove` is how you drop an id. One `set` is one window. Different hours on different days are separate schedules. Preconditioning and scheduled departure are separate commands and are not part of `charge-schedule`. Immediate cabin preconditioning is `agentdrive precondition`.
 
 The sample coordinates and the sample id above are placeholders.
 

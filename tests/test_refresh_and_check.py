@@ -472,10 +472,18 @@ def test_cli_rejects_trunk_and_bad_ranges(tmp_path, capsys):
         "where",
         "update",
         "refresh",
+        "sentry-on",
+        "sentry-off",
+        "seat-heat",
+        "steering-heat",
+        "defrost-on",
+        "defrost-off",
+        "precondition",
     ):
         assert name in choices
     assert "trunk" not in choices
     assert "frunk" not in choices
+    assert "precondition-schedule" not in choices
     assert main(["--home", str(tmp_path), "set-temp", "10"]) == 2
     assert "15-28" in capsys.readouterr().err
     assert main(["--home", str(tmp_path), "charge-limit", "40"]) == 2
@@ -537,6 +545,8 @@ def test_install_script_builds_the_signed_command_tool_from_source():
     text = Path("setup/install.sh").read_text(encoding="utf-8")
     assert "go build ./cmd/tesla-control" in text
     assert "github.com/teslamotors/vehicle-command" in text
+    assert "setup/patch_tesla_control_defrost.py" in text
+    assert "python3 -m core gate-check" in text
     for line in text.splitlines():
         if line.strip().startswith("#"):
             continue

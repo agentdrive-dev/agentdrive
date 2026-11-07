@@ -28,11 +28,11 @@ Override a wrong detection with `bash setup/install.sh --adapter template`.
 
 ## Step 3 — What the safety gate will refuse
 
-A state-changing command is sent only when the shift state is Park and the speed is 0. Unlock, remote start, the front trunk, the rear trunk, sentry off, and charging changes each need an explicit confirmation for that action. The next action needs a new one. A schedule cannot supply it.
+A state-changing command is sent only when the shift state is Park and the speed is 0. Unlock, remote start, the front trunk, the rear trunk, sentry off, and charging changes each need an explicit confirmation for that action. The next action needs a new one. A schedule cannot supply it. Sentry on, seat heat, steering-wheel heat, defrost, and preconditioning the cabin now use that park check and do not add a confirmation of their own.
 
 ## After install — health check
 
-On install, the AI agent schedules `agentdrive check --json` every 30 minutes. The check is read-only and does not wake a sleeping car. Notify only when the exit code is 1. Exit 0 means nothing new, including when the car is asleep and when the same alerts are still active. The same alert stays quiet until it clears and later returns. Do not schedule unlock or a charging change. AgentDrive does not run that job and does not install cron. The morning usage briefing stays the separate daily job described below.
+On install, the AI agent schedules `agentdrive check --json` every 30 minutes. The check is read-only and does not wake a sleeping car. Notify only when the exit code is 1. Exit 0 means nothing new, including when the car is asleep and when the same alerts are still active. The same alert stays quiet until it clears and later returns. Do not schedule unlock, turning sentry off, or a charging change. AgentDrive does not run that job and does not install cron. The morning usage briefing stays the separate daily job described below.
 
 ## After install — daily report
 

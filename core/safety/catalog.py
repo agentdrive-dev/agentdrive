@@ -8,6 +8,9 @@ from core.config import load_vehicles
 from core.errors import ConfigError
 
 # Arguments passed to tesla-control. Remote start is that tool's `drive` command.
+# Cabin preconditioning now is that tool's `climate-on` command (auto conditioning start).
+# Max defrost is `preconditioning-max`, added to the local tesla-control build because
+# upstream does not register SetPreconditioningMax. The manual override is not sent.
 TOOL_ARGS: dict[str, tuple[str, ...]] = {
     "flash_lights": ("flash-lights",),
     "climate_on": ("climate-on",),
@@ -19,7 +22,13 @@ TOOL_ARGS: dict[str, tuple[str, ...]] = {
     "remote_start": ("drive",),
     "frunk_open": ("frunk-open",),
     "trunk_open": ("trunk-open",),
+    "sentry_on": ("sentry-mode", "on"),
     "sentry_off": ("sentry-mode", "off"),
+    "seat_heater": ("seat-heater",),
+    "steering_wheel_heater": ("steering-wheel-heater",),
+    "defrost_on": ("preconditioning-max", "on"),
+    "defrost_off": ("preconditioning-max", "off"),
+    "cabin_precondition": ("climate-on",),
     "charging_start": ("charging-start",),
     "charging_stop": ("charging-stop",),
     "charging_set_limit": ("charging-set-limit",),
@@ -39,7 +48,13 @@ VERIFY_KIND = {
     "unlock": "unlocked",
     "frunk_open": "frunk_open",
     "trunk_open": "trunk_open",
+    "sentry_on": "sentry_on",
     "sentry_off": "sentry_off",
+    "seat_heater": "seat_heater",
+    "steering_wheel_heater": "steering_heater",
+    "defrost_on": "defrost_on",
+    "defrost_off": "defrost_off",
+    "cabin_precondition": "climate_on",
     "charging_start": "charging",
     "charging_stop": "not_charging",
     "charging_set_limit": "charge_limit",
@@ -49,12 +64,19 @@ VERIFY_KIND = {
 }
 
 
+# Clear names for the confirmation prompt. The broker still matches the spec name.
+ACTION_NAMES = {
+    "sentry_off": "turn sentry off",
+}
+
+
 @dataclass(frozen=True)
 class CommandSpec:
     name: str
     tier: str
     tool_args: tuple[str, ...]
     verify: str
+    action: str
 
 
 def load_specs(document: dict | None = None) -> dict[str, CommandSpec]:
@@ -70,7 +92,14 @@ def load_specs(document: dict | None = None) -> dict[str, CommandSpec]:
         if name not in TOOL_ARGS:
             raise ConfigError(f"No signed-command mapping for {name}")
         tier = "sensitive" if name in sensitive else "standard"
-        specs[name] = CommandSpec(name=name, tier=tier, tool_args=TOOL_ARGS[name], verify=VERIFY_KIND[name])
+        action = ACTION_NAMES.get(name, name.replace("_", " "))
+        specs[name] = CommandSpec(
+            name=name,
+            tier=tier,
+            tool_args=TOOL_ARGS[name],
+            verify=VERIFY_KIND[name],
+            action=action,
+        )
     return specs
 
 

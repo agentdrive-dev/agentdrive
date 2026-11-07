@@ -86,7 +86,12 @@ class AdapterBase:
 def _schedule_command_is_sensitive(command, sensitive: set[str]) -> bool:
     if not isinstance(command, str):
         return False
-    if command in sensitive:
+    raw = " ".join(command.strip().lower().split())
+    if not raw:
+        return False
+    head = raw.split()[0]
+    candidates = {raw, raw.replace("-", "_"), head, head.replace("-", "_")}
+    if any(item in sensitive for item in candidates):
         return True
     # The public command family. A host schedule must not store it.
-    return command == "charge-schedule" or command.startswith("charge-schedule ")
+    return raw == "charge-schedule" or raw.startswith("charge-schedule ") or head in {"charge-schedule", "charge_schedule"}
