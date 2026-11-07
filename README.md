@@ -4,6 +4,11 @@ Turn your AI agent into your car concierge.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
 [![Vehicle trial](https://img.shields.io/badge/vehicle%20trial-basic%20commands%2C%20Grok%20Bot%20and%20Muse-lightgrey)](#supported-agents)
+[![View on GitHub](https://img.shields.io/badge/view%20on-GitHub-lightgrey?logo=github)](https://github.com/agentdrive-dev/agentdrive)
+[![GitHub stars](https://img.shields.io/github/stars/agentdrive-dev/agentdrive?logo=github)](https://github.com/agentdrive-dev/agentdrive)
+[![GitHub issues](https://img.shields.io/github/issues/agentdrive-dev/agentdrive?color=lightgrey&logo=github)](https://github.com/agentdrive-dev/agentdrive/issues)
+
+Source, issues, and the project page are on [GitHub](https://github.com/agentdrive-dev/agentdrive).
 
 AgentDrive is unofficial. It is not affiliated with, endorsed by, or supported by Tesla.
 
