@@ -53,15 +53,16 @@ class ConfirmationBroker:
         if response.action_id in self.used:
             raise ConfirmationRequired("That confirmation was already used.")
         statement = " ".join(response.statement.lower().split())
-        if not _names_command(statement, spec.name):
+        if not _names_command(statement, spec):
             raise ConfirmationRequired("Name the action and confirm it. A plain yes is not enough.")
         self.used.add(response.action_id)
 
 
-def _names_command(statement: str, spec_name: str) -> bool:
+def _names_command(statement: str, spec: CommandSpec) -> bool:
     if "confirm" not in statement.split():
         return False
-    for phrase in {spec_name, spec_name.replace("_", " ")}:
-        if re.search(rf"(?<![a-z0-9]){re.escape(phrase)}(?![a-z0-9])", statement):
+    phrases = {spec.name, spec.name.replace("_", " "), spec.action}
+    for phrase in phrases:
+        if phrase and re.search(rf"(?<![a-z0-9]){re.escape(phrase)}(?![a-z0-9])", statement):
             return True
     return False

@@ -38,7 +38,7 @@ class Gateway:
         if spec.tier == "sensitive":
             if via_schedule:
                 raise ScheduleBlocked("A schedule cannot run a sensitive command.")
-            challenge = new_challenge(command, f"Confirm {command.replace('_', ' ')}")
+            challenge = new_challenge(command, spec.action)
             response = adapter.confirm(challenge)
             self.broker.authorize(spec, challenge, response, via_schedule=False)
         args = list(spec.tool_args)
@@ -76,6 +76,8 @@ def _verify(kind: str, observed: Observation, extra_args: list[str]) -> None:
     if kind == "frunk_open" and observed.frunk_open is True:
         return
     if kind == "trunk_open" and observed.trunk_open is True:
+        return
+    if kind == "trunk_closed" and observed.trunk_open is False:
         return
     if kind == "sentry_off" and observed.sentry_on is False:
         return

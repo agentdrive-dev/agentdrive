@@ -65,6 +65,10 @@ PUBLIC_COMMANDS = {
     "charge-start": "charging_start",
     "charge-stop": "charging_stop",
     "charge-limit": "charging_set_limit",
+    "trunk-open": "trunk_open",
+    "trunk-close": "trunk_close",
+    "frunk-open": "frunk_open",
+    "remote-start": "remote_start",
 }
 
 
@@ -424,16 +428,22 @@ def _extra(name: str, argument: str | None) -> list[str] | None:
     return None
 
 
+def _action_phrase(challenge) -> str:
+    summary = str(getattr(challenge, "summary", "") or "").strip()
+    if summary:
+        return summary
+    return str(challenge.command).replace("_", " ")
+
+
 def _cli_adapter(statement: str | None):
     def prompter(challenge) -> str:
         if statement is not None:
             return statement
+        phrase = _action_phrase(challenge)
         if not sys.stdin.isatty():
-            phrase = challenge.command.replace("_", " ")
             raise ConfirmationRequired(
                 f"This action needs an explicit confirmation. Pass --confirm with a sentence that includes confirm and {phrase}."
             )
-        phrase = challenge.command.replace("_", " ")
         return input(f"Confirm {phrase}. Type a sentence that names the action and includes confirm: ")
 
     return TemplateAdapter(prompter)

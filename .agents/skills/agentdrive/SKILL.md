@@ -39,15 +39,17 @@ Security trade-off of a shared key: every agent that can read the private key fi
 1. `agentdrive doctor`
 2. `agentdrive check` — the read-only vehicle status check. It does not wake a sleeping vehicle and it does not send a command.
 3. `agentdrive where` — a coarse area only: suburb or locality, state or region, and country. It does not wake a sleeping vehicle, it does not print coordinates, and it does not send a command. A rounded point is sent to Nominatim. Do not copy coordinates into memory.
-4. A vehicle command only after doctor and check have finished, and only when the user asks. Park and speed 0 are required. Unlock and charging changes need a fresh confirmation. A schedule cannot supply that confirmation.
+4. A vehicle command only after doctor and check have finished, and only when the user asks. Park and speed 0 are required. Unlock, the rear trunk, the front trunk, remote start, and charging changes need a fresh confirmation. A schedule cannot supply that confirmation and cannot run the trunk, the front trunk, or remote start.
 
 `agentdrive charge-schedule show` reads the in-car charging timetable and does not wake a sleeping vehicle. `agentdrive charge-schedule set` and `agentdrive charge-schedule remove` change that timetable. They are charging commands. Each one needs a fresh confirmation. A scheduled job cannot supply that confirmation.
+
+`agentdrive trunk-open` and `agentdrive trunk-close` open and close the rear trunk. Closing works when the vehicle can close the rear trunk. `agentdrive frunk-open` opens the front trunk. The front trunk cannot be closed from AgentDrive. `agentdrive remote-start` enables keyless driving so the car can be driven without the phone key for a short time. It does not drive the car, it does not start an engine, and it does not ask for a password. Each command needs a fresh confirmation that names the action: open rear trunk, close rear trunk, open frunk, or enable remote start. Do not call `tesla-control` for these. The shared core signs them.
 
 `agentdrive status` answers a direct question and may wake a sleeping vehicle. It is still not a lock, unlock, climate, or charging command. Use `agentdrive check` for the check that must happen first.
 
 ## Health check
 
-On install, schedule a routine that runs `agentdrive check --json` every 30 minutes. Exit 0 means there is nothing new to report, including when the vehicle is asleep and when the same alerts are still active, so stay quiet. Exit 1 means a new alert the user should hear. Notify only when the exit code is 1. The same alert stays quiet until it clears and later returns. Do not schedule unlock or a charging change. `charge-schedule set` and `charge-schedule remove` are charging changes. Do not put `agentdrive report` or `agentdrive history due` on that health-check loop. When the car is already online, `check` also saves local history, including when there is nothing new to notify. It does not wake the car to do that. AgentDrive does not run that job and does not install cron.
+On install, schedule a routine that runs `agentdrive check --json` every 30 minutes. Exit 0 means there is nothing new to report, including when the vehicle is asleep and when the same alerts are still active, so stay quiet. Exit 1 means a new alert the user should hear. Notify only when the exit code is 1. The same alert stays quiet until it clears and later returns. Do not schedule unlock, the trunk, the front trunk, remote start, or a charging change. `charge-schedule set` and `charge-schedule remove` are charging changes. Do not put `agentdrive report` or `agentdrive history due` on that health-check loop. When the car is already online, `check` also saves local history, including when there is nothing new to notify. It does not wake the car to do that. AgentDrive does not run that job and does not install cron.
 
 ## Morning history
 
