@@ -67,8 +67,6 @@ def test_homepage_how_to_start_leads_with_the_paste_prompt():
         "teslamate",
         "trip advisor",
         "charging tips",
-        "frunk",
-        "remote start",
         "## Next",
         "## What this version does",
         "## Not in this version",
@@ -90,6 +88,16 @@ def test_homepage_how_to_start_leads_with_the_paste_prompt():
         assert image in readme
     assert "sample data" in readme.lower()
     assert "not a vehicle reading or a transcript" in readme.lower()
+    can_do = readme[readme.index("## What you can do"):readme.index("## A conversation")].lower()
+    assert "rear trunk" in can_do
+    assert "frunk" in can_do
+    assert "remote start" in can_do
+    assert "lock" in can_do
+    assert "climate" in can_do
+    assert "charging" in can_do
+    assert "honk" in can_do
+    assert "health alert" in can_do
+    assert "morning briefing" in can_do
 
 
 def test_install_page_holds_the_full_prompt_and_agent_steps():
@@ -163,6 +171,16 @@ def test_homepage_does_not_list_unfinished_work():
     assert "does not use the park check" in commands
     assert "SQLCipher is not required" in commands
     assert "stays quiet unless something needs attention" not in commands.lower()
+    assert "| `trunk-open`" in commands
+    assert "| `trunk-close`" in commands
+    assert "| `frunk-open`" in commands
+    assert "| `remote-start`" in commands
+    assert "frunk-close" not in commands
+    assert "close-frunk" not in commands
+    assert "open rear trunk" in commands
+    assert "close rear trunk" in commands
+    assert "open frunk" in commands
+    assert "enable remote start" in commands
 
 
 def test_guides_and_checklist_links():

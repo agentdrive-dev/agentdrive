@@ -124,7 +124,7 @@ CATALOG: tuple[Tip, ...] = (
     ),
     Tip(
         "fresh-confirmation",
-        "Unlocking and charging changes need a fresh yes each time. An earlier yes does not carry over, and a scheduled job cannot confirm them.",
+        "Unlocking, the trunk, the front trunk, remote start, and charging changes need a fresh yes each time. An earlier yes does not carry over, and a scheduled job cannot confirm them.",
     ),
     Tip(
         "one-token-writer",

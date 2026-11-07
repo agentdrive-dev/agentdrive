@@ -50,6 +50,7 @@ capabilities:
     - remote_start
     - frunk_open
     - trunk_open
+    - trunk_close
     - sentry_off
     - charging_start
     - charging_stop
