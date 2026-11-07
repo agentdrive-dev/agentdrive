@@ -14,6 +14,7 @@ build/
 .agentdrive/
 runtime/
 var/
+check-alerts.json
 
 # Secrets and owner material. Never commit these.
 .env

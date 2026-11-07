@@ -26,6 +26,15 @@ Then run `agentdrive doctor` and a read-only vehicle status check before any com
 The read-only check is `agentdrive check`. It does not wake a sleeping vehicle and it does not send a command.
 Do not flash, lock, unlock, or change climate or charging until doctor and that check have finished.
 
+On install, schedule a routine that runs `agentdrive check --json` every 30 minutes.
+The check does not wake a sleeping vehicle.
+Exit 0 means there is nothing new to report, including when the vehicle is asleep and when the same alerts are still active.
+Exit 1 means a new alert. Notify only when the exit code is 1.
+The same alert stays quiet until it clears and later returns.
+Do not schedule unlock or a charging change on that routine.
+Do not put `agentdrive report` or `agentdrive history due` on that health-check loop.
+AgentDrive does not run that job and does not install cron.
+
 Then read `agentdrive report-schedule`. The default is 07:30 local time and enabled.
 Create one daily job at that time that runs `agentdrive history due` and send me that usage briefing.
 On Monday send the previous week, on the 1st the previous month, and on 1 January the previous year.

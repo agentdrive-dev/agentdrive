@@ -30,6 +30,7 @@ from core.fleet.charge_schedule import (
 )
 from core.fleet.commands import TeslaControl
 from core.fleet.credentials import load_client_credentials
+from core.fleet.check_state import apply_rising_edge
 from core.fleet.health import (
     DEFAULT_LOW_BATTERY_PERCENT,
     DEFAULT_TYRE_BAR,
@@ -199,8 +200,10 @@ class App:
         payload = self.reader.vehicle_data(vehicle_key(chosen), DATA_ENDPOINTS)
         observation = from_vehicle_data(payload)
         report = report_from_observation(observation, tyre_bar=tyre_bar, low_battery_percent=low_battery_percent)
+        # History records the full online reading. Notification dedupe is separate,
+        # and a skipped check never reaches this write.
         self._remember(payload, observation, tyre_bar=tyre_bar, low_battery_percent=low_battery_percent)
-        return report
+        return apply_rising_edge(self.home, report)
 
     def report(self, *, preferred: str | None) -> VehicleReport:
         """Read-only briefing. A car that is not online, a timeout, or HTTP 408 is a skip.

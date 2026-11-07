@@ -375,5 +375,6 @@ def test_template_install_prints_the_daily_report_note(tmp_path, capsys):
     assert main(["--home", str(tmp_path), "adapter", "install", "--adapter", "template"]) == 0
     output = capsys.readouterr().out
     assert "07:30 local time" in output
+    assert "every 30 minutes" in output
     assert "agentdrive report" in output
     assert "does not run the job itself" in output

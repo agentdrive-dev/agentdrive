@@ -59,6 +59,8 @@ def test_install_note_and_bundle(tmp_path, capsys):
     assert "Phase 2 stub" not in output
     assert INSTALL_NOTE in output
     assert "agentdrive check --json" in output
+    assert "every 30 minutes" in output
+    assert "every few hours" not in output
     assert WINDOWS_KEY_EXAMPLE in output
     files = MuseAdapter.bundle_files()
     assert set(files) == {"skill", "prompt", "config"}

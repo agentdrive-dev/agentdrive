@@ -22,7 +22,7 @@ On the billing and usage page, choose Manage Payment and add a card you control.
 
 ![Diagram: you choose Update Limit and bills stop at the cap you set](../images/billing-3.svg)
 
-Choose Update Limit and set a ceiling you are willing to hit. Tesla says usage can run slightly over the limit, and that pre-tax bills are capped at the limit. If the limit is hit, API access is suspended until you raise it or a new billing cycle starts. Pick a small limit for a single car and an occasional health check.
+Choose Update Limit and set a ceiling you are willing to hit. Tesla says usage can run slightly over the limit, and that pre-tax bills are capped at the limit. If the limit is hit, API access is suspended until you raise it or a new billing cycle starts. Pick a small limit for a single car and a health check every 30 minutes.
 
 ## Step 4 — Know what is billed
 

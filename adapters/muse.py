@@ -10,6 +10,7 @@ from pathlib import Path
 
 from adapters.files import FileBackedAdapter
 from core.config import repo_root
+from core.fleet.check_state import HEALTH_CHECK_NOTE
 from core.report_schedule import DAILY_REPORT_NOTE
 
 # Printed when this adapter is installed. The health check matches the Grok
@@ -18,12 +19,8 @@ INSTALL_NOTE = (
     "Muse adapter is installed. "
     "Follow .agents/skills/agentdrive/SKILL.md and the prompt in "
     ".agents/skills/agentdrive/prompts/install.md. "
-    "Set up a recurring health check by default. "
-    "Schedule a routine that runs `agentdrive check --json` every few hours. "
-    "The check is read-only and does not wake a sleeping car. "
-    "Exit 0 means there is nothing to report, including when the vehicle is asleep. "
-    "Exit 1 means an alert the owner should hear. Notify only when the exit code is 1. "
-    "The config home is $AGENTDRIVE_HOME, or ~/.config/agentdrive when that variable is unset "
+    + HEALTH_CHECK_NOTE
+    + "The config home is $AGENTDRIVE_HOME, or ~/.config/agentdrive when that variable is unset "
     "(on Windows, C:\\Users\\<you>\\.config\\agentdrive). "
     "Point AGENTDRIVE_KEY_FILE or runtime.yaml key_file at the existing private key, "
     "for example C:\\Users\\<you>\\agentdrive-key\\private-key.pem. "
