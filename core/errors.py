@@ -55,3 +55,7 @@ class AmbiguousAdapter(AgentDriveError):
 
 class ProfileError(AgentDriveError):
     """An owner profile contains a field this toolkit will not store."""
+
+
+class HistoryError(AgentDriveError):
+    """Local history could not be read or written. The message has no secrets."""

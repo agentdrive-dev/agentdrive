@@ -94,8 +94,11 @@ def test_readme_next_lists_planned_work_in_positive_language():
     assert "trunk" in lowered and "frunk" in lowered and "remote start" in lowered
     for skill in ("onboarding", "trip advisor", "charging tips", "news watch"):
         assert skill in lowered
-    assert "unconfirmed against a live response" in lowered
-    assert "revised design" in lowered
+    assert "saved charging history" in lowered
+    assert "nearby stall counts" in lowered
+    assert "telemetry" not in lowered
+    assert "unconfirmed against a live response" not in lowered
+    assert "revised design" not in lowered
     commands = readme[readme.index("## What this version does"):next_at]
     before_table = commands.split("| Command |", 1)[0]
     assert "reference, not homework" in before_table.lower()

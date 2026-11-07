@@ -1,5 +1,4 @@
 # Global hosts only. The application reads this file and does not embed hosts.
-# China-region hosts are intentionally absent.
 version: 1
 
 shared:

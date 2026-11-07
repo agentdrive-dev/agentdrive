@@ -32,6 +32,8 @@ credentials.json
 client.json
 .refresh.lock
 .session-cache.json
+history.db
+.history.lock
 secrets/
 .secrets/
 config/local.yaml

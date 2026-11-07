@@ -22,10 +22,14 @@ _TIME = re.compile(r"^([01][0-9]|2[0-3]):([0-5][0-9])$")
 
 # Printed on adapter install. The same instruction is for every shell assistant.
 DAILY_REPORT_NOTE = (
-    "Also set up a daily vehicle report by default. "
+    "Also set up the morning vehicle history by default. "
     "Run `agentdrive report-schedule`. The default is 07:30 local time and enabled. "
-    "Create a daily job at that time that runs `agentdrive report` and send the result to the user every time, "
-    "including when the vehicle is asleep. "
+    "Create one daily job at that time. The job runs `agentdrive history due` and you send that usage briefing. "
+    "On Monday it is the previous week, on the 1st it is the previous month, and on 1 January it is the previous year. "
+    "Every other morning it is the previous day. "
+    "A short tip is included only on some mornings, and a service reminder is included only when one is due "
+    "and was not sent in the last two months. "
+    "`agentdrive report` is the live parked snapshot and can still be run when the user wants the car's current status. "
     "If the user changes the time or turns the report off, update that job to match `agentdrive report-schedule`. "
     "AgentDrive stores the schedule and does not run the job itself."
 )
@@ -106,7 +110,7 @@ def crontab_example(schedule: ReportSchedule) -> str:
     """A cron line for the configured local time. This is not installed."""
     hour = int(schedule.time[:2])
     minute = int(schedule.time[3:])
-    return f"{minute} {hour} * * * agentdrive report"
+    return f"{minute} {hour} * * * agentdrive history due"
 
 
 def format_schedule(schedule: ReportSchedule, *, action: str | None = None) -> str:
@@ -118,20 +122,23 @@ def format_schedule(schedule: ReportSchedule, *, action: str | None = None) -> s
     if action == "set":
         lines.append("The time is stored in the config home. AgentDrive does not change the assistant job.")
         if schedule.enabled:
-            lines.append("The assistant should update its daily job to this time, run `agentdrive report`, and send the result.")
+            lines.append(
+                "The assistant should update its daily job to this time, run `agentdrive history due`, and send the result."
+            )
         else:
-            lines.append("The daily report is off, so the assistant should leave its job removed until the report is enabled.")
+            lines.append("The morning history is off, so the assistant should leave its job removed until the report is enabled.")
     elif action == "enable":
-        lines.append("The daily report is on. The assistant should create a daily job at this local time.")
-        lines.append("The job runs `agentdrive report` and the assistant sends the result. AgentDrive does not install the job.")
+        lines.append("The morning history is on. The assistant should create a daily job at this local time.")
+        lines.append("The job runs `agentdrive history due` and the assistant sends the result. AgentDrive does not install the job.")
     elif action == "disable":
-        lines.append("The daily report is off. The assistant should remove its scheduled job.")
+        lines.append("The morning history is off. The assistant should remove its scheduled job.")
         lines.append("AgentDrive does not change that job by itself.")
     elif schedule.enabled:
-        lines.append("The assistant should run `agentdrive report` every day at this local time and send the result.")
+        lines.append("The assistant should run `agentdrive history due` every day at this local time and send the result.")
+        lines.append("`agentdrive report` remains the live parked snapshot when the current status is wanted.")
         lines.append("AgentDrive does not run in the background and does not install the job.")
     else:
-        lines.append("The daily report is off. The assistant should not create a job, and should remove one that already exists.")
+        lines.append("The morning history is off. The assistant should not create a job, and should remove one that already exists.")
         lines.append("AgentDrive does not change that job by itself.")
     if schedule.enabled:
         lines.append(f"crontab example: {crontab_example(schedule)}")

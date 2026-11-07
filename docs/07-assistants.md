@@ -40,14 +40,14 @@ The daily report is a second job, separate from the health check. The health che
 
 The default is 07:30 in the local timezone, and the report is enabled. `agentdrive report-schedule` prints that. The time is stored in `$AGENTDRIVE_HOME/runtime.yaml` under `report_schedule` when you change it. With no `report_schedule` key, the default above is what the command shows.
 
-After install, the AI agent creates one daily job at the configured time. The job runs `agentdrive report`, and the AI agent sends the printed briefing to the user, including the skip line when the vehicle is not online. The command is read-only. It does not wake the car. A timeout or HTTP 408 is a skip, the same as a car that is already asleep or offline.
+After install, the AI agent creates one daily job at the configured time. The job runs `agentdrive history due`, and the AI agent sends that usage briefing. On Monday it covers the previous week, on the 1st the previous month, and on 1 January the previous year. Every other morning it covers the previous day. The command reads saved history only. It does not wake the car. `agentdrive report` remains the live parked snapshot when the user wants the car's current status, including the skip line when the vehicle is not online.
 
 When you ask for a different time, the AI agent runs `agentdrive report-schedule set HH:MM` and moves the job to that time. When you ask to turn the report off, the AI agent runs `agentdrive report-schedule disable` and removes the job. `agentdrive report-schedule enable` turns it back on. AgentDrive does not update the job itself. The same steps apply to Grok Bot, Muse, and any shell-capable AI agent.
 
 A host that uses cron can copy the example line printed by `agentdrive report-schedule`. AgentDrive does not install that line or a systemd timer. This is the recommended setup. It is not zero-setup: something outside AgentDrive has to run the command.
 
 ```text
-Read `agentdrive report-schedule`. If it is enabled, create a daily job at that local time that runs `agentdrive report` and send me the output every day. If I change the time or turn the report off, update the job to match the command. Do not wake the car from that job.
+Read `agentdrive report-schedule`. If it is enabled, create a daily job at that local time that runs `agentdrive history due` and send me that briefing every day. On Monday send the previous week, on the 1st the previous month, and on 1 January the previous year. If I change the time or turn the briefing off, update the job to match the command. Do not wake the car from that job.
 ```
 
 ## Using more than one AI agent
