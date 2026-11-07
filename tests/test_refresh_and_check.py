@@ -131,11 +131,11 @@ def vehicle_payload(**parts):
     return {"response": response}
 
 
-def make_app(http, control=None):
+def make_app(http, control=None, home=None):
     regions = load_regions()
     tokens = SimpleNamespace(access_token=lambda force=False: TOKEN)
     reader = FleetReader(http, regions, "na", tokens)
-    return App(Path("."), reader=reader, tokens=tokens, control=control or Control(), region="na")
+    return App(Path(home) if home is not None else Path("."), reader=reader, tokens=tokens, control=control or Control(), region="na")
 
 
 def urls(http):
@@ -294,7 +294,7 @@ def test_check_does_not_wake_a_sleeping_vehicle():
     assert not any("wake_up" in url or "vehicle_data" in url for url in urls(http))
 
 
-def test_check_reports_actionable_alerts_from_vehicle_data():
+def test_check_reports_actionable_alerts_from_vehicle_data(tmp_path):
     http = Http(
         listed("online"),
         vehicle_payload(
@@ -307,7 +307,7 @@ def test_check_reports_actionable_alerts_from_vehicle_data():
             },
         ),
     )
-    report = make_app(http).check(preferred=None, tyre_bar=2.5, low_battery_percent=30)
+    report = make_app(http, home=tmp_path).check(preferred=None, tyre_bar=2.5, low_battery_percent=30)
     codes = [item.code for item in report.alerts]
     assert report.exit_code == 1
     assert "tpms_warning" in codes
@@ -524,6 +524,8 @@ def test_grokbot_install_tells_the_bot_to_schedule_a_health_check(tmp_path, caps
     assert main(["--home", str(tmp_path), "adapter", "install", "--adapter", "grokbot"]) == 0
     output = capsys.readouterr().out
     assert "agentdrive check --json" in output
+    assert "every 30 minutes" in output
+    assert "every few hours" not in INSTALL_NOTE
     assert INSTALL_NOTE in output
     grok = GrokBotAdapter(tmp_path, lambda challenge: f"I confirm {challenge.command}")
     grok.schedule("health-check", "every 6 hours", {"command": "check", "json": True})

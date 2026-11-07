@@ -28,10 +28,10 @@ Copy `adapters/template.py` for a host that is not listed. The same five operati
 
 ## Health check by default
 
-Setup for an AI agent includes this instruction: set up a recurring health check by default. The routine runs `agentdrive check --json` every few hours. It is read-only. It reads the vehicle list first and does not wake a sleeping car. Exit 0 means there is nothing to do, including when the car is asleep, so the AI agent stays quiet. Exit 1 means an alert (tyre pressure, TPMS warning, low battery while not charging, unlocked or open while parked, or a charge error). Notify only on exit 1. `agentdrive adapter install` prints the same note. The config home and the private-key path work on Windows as well as macOS and Linux.
+Setup for an AI agent includes this instruction: set up a recurring health check by default. The routine runs `agentdrive check --json` every 30 minutes. It is read-only. It reads the vehicle list first and does not wake a sleeping car. Exit 0 means there is nothing new to report, including when the car is asleep and when the same alerts are still active, so the AI agent stays quiet. Exit 1 means a new alert (tyre pressure, TPMS warning, low battery while not charging, sentry off while the battery is low and the vehicle is not charging, unlocked or open while parked, or a charge error). Notify only on exit 1. The same alert stays quiet until it clears and later returns. `agentdrive adapter install` prints the same note. AgentDrive does not run that job and does not install cron. The morning usage briefing stays the separate daily job. The config home and the private-key path work on Windows as well as macOS and Linux.
 
 ```text
-Schedule a routine named health-check that runs `agentdrive check --json` every few hours. Notify me only when the exit code is 1. Do not wake the car from that routine. Do not schedule unlock or a charging change.
+Schedule a routine named health-check that runs `agentdrive check --json` every 30 minutes. Notify me only when the exit code is 1. Exit 0 means nothing new, including when the car is asleep and when the same alerts are still active. The same alert stays quiet until it clears and later returns. Do not wake the car from that routine. Do not schedule unlock or a charging change.
 ```
 
 ## Daily vehicle report by default

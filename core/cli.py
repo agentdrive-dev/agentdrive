@@ -9,6 +9,7 @@ from pathlib import Path
 from adapters.detect import VALID_ADAPTERS, resolve_adapter
 from adapters.grokbot import INSTALL_NOTE as GROK_INSTALL_NOTE
 from adapters.muse import INSTALL_NOTE as MUSE_INSTALL_NOTE
+from core.fleet.check_state import HEALTH_CHECK_NOTE
 from core.config import repo_root
 from core.doctor import run_doctor
 from core.errors import AgentDriveError, AmbiguousAdapter, ConfigError
@@ -202,7 +203,7 @@ def _adapter(args, home: Path) -> int:
     elif args.action == "install" and choice.adapter == "muse":
         print(MUSE_INSTALL_NOTE)
     elif args.action == "install":
-        print(DAILY_REPORT_NOTE)
+        print(HEALTH_CHECK_NOTE + DAILY_REPORT_NOTE)
     return 0
 
 

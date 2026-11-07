@@ -33,7 +33,13 @@ On Monday send the previous week, on the 1st the previous month, and on 1 Januar
 Every other morning send the previous day. That one job is the whole morning briefing:
 the usage report, a short tip on some mornings, a service reminder when one is due, and
 on a Monday weekly briefing one official Tesla note only when the local Tesla site has
-something new. If it does not, leave that part out. Do not add a second job.
+something new. If it does not, leave that part out. Do not add a second morning job.
+Also schedule a health check that runs agentdrive check --json every 30 minutes.
+Notify me only when it exits 1. Exit 0 means nothing new, including when the car
+is asleep and when the same alert is still active. That alert stays quiet until
+it clears and later returns. Do not wake the car from that check, and do not
+schedule unlock or a charging change. This check is separate from the one daily
+morning job above. AgentDrive does not run it itself.
 agentdrive report is the live snapshot when I want the car's current status, including
 the skip line when the car is asleep. If I later ask for a different time or to turn the
 briefing off, update the stored schedule and update that job.
@@ -134,7 +140,7 @@ agentdrive where
 agentdrive update
 ```
 
-`agentdrive check` prints that it skipped, and exits 0, when the car is not online. When the car is online it exits 1 for a TPMS warning, a tyre below the threshold, a low battery that is not charging, the car unlocked or open while parked, or a charge error. `agentdrive check --json` prints a short object. On install, the AI agent is asked to run that check every few hours and to notify only when the exit code is 1.
+`agentdrive check` prints that it skipped, and exits 0, when the car is not online. A skip does not change the alerts already remembered. When the car is online it looks for a TPMS warning, a tyre below the threshold, a low battery that is not charging, sentry off while the battery is low and the vehicle is not charging, the car unlocked or open while parked, or a charge error. It exits 1 only when an alert is new, and it prints those new alerts. The same alert exits 0, and is not printed again, until it clears and later returns. A different new alert still exits 1 while an older one continues. `agentdrive check --json` prints a short object. On install, the AI agent is asked to run that check every 30 minutes and to notify only when the exit code is 1. AgentDrive does not run that job and does not install cron. The morning usage briefing stays the separate daily job. Remembered alert codes stay in the private config home. They are not written into the git checkout.
 
 `agentdrive report` prints a short briefing the AI agent should send to you: battery, charge connection, lock, gear, doors, windows, trunk, sentry, climate, tyres, and TPMS. It reads the same parked snapshot as `check` and does not request location. If the vehicle list says the car is asleep, offline, or otherwise not online, it prints the same skip line as `check` and exits 0. A timeout or HTTP 408 is the same skip. It never wakes the car. `--json` prints that briefing as an object. This is a report to send every time, including the skip line. It is not an alerts-only health check.
 
@@ -146,7 +152,7 @@ The default schedule is 07:30 in your local timezone, and it is enabled. `agentd
 
 Ask how yesterday went, or how last month looked. The AI agent reads history saved on your computer. You do not type the commands, and the car is not woken to answer.
 
-`agentdrive check` and `agentdrive report` save a snapshot when the car is already online. A sleeping car is skipped, and nothing is written for that skip. While the car stays parked and the meaningful state stays the same, later checks update that snapshot: first time, last time, how many checks were folded in, and the latest battery and tyre readings. A new snapshot starts when the car leaves Park, charging changes, the lock, sentry, doors, windows, or trunk change, a new alert appears, or the odometer moves. Charge readings stay with the charge session, about once a minute when a reading was seen. The file is encrypted. The key stays in the private config home (`history.key`). It is not in the git repo and it must not be pasted into chat. The Python package `cryptography` provides AES-256-GCM. SQLCipher is not required.
+`agentdrive check` and `agentdrive report` save a snapshot when the car is already online. A sleeping car is skipped, and nothing is written for that skip. A check that finds nothing new to notify still saves the snapshot. While the car stays parked and the meaningful state stays the same, later checks update that snapshot: first time, last time, how many checks were folded in, and the latest battery and tyre readings. A new snapshot starts when the car leaves Park, charging changes, the lock, sentry, doors, windows, or trunk change, a new alert appears, or the odometer moves. Charge readings stay with the charge session, about once a minute when a reading was seen. The file is encrypted. The key stays in the private config home (`history.key`). It is not in the git repo and it must not be pasted into chat. The Python package `cryptography` provides AES-256-GCM. SQLCipher is not required.
 
 What is saved: trip summaries (time, distance from the odometer change, battery, lock, gear, and sentry), charge sessions (time, start and end percent, energy added when the car sent it, and whether it was plugged in), those charge readings, parked snapshots, alerts when they appear, and software or unit settings when they change. A service you mention, such as a tyre rotation, is stored against the last saved odometer. How full the charge curve looks depends on how often the usual check runs while the car is already online or charging. AgentDrive does not run in the background to fill the gaps.
 
@@ -163,7 +169,7 @@ agentdrive service log replacement
 agentdrive service log maintenance --note "cabin filter" --interval-km 20000
 ```
 
-`history due` is the morning briefing. After install, the AI agent creates one daily job at the report-schedule time and sends that briefing. There is no second routine. `history daily`, `weekly`, `monthly`, and `yearly` print that period when you ask. `tips` is the occasional usage tip already included on some mornings. The same tip is not repeated for two calendar months. `service` shows kilometres since a logged tyre change or service. Tyre service uses Tesla's published rotation interval of 6,250 miles / 10,000 km unless you set another interval. Replacing tyres depends on tread, not a fixed distance. If no odometer is saved yet, say so after the next online check. That check does not wake the car. A due reminder is included in the same morning briefing, and the same reminder is not repeated for two calendar months.
+`history due` is the morning briefing. After install, the AI agent creates one daily job at the report-schedule time and sends that briefing. There is no second morning routine. `history daily`, `weekly`, `monthly`, and `yearly` print that period when you ask. `tips` is the occasional usage tip already included on some mornings. The same tip is not repeated for two calendar months. `service` shows kilometres since a logged tyre change or service. Tyre service uses Tesla's published rotation interval of 6,250 miles / 10,000 km unless you set another interval. Replacing tyres depends on tread, not a fixed distance. If no odometer is saved yet, say so after the next online check. That check does not wake the car. A due reminder is included in the same morning briefing, and the same reminder is not repeated for two calendar months.
 
 On a Monday weekly briefing, `history due` also adds one official item from the Tesla site for the country in the private profile, or from the computer's timezone when the profile has no country. A safety notice comes before other owner updates. The note is a short summary and the official link. The same item is not repeated for two calendar months. When the site has nothing new, that part of the briefing is left out. `agentdrive news` prints the same item on demand. It does not wake the car.
 
@@ -212,6 +218,8 @@ bash setup/install.sh
 ```
 
 `gate-present` prints the disclaimer and the security file in full.
+
+After install, the AI agent schedules `agentdrive check --json` every 30 minutes. Notify only when that command exits 1. Exit 0 means nothing new, including when the car is asleep and when the same alerts are still active. The same alert stays quiet until it clears and later returns. The check does not wake the car. Do not schedule unlock or a charging change on it. AgentDrive does not run that job. It is separate from the daily morning briefing.
 
 After install, the AI agent reads `agentdrive report-schedule`. The default is 07:30 local time and enabled. It creates one daily job at that time that runs `agentdrive history due` and sends that usage briefing. On Monday it sends the previous week, on the 1st the previous month, and on 1 January the previous year. Every other morning it sends the previous day. `agentdrive report` remains available when you want the car's current status, including the skip line when the car is asleep. A later change of time, or turning the briefing off, is `agentdrive report-schedule set HH:MM`, `disable`, or `enable`. The AI agent then updates its own job. AgentDrive does not install that job.
 

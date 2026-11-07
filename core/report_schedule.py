@@ -30,7 +30,7 @@ DAILY_REPORT_NOTE = (
     "That one job is the whole morning. A short tip is included only on some mornings, and a service reminder "
     "is included only when one is due and was not sent in the last two months. "
     "On a Monday weekly briefing, one new official Tesla note is included when the local Tesla site has one. "
-    "When it does not, that part is left out. Do not add a second job. "
+    "When it does not, that part is left out. Do not add a second morning job. "
     "`agentdrive report` is the live parked snapshot and can still be run when the user wants the car's current status. "
     "If the user changes the time or turns the report off, update that job to match `agentdrive report-schedule`. "
     "AgentDrive stores the schedule and does not run the job itself."

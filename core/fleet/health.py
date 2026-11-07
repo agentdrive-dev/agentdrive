@@ -86,6 +86,16 @@ def evaluate_alerts(
                 f"Battery is at {observation.battery_level} percent and the vehicle is not charging. Plug it in or start charging.",
             )
         )
+        if observation.sentry_on is False:
+            alerts.append(
+                Alert(
+                    "sentry-off-due-to-low-battery",
+                    (
+                        f"Sentry is off while the battery is at {observation.battery_level} percent. "
+                        "Plug the vehicle in and restore sentry."
+                    ),
+                )
+            )
     if _charge_error(observation):
         state = observation.charging_state or "error"
         alerts.append(Alert("charge_error", f"Charging reported an error ({state}). Check the cable and the charge port."))

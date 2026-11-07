@@ -99,11 +99,17 @@ def nominatim_payload():
     }
 
 
-def make_app(http):
+def make_app(http, home=None):
     regions = load_regions()
     tokens = SimpleNamespace(access_token=lambda force=False: TOKEN)
     reader = FleetReader(http, regions, "na", tokens)
-    return App(Path("."), reader=reader, tokens=tokens, control=SimpleNamespace(run=lambda **kwargs: None), region="na")
+    return App(
+        Path(home) if home is not None else Path("."),
+        reader=reader,
+        tokens=tokens,
+        control=SimpleNamespace(run=lambda **kwargs: None),
+        region="na",
+    )
 
 
 def rendered(report):
@@ -255,13 +261,13 @@ def test_query_error_does_not_include_coordinates():
         raise AssertionError("expected QueryError")
 
 
-def test_status_and_check_still_strip_location():
+def test_status_and_check_still_strip_location(tmp_path):
     assert "location_data" not in DATA_ENDPOINTS
     assert LOCATION_ENDPOINTS == ["location_data"]
     assert "where" not in PUBLIC_COMMANDS
     assert "latitude" not in Observation.__dataclass_fields__
     http = Http(data=location_payload())
-    app = make_app(http)
+    app = make_app(http, home=tmp_path)
     status = app.status(preferred=None, sleep=lambda _seconds: None)
     assert_secret_free(status)
     assert "Tyres" in status or "Battery" in status or "Vehicle" in status
