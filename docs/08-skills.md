@@ -14,7 +14,7 @@ Phase 1 answers a question you just asked, or sends a parked command you just as
 - **`agentdrive where`** is a coarse area: suburb or locality, state or region, and country. It does not wake a sleeping car and it does not print coordinates. A rounded point is sent to Nominatim. It is not part of the recurring health check.
 - **`agentdrive charge-schedule show`**, **`set`**, and **`remove`** read and change the in-car charging timetable. `show` does not wake a sleeping car. `set` and `remove` need Park, speed 0, and a fresh confirmation. A scheduled job cannot confirm them.
 
-Onboarding, trip advisor, charging tips, and news watch are still to build. Calling one of them fails. News watch, once it exists, stays quiet unless the owner needs to act. See [Next](../README.md#next).
+Onboarding, trip advisor, and charging tips are still to build. Calling one of them fails. See [Next](../README.md#next). The Monday weekly briefing can include one new official item from the Tesla site for the owner's country. `agentdrive news` prints that item. When there is nothing new, that part is left out.
 
 Habits and suburb-level places live in the profile file. Copy `config/profile.example.yaml` outside the repository before you fill it in. Do not put a street, a VIN, a token, or a live coordinate in it.
 

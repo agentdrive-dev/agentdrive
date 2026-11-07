@@ -13,6 +13,7 @@ from core.history.clock import local_today, resolve_timezone, timezone_name
 from core.history.service import take_service_reminders
 from core.history.store import database_exists, history_session, isoformat_utc, list_named, range_summary
 from core.history.text import dumps, fmt_km, fmt_kwh, fmt_pct, yes_no
+from core.history.official import take_official
 from core.history.tips import choose_tip, is_tip_day
 
 _LISTS = ("trips", "charges", "snapshots", "alerts", "config")
@@ -113,6 +114,12 @@ def render_briefing(home, period: str, *, as_json: bool, on: date | None = None,
             summary = range_summary(conn, start_iso, end_iso)
             tip, _reason = choose_tip(conn, today)
             reminders = take_service_reminders(conn, today)
+    official = None
+    if selected == "weekly":
+        try:
+            official = take_official(home, today, tz=zone)
+        except Exception:
+            official = None
     payload = _payload(
         selected=selected,
         explicit=period,
@@ -122,13 +129,14 @@ def render_briefing(home, period: str, *, as_json: bool, on: date | None = None,
         summary=summary,
         tip=tip,
         reminders=reminders,
+        official=official,
     )
     if as_json:
         return dumps(payload)
     return payload["text"]
 
 
-def _payload(*, selected, explicit, start, end, zone_name, summary, tip, reminders) -> dict:
+def _payload(*, selected, explicit, start, end, zone_name, summary, tip, reminders, official) -> dict:
     inclusive_end = end - timedelta(days=1)
     trips = summary["trips"]
     charges = summary["charges"]
@@ -156,6 +164,7 @@ def _payload(*, selected, explicit, start, end, zone_name, summary, tip, reminde
         empty=empty,
         tip=tip,
         reminders=reminders,
+        official=official,
     )
     return {
         "selected": selected,
@@ -184,6 +193,7 @@ def _payload(*, selected, explicit, start, end, zone_name, summary, tip, reminde
         "alerts_truncated": alerts_truncated,
         "tip": None if tip is None else {"id": tip["id"], "text": tip["text"]},
         "service_reminders": reminders,
+        "official": official,
     }
 
 
@@ -204,6 +214,7 @@ def _text(
     empty,
     tip,
     reminders,
+    official,
 ) -> str:
     lines = []
     if explicit == "due":
@@ -230,6 +241,8 @@ def _text(
             lines.append(f"- {item['text']}")
     if tip is not None:
         lines.append(f"Tip: {tip['text']}")
+    if official is not None and official.get("text"):
+        lines.append(official["text"])
     return "\n".join(lines)
 
 

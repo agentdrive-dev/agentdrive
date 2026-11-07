@@ -92,8 +92,9 @@ def test_readme_next_lists_planned_work_in_positive_language():
     assert "morning report" not in lowered
     assert "stays quiet unless something needs attention" not in lowered
     assert "trunk" in lowered and "frunk" in lowered and "remote start" in lowered
-    for skill in ("onboarding", "trip advisor", "charging tips", "news watch"):
+    for skill in ("onboarding", "trip advisor", "charging tips"):
         assert skill in lowered
+    assert "news watch" not in lowered
     assert "saved charging history" in lowered
     assert "nearby stall counts" in lowered
     assert "telemetry" not in lowered

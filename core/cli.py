@@ -16,6 +16,7 @@ from core.fleet.area import format_where, format_where_json
 from core.fleet.charge_schedule import format_schedule_report, format_schedule_report_json, parse_schedule_id, parse_schedule_write
 from core.fleet.http import UrllibClient
 from core.fleet.report import format_report, format_report_json
+from core.history.official import render_news
 from core.history.service import perform_log, render_service_status
 from core.history.usage import render_briefing, render_list, render_tips
 from core.ops import PUBLIC_COMMANDS, build_app, format_check, format_check_json, parse_limit, parse_temp, preferred_vin, resolve_thresholds
@@ -116,6 +117,12 @@ def build_parser() -> argparse.ArgumentParser:
     tips = sub.add_parser("tips", help="Say whether a usage tip is due this morning. Does not contact the car.")
     tips.add_argument("--json", action="store_true")
 
+    news = sub.add_parser(
+        "news",
+        help="Print one new official Tesla item for this locale, when there is one. Does not wake the car.",
+    )
+    news.add_argument("--json", action="store_true")
+
     service = sub.add_parser("service", help="Log or read service events from the saved odometer. Does not wake the car.")
     service.add_argument("--json", action="store_true")
     service_sub = service.add_subparsers(dest="service_action")
@@ -164,6 +171,8 @@ def main(argv: list[str] | None = None) -> int:
             return _history(args, home)
         if args.command == "tips":
             return _tips(args, home)
+        if args.command == "news":
+            return _news(args, home)
         if args.command == "service":
             return _service(args, home)
         if args.command == "charge-schedule":
@@ -305,6 +314,13 @@ def _history(args, home: Path) -> int:
 
 def _tips(args, home: Path) -> int:
     print(scrub(render_tips(home, as_json=args.json)))
+    return 0
+
+
+def _news(args, home: Path) -> int:
+    text = render_news(home, as_json=args.json)
+    if text:
+        print(scrub(text))
     return 0
 
 

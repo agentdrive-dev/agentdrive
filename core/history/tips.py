@@ -164,7 +164,8 @@ def choose_tip(conn, today: date) -> tuple[dict | None, str]:
     if not is_tip_day(today):
         return None, "not_today"
     notices = load_notices(conn)
-    if any(not key.startswith(_SERVICE_PREFIX) and shown == today for key, shown in notices.items()):
+    catalog_ids = {tip.id for tip in CATALOG}
+    if any(key in catalog_ids and shown == today for key, shown in notices.items()):
         return None, "already_shown"
     preferred = _preferred(recent_snapshots(conn))
     eligible = [tip for tip in CATALOG if tip.id not in notices or not on_cooldown(notices[tip.id], today)]

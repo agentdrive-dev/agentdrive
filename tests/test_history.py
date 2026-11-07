@@ -25,6 +25,11 @@ LON = "98.765432"
 TOKEN = "access-token"
 UTC = timezone.utc
 NY = ZoneInfo("America/New_York")
+
+
+@pytest.fixture(autouse=True)
+def offline_tesla_site(monkeypatch):
+    monkeypatch.setattr("core.history.official.fetch_text", lambda url: "")
 REQUIRED_TIP_IDS = {
     "precondition-plugged-in",
     "daily-charge-limit",
@@ -647,3 +652,130 @@ def test_note_rejects_coordinates_and_commands_do_not_print_them(tmp_path, monke
     plain = plaintext(home).decode("latin1")
     assert LAT not in plain
     assert VIN not in plain
+
+
+def _profile(home, country, timezone="Etc/UTC"):
+    home.mkdir(parents=True, exist_ok=True)
+    (home / "profile.yaml").write_text(
+        f"country: {country}\ntimezone: {timezone}\nplaces: []\nhabits: []\n",
+        encoding="utf-8",
+    )
+
+
+def _listing(locale, links):
+    rows = []
+    for href, title, when in links:
+        rows.append(f'<time datetime="{when}"></time><a href="{href}">{title}</a>')
+    return "\n".join(rows)
+
+
+def test_locale_comes_from_the_profile_or_the_timezone(tmp_path):
+    from zoneinfo import ZoneInfo
+
+    from core.history.locale import locale_for, site_root
+
+    australia = tmp_path / "au"
+    _profile(australia, "AU", "Etc/UTC")
+    assert locale_for(australia, ZoneInfo("America/New_York")) == "en_au"
+    assert site_root("en_au") == "https://www.tesla.com/en_au"
+    britain = tmp_path / "gb"
+    _profile(britain, "GB")
+    assert locale_for(britain, ZoneInfo("Etc/UTC")) == "en_gb"
+    assert site_root("en_gb") == "https://www.tesla.com/en_gb"
+    assert locale_for(tmp_path / "missing", ZoneInfo("Australia/Sydney")) == "en_au"
+    assert locale_for(tmp_path / "missing", ZoneInfo("Europe/London")) == "en_gb"
+    assert locale_for(tmp_path / "missing", ZoneInfo("America/Chicago")) == ""
+    assert site_root("") == "https://www.tesla.com"
+
+
+def test_weekly_briefing_includes_a_short_official_item_with_its_url(tmp_path):
+    from core.history.official import render_news
+
+    home = tmp_path / "home"
+    _profile(home, "GB")
+    article = "https://www.tesla.com/en_gb/support/example-brake-recall"
+    long_summary = " ".join(f"Point {number}." for number in range(1, 9))
+
+    def fetch(url):
+        if url.endswith("/support"):
+            return _listing(
+                "en_gb",
+                [
+                    ("/en_gb/blog/new-roadster-unveil", "Meet the new example car", "2026-03-01"),
+                    ("/en_gb/support/example-brake-recall", "Example brake safety recall", "2024-01-01"),
+                    (article, "Example brake safety recall", "2024-01-01"),
+                ],
+            )
+        if url == article:
+            return f'<meta name="description" content="{long_summary}">'
+        return ""
+
+    text = render_news(home, as_json=False, on=date(2026, 3, 2), tz=UTC, fetch=fetch)
+    assert "Safety notice: Example brake safety recall" in text
+    assert "Point 1." in text
+    assert "Point 3." in text
+    assert "Point 4." not in text
+    assert article in text
+    assert "example.com" not in text
+    assert "new-roadster" not in text
+    again = render_news(home, as_json=False, on=date(2026, 3, 2), tz=UTC, fetch=fetch)
+    assert again == ""
+
+
+def test_empty_official_check_omits_the_slot_and_does_not_pad_with_a_catalog_tip(tmp_path, monkeypatch):
+    home = tmp_path / "home"
+    _profile(home, "AU")
+    old = _listing(
+        "en_au",
+        [("/en_au/blog/cold-weather-software-update", "Cold weather software update", "2025-01-01")],
+    )
+    monkeypatch.setattr("core.history.official.fetch_text", lambda url: old)
+    weekly = render_briefing(home, "due", as_json=False, on=date(2026, 3, 2), tz=UTC)
+    assert "Official update" not in weekly
+    assert "Safety notice" not in weekly
+    assert "no update" not in weekly.lower()
+    assert "Tip:" in weekly
+    daily = render_briefing(home, "daily", as_json=False, on=date(2026, 3, 2), tz=UTC)
+    assert "cold-weather-software-update" not in daily
+
+
+def test_official_item_cooldown_is_two_months_and_one_per_week(tmp_path):
+    from core.history.official import render_news
+
+    home = tmp_path / "home"
+    _profile(home, "GB")
+    first = "/en_gb/support/example-brake-recall"
+    second = "/en_gb/support/example-software-update"
+
+    def fetch(url, extra=False):
+        links = [(first, "Example brake safety recall", "2026-03-01")]
+        if extra:
+            links.append((second, "Example software update for owners", "2026-03-08"))
+        if url.endswith("/support"):
+            return _listing("en_gb", links)
+        return ""
+
+    assert "example-brake-recall" in render_news(home, as_json=False, on=date(2026, 3, 2), tz=UTC, fetch=lambda url: fetch(url))
+    assert render_news(home, as_json=False, on=date(2026, 3, 4), tz=UTC, fetch=lambda url: fetch(url, extra=True)) == ""
+    assert render_news(home, as_json=False, on=date(2026, 3, 9), tz=UTC, fetch=lambda url: fetch(url)) == ""
+    later = render_news(home, as_json=False, on=date(2026, 3, 9), tz=UTC, fetch=lambda url: fetch(url, extra=True))
+    assert "example-software-update" in later
+    assert "example-brake-recall" not in later
+    returned = render_news(home, as_json=False, on=date(2026, 5, 4), tz=UTC, fetch=lambda url: fetch(url))
+    assert "example-brake-recall" in returned
+
+
+def test_news_command_prints_nothing_when_the_site_has_nothing_new(tmp_path, monkeypatch, capsys):
+    def explode(path):
+        raise AssertionError("news must not contact the car")
+
+    monkeypatch.setattr("core.cli.build_app", explode)
+    monkeypatch.setattr("core.history.usage.local_today", lambda tz: date(2026, 3, 2))
+    home = tmp_path / "home"
+    _profile(home, "US")
+    assert main(["--home", str(home), "news"]) == 0
+    assert capsys.readouterr().out == ""
+    assert main(["--home", str(home), "news", "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["item"] is None
+    assert "no update" not in json.dumps(payload).lower()

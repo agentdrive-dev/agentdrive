@@ -30,10 +30,13 @@ The same install is used for every shell-capable AI agent. Do not invent a secon
 After install, run agentdrive report-schedule. The default is 07:30 local time and enabled.
 Create one daily job at that time that runs agentdrive history due and send me that usage briefing.
 On Monday send the previous week, on the 1st the previous month, and on 1 January the previous year.
-Every other morning send the previous day. A tip appears only on some mornings, and a service
-reminder appears only when one is due. agentdrive report is the live snapshot when I want the
-car's current status, including the skip line when the car is asleep. If I later ask for a
-different time or to turn the briefing off, update the stored schedule and update that job.
+Every other morning send the previous day. That one job is the whole morning briefing:
+the usage report, a short tip on some mornings, a service reminder when one is due, and
+on a Monday weekly briefing one official Tesla note only when the local Tesla site has
+something new. If it does not, leave that part out. Do not add a second job.
+agentdrive report is the live snapshot when I want the car's current status, including
+the skip line when the car is asleep. If I later ask for a different time or to turn the
+briefing off, update the stored schedule and update that job.
 AgentDrive does not run it itself.
 ```
 
@@ -96,6 +99,7 @@ These are the commands the AI agent can run in `agentdrive` today. Grok Bot and 
 | `history trips`, `history charges`, `history snapshots` | no. Saved history only. It does not contact the car |
 | `history due`, `history daily`, `history weekly`, `history monthly`, `history yearly` | no. Saved history only |
 | `tips` | no. It does not contact the car |
+| `news` | no. It reads the official Tesla site for the owner's country and does not wake the car |
 | `service`, `service log rotation`, `service log replacement`, `service log maintenance` | no. It uses the saved odometer and does not wake the car |
 
 Unlock and charging changes are immediate commands. A scheduled job cannot run them or confirm them.
@@ -152,13 +156,16 @@ agentdrive history trips
 agentdrive history charges --json
 agentdrive history snapshots
 agentdrive tips
+agentdrive news
 agentdrive service
 agentdrive service log rotation
 agentdrive service log replacement
 agentdrive service log maintenance --note "cabin filter" --interval-km 20000
 ```
 
-`history due` is the morning briefing. `history daily`, `weekly`, `monthly`, and `yearly` print that period even when it is not this morning's turn. `tips` says whether a short tip is included this morning. A tip shows on some mornings only, at most one, and the same tip is not repeated for two calendar months. `service` shows kilometres since a logged tyre change or service. Tyre service uses Tesla's published rotation interval of 6,250 miles / 10,000 km unless you set another interval. Replacing tyres depends on tread, not a fixed distance. If no odometer is saved yet, say so after the next online check. That check does not wake the car. A due reminder is included in the morning briefing, and the same reminder is not repeated for two calendar months.
+`history due` is the morning briefing. After install, the AI agent creates one daily job at the report-schedule time and sends that briefing. There is no second routine. `history daily`, `weekly`, `monthly`, and `yearly` print that period when you ask. `tips` is the occasional usage tip already included on some mornings. The same tip is not repeated for two calendar months. `service` shows kilometres since a logged tyre change or service. Tyre service uses Tesla's published rotation interval of 6,250 miles / 10,000 km unless you set another interval. Replacing tyres depends on tread, not a fixed distance. If no odometer is saved yet, say so after the next online check. That check does not wake the car. A due reminder is included in the same morning briefing, and the same reminder is not repeated for two calendar months.
+
+On a Monday weekly briefing, `history due` also adds one official item from the Tesla site for the country in the private profile, or from the computer's timezone when the profile has no country. A safety notice comes before other owner updates. The note is a short summary and the official link. The same item is not repeated for two calendar months. When the site has nothing new, that part of the briefing is left out. `agentdrive news` prints the same item on demand. It does not wake the car.
 
 `agentdrive where` prints a suburb or locality, a state or region, and a country. It skips, and does not wake the car, when the car is asleep or offline. A rounded point (two decimal places, about 1 km) is sent to OpenStreetMap Nominatim so the place name can be resolved. The precise point is not sent. Coordinates are not printed. If the token lacks the `vehicle_location` scope, the command says to re-authorize with that scope.
 
@@ -169,7 +176,7 @@ agentdrive service log maintenance --note "cabin filter" --interval-km 20000
 Work we intend to add:
 
 - Trunk, frunk, and remote start on the command line. The signed-command path, the park check, and the one-time confirmation already cover those actions.
-- Onboarding, trip advisor, charging tips, and news watch. Onboarding walks registration after the disclaimer gate. Trip advisor compares a planned drive with current range from a saved suburb, and keeps live coordinates out of the AI agent's memory. Charging tips turns saved charging history and nearby stall counts into a short suggestion. News watch speaks only when a public recall or safety notice needs the owner to act.
+- Onboarding, trip advisor, and charging tips. Onboarding walks registration after the disclaimer gate. Trip advisor compares a planned drive with current range from a saved suburb, and keeps live coordinates out of the AI agent's memory. Charging tips turns saved charging history and nearby stall counts into a short suggestion.
 
 ## Illustrative example
 
