@@ -55,13 +55,17 @@ Commands:
 | `charge-schedule show` | read `charge_schedule_data` | no, and it does not wake |
 | `charge-schedule set <days> <time> <latitude> <longitude>` | signed `charging-schedule-add` | yes, one time |
 | `charge-schedule remove <id>` | signed `charging-schedule-remove` | yes, one time |
+| `trunk-open` | signed `trunk-open` | yes, one time. The sentence names open rear trunk |
+| `trunk-close` | signed `trunk-close` | yes, one time. The sentence names close rear trunk |
+| `frunk-open` | signed `frunk-open` | yes, one time. The sentence names open frunk |
+| `remote-start` | signed `drive` | yes, one time. The sentence names enable remote start |
 | `history trips`, `history charges`, `history snapshots` | no signed command; saved history only | no, and it does not contact the car |
 | `history due`, `history daily`, `history weekly`, `history monthly`, `history yearly` | no signed command; saved history only | no |
 | `tips` | no signed command | no, and it does not contact the car |
 | `news` | no signed command; reads the official Tesla site for the owner's country | no, and it does not wake the car |
 | `service`, `service log rotation`, `service log replacement`, `service log maintenance` | no signed command; uses the saved odometer | no, and it does not wake the car |
 
-Unlock, turning sentry off, and every charging change go through the existing confirmation layer. A schedule cannot confirm them. State-changing commands are sent only in Park at speed 0, then read back once.
+Unlock, turning sentry off, every charging change, the rear trunk, the front trunk, and remote start go through the existing confirmation layer. A schedule cannot confirm them and cannot run sentry off, the trunk, the front trunk, or remote start. The health check stays `agentdrive check`. The morning job stays `agentdrive history due`. State-changing commands are sent only in Park at speed 0, then read back once.
 
 ## Sentry and cabin climate
 
@@ -86,6 +90,23 @@ agentdrive precondition
 `defrost-on` and `defrost-off` send `preconditioning-max`. That is max defrost for the front and rear together. There is no separate front-only or rear-only command, and the manual override is not sent. Upstream `tesla-control` does not include that subcommand, so the installer adds it to the local build. `agentdrive update` rebuilds that binary.
 
 `precondition` sends `climate-on`, which starts cabin preconditioning now. It does not add a precondition schedule or a scheduled departure. `climate-off` stops the cabin climate.
+
+## Rear trunk, front trunk, and remote start
+
+```bash
+agentdrive trunk-open --confirm "I confirm open rear trunk"
+agentdrive trunk-close --confirm "I confirm close rear trunk"
+agentdrive frunk-open --confirm "I confirm open frunk"
+agentdrive remote-start --confirm "I confirm enable remote start"
+```
+
+`trunk-open` opens the rear trunk. `trunk-close` closes it when the vehicle can close the rear trunk electrically. If the car cannot, the signed command fails once and is not sent again. After a successful open, the follow-up read must show the rear trunk open. After a successful close, it must show the rear trunk closed.
+
+`frunk-open` opens the front trunk. The front trunk cannot be closed from AgentDrive. The signed command tool has no close for it.
+
+`remote-start` enables keyless driving for a short time, so the car can be driven without the phone key. It does not drive the car, it does not start an engine, and it does not ask for an account password. The signed command is `drive`. The follow-up read checks that the car is still in Park at speed 0.
+
+These four commands may wake a sleeping car, the same way lock, climate, and charging commands do. `agentdrive check`, `agentdrive report`, `agentdrive where`, and `agentdrive history` still never wake a sleeping car.
 
 ## In-car charging timetable
 

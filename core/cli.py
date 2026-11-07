@@ -88,6 +88,14 @@ def build_parser() -> argparse.ArgumentParser:
         "precondition",
     ):
         sub.add_parser(name, parents=[confirmed])
+    sub.add_parser("trunk-open", parents=[confirmed], help="Open the rear trunk. Needs a confirmation.")
+    sub.add_parser("trunk-close", parents=[confirmed], help="Close the rear trunk when the vehicle can. Needs a confirmation.")
+    sub.add_parser("frunk-open", parents=[confirmed], help="Open the front trunk. Needs a confirmation.")
+    sub.add_parser(
+        "remote-start",
+        parents=[confirmed],
+        help="Enable keyless driving. Needs a confirmation. Does not drive the car.",
+    )
     set_temp = sub.add_parser("set-temp", parents=[confirmed])
     set_temp.add_argument("celsius")
     seat_heat = sub.add_parser("seat-heat", parents=[confirmed])

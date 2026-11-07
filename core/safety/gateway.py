@@ -77,6 +77,8 @@ def _verify(kind: str, observed: Observation, extra_args: list[str]) -> None:
         return
     if kind == "trunk_open" and observed.trunk_open is True:
         return
+    if kind == "trunk_closed" and observed.trunk_open is False:
+        return
     if kind == "sentry_on" and observed.sentry_on is True:
         return
     if kind == "sentry_off" and observed.sentry_on is False:

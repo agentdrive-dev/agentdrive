@@ -2,9 +2,11 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
+from adapters.template import TemplateAdapter
 from core.errors import CommandFailed, ConfirmationRequired, NotParked, ScheduleBlocked, VerificationFailed
 from core.fleet.commands import CommandResult
 from core.fleet.snapshot import Observation
+from core.safety.catalog import TOOL_ARGS, load_specs
 from core.safety.confirm import Confirmation
 from core.safety.gateway import Gateway
 from core.safety.parked import require_parked
@@ -171,3 +173,105 @@ def test_command_failure_is_not_retried(monkeypatch):
             access_token="token",
             observe=lambda: parked(),
         )
+
+
+def test_trunk_frunk_and_remote_start_send_the_signed_command_once():
+    specs = load_specs()
+    cases = (
+        ("trunk_open", "I confirm open rear trunk", ["trunk-open"], parked(trunk_open=True)),
+        ("trunk_close", "I confirm close rear trunk", ["trunk-close"], parked(trunk_open=False)),
+        ("frunk_open", "I confirm open frunk", ["frunk-open"], parked(frunk_open=True)),
+        ("remote_start", "I confirm enable remote start", ["drive"], parked()),
+    )
+    for command, statement, args, after in cases:
+        assert specs[command].tier == "sensitive"
+        assert specs[command].tool_args == tuple(args)
+        _, runner = execute(command, adapter=Adapter(statement), after=after)
+        assert runner.calls[0]["args"] == args
+        assert "password" not in args
+
+
+def test_trunk_frunk_and_remote_start_refuse_when_not_parked_or_unconfirmed():
+    runner = Runner()
+    for command in ("trunk_open", "trunk_close", "frunk_open", "remote_start"):
+        with pytest.raises(NotParked):
+            execute(command, shift="D", speed=0, adapter=Adapter("I confirm open rear trunk"), runner=runner)
+        with pytest.raises(NotParked):
+            execute(command, speed=None, runner=runner)
+        with pytest.raises(ConfirmationRequired):
+            execute(command, adapter=Adapter("yes"), runner=runner)
+        with pytest.raises(ConfirmationRequired):
+            execute(command, adapter=Adapter("I confirm unlock"), runner=runner)
+    assert runner.calls == []
+
+
+def test_one_trunk_confirmation_does_not_authorize_another_action():
+    runner = Runner()
+    with pytest.raises(ConfirmationRequired):
+        execute("trunk_close", adapter=Adapter("I confirm open rear trunk"), after=parked(trunk_open=False), runner=runner)
+    with pytest.raises(ConfirmationRequired):
+        execute("remote_start", adapter=Adapter("I confirm open frunk"), runner=runner)
+    with pytest.raises(ConfirmationRequired):
+        execute("frunk_open", adapter=Adapter("I confirm enable remote start"), after=parked(frunk_open=True), runner=runner)
+    assert runner.calls == []
+
+
+def test_schedule_cannot_run_trunk_frunk_or_remote_start():
+    for command, statement, after in (
+        ("remote_start", "I confirm enable remote start", parked()),
+        ("trunk_open", "I confirm open rear trunk", parked(trunk_open=True)),
+        ("trunk_close", "I confirm close rear trunk", parked(trunk_open=False)),
+        ("frunk_open", "I confirm open frunk", parked(frunk_open=True)),
+    ):
+        adapter = Adapter(statement)
+        runner = Runner()
+        with pytest.raises(ScheduleBlocked):
+            execute(command, adapter=adapter, via_schedule=True, after=after, runner=runner)
+        assert adapter.calls == 0
+        assert runner.calls == []
+
+
+def test_closing_a_trunk_that_stays_open_is_not_retried():
+    runner = Runner()
+    with pytest.raises(VerificationFailed):
+        execute("trunk_close", adapter=Adapter("I confirm close rear trunk"), after=parked(trunk_open=True), runner=runner)
+    assert len(runner.calls) == 1
+    assert runner.calls[0]["args"] == ["trunk-close"]
+
+
+def test_frunk_close_is_not_a_signed_command():
+    specs = load_specs()
+    assert "frunk_close" not in specs
+    assert "close_frunk" not in specs
+    assert "frunk-close" not in {arg for args in TOOL_ARGS.values() for arg in args}
+    assert "close-frunk" not in {arg for args in TOOL_ARGS.values() for arg in args}
+
+
+def test_schedule_store_rejects_trunk_frunk_and_remote_start_and_keeps_the_jobs():
+    template = TemplateAdapter(lambda challenge: "no")
+    blocked = (
+        "remote_start",
+        "remote-start",
+        "remote start",
+        "drive",
+        "enable remote start",
+        "trunk-open",
+        "trunk-close",
+        "trunk_open",
+        "trunk_close",
+        "open rear trunk",
+        "close rear trunk",
+        "frunk-open",
+        "frunk_open",
+        "frunk-close",
+        "close-frunk",
+        "open frunk",
+    )
+    for command in blocked:
+        with pytest.raises(ScheduleBlocked):
+            template.schedule(command, "22:00", {"command": command})
+    template.schedule("health-check", "every 30 minutes", {"command": "check", "json": True})
+    template.schedule("morning", "07:30", {"command": "history", "action": "due"})
+    template.schedule("lights", "now", {"command": "flash"})
+    template.schedule("climate", "now", {"command": "climate-on"})
+    assert [item["task"]["command"] for item in template.schedules] == ["check", "history", "flash", "climate-on"]

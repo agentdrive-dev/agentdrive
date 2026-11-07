@@ -7,8 +7,11 @@ from dataclasses import dataclass
 from core.config import load_vehicles
 from core.errors import ConfigError
 
-# Arguments passed to tesla-control. Remote start is that tool's `drive` command.
-# Cabin preconditioning now is that tool's `climate-on` command (auto conditioning start).
+# Arguments passed to tesla-control.
+# Remote start is that tool's `drive` command (keyless-driving enablement). It takes no password.
+# The rear trunk can open (`trunk-open`) and, on vehicles that can close it, `trunk-close`.
+# The front trunk can open. The signed tool has no command that closes it.
+# Cabin preconditioning now is `climate-on` (auto conditioning start).
 # Max defrost is `preconditioning-max`, added to the local tesla-control build because
 # upstream does not register SetPreconditioningMax. The manual override is not sent.
 TOOL_ARGS: dict[str, tuple[str, ...]] = {
@@ -22,6 +25,7 @@ TOOL_ARGS: dict[str, tuple[str, ...]] = {
     "remote_start": ("drive",),
     "frunk_open": ("frunk-open",),
     "trunk_open": ("trunk-open",),
+    "trunk_close": ("trunk-close",),
     "sentry_on": ("sentry-mode", "on"),
     "sentry_off": ("sentry-mode", "off"),
     "seat_heater": ("seat-heater",),
@@ -48,6 +52,7 @@ VERIFY_KIND = {
     "unlock": "unlocked",
     "frunk_open": "frunk_open",
     "trunk_open": "trunk_open",
+    "trunk_close": "trunk_closed",
     "sentry_on": "sentry_on",
     "sentry_off": "sentry_off",
     "seat_heater": "seat_heater",
@@ -64,9 +69,29 @@ VERIFY_KIND = {
 }
 
 
-# Clear names for the confirmation prompt. The broker still matches the spec name.
+# Phrases the owner must say. Other commands use the spec name with spaces.
 ACTION_NAMES = {
+    "trunk_open": "open rear trunk",
+    "trunk_close": "close rear trunk",
+    "frunk_open": "open frunk",
+    "remote_start": "enable remote start",
     "sentry_off": "turn sentry off",
+}
+
+# Normalized command strings a schedule must not store. `drive` is the signed remote-start command.
+_SCHEDULE_BLOCKED = {
+    "trunk open",
+    "trunk close",
+    "trunk move",
+    "frunk open",
+    "frunk close",
+    "close frunk",
+    "remote start",
+    "enable remote start",
+    "open rear trunk",
+    "close rear trunk",
+    "open frunk",
+    "drive",
 }
 
 
@@ -105,3 +130,30 @@ def load_specs(document: dict | None = None) -> dict[str, CommandSpec]:
 
 def sensitive_names(document: dict | None = None) -> set[str]:
     return {name for name, spec in load_specs(document).items() if spec.tier == "sensitive"}
+
+
+def _schedule_text(command: str) -> str:
+    return " ".join(command.strip().lower().replace("_", " ").replace("-", " ").split())
+
+
+def schedule_blocks(command, sensitive: set[str] | None = None) -> bool:
+    """True when a host schedule must not store this command.
+
+    Health check (`check`) and the morning history (`history`) stay allowed.
+    Trunk, frunk, and remote start are interactive owner commands.
+    """
+    if not isinstance(command, str):
+        return False
+    raw = command.strip()
+    if not raw:
+        return False
+    names = sensitive if sensitive is not None else sensitive_names()
+    if raw in names:
+        return True
+    text = _schedule_text(raw)
+    if text in _SCHEDULE_BLOCKED or text.replace(" ", "_") in names:
+        return True
+    if raw == "charge-schedule" or raw.startswith("charge-schedule ") or text == "charge schedule" or text.startswith("charge schedule "):
+        return True
+    head = _schedule_text(raw.split()[0])
+    return head in _SCHEDULE_BLOCKED or head.replace(" ", "_") in names

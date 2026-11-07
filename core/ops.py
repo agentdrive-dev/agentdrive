@@ -72,6 +72,10 @@ PUBLIC_COMMANDS = {
     "defrost-on": "defrost_on",
     "defrost-off": "defrost_off",
     "precondition": "cabin_precondition",
+    "trunk-open": "trunk_open",
+    "trunk-close": "trunk_close",
+    "frunk-open": "frunk_open",
+    "remote-start": "remote_start",
 }
 
 

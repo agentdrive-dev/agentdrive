@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from core.errors import MemoryRejected, ScheduleBlocked
 from core.profile.owner import assert_memory_safe
-from core.safety.catalog import sensitive_names
+from core.safety.catalog import schedule_blocks, sensitive_names
 from core.safety.confirm import Challenge, Confirmation
 
 
@@ -84,14 +84,6 @@ class AdapterBase:
 
 
 def _schedule_command_is_sensitive(command, sensitive: set[str]) -> bool:
-    if not isinstance(command, str):
-        return False
-    raw = " ".join(command.strip().lower().split())
-    if not raw:
-        return False
-    head = raw.split()[0]
-    candidates = {raw, raw.replace("-", "_"), head, head.replace("-", "_")}
-    if any(item in sensitive for item in candidates):
-        return True
-    # The public command family. A host schedule must not store it.
-    return raw == "charge-schedule" or raw.startswith("charge-schedule ") or head in {"charge-schedule", "charge_schedule"}
+    # Sensitive spec names, the charge-schedule family, sentry off, and trunk, frunk, and remote start.
+    # `check` and `history` stay allowed for the health check and the morning report.
+    return schedule_blocks(command, sensitive)

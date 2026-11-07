@@ -37,9 +37,11 @@ def test_sentry_on_is_standard_and_sentry_off_stays_sensitive():
     assert specs["cabin_precondition"].tool_args == ("climate-on",)
     assert specs["defrost_on"].tool_args == ("preconditioning-max", "on")
     assert specs["defrost_off"].tool_args == ("preconditioning-max", "off")
-    assert "trunk" not in PUBLIC_COMMANDS
-    assert "frunk" not in PUBLIC_COMMANDS
+    assert PUBLIC_COMMANDS["trunk-open"] == "trunk_open"
+    assert PUBLIC_COMMANDS["frunk-open"] == "frunk_open"
+    assert PUBLIC_COMMANDS["remote-start"] == "remote_start"
     assert "precondition-schedule" not in PUBLIC_COMMANDS
+    assert "frunk-close" not in PUBLIC_COMMANDS
 
 
 def test_seat_and_steering_reject_combinations_the_signed_tool_rejects():
@@ -316,8 +318,10 @@ def test_queries_page_and_skill_document_sentry_wake_behavior():
     assert "may wake a sleeping car" not in readme
     assert "## Next" not in readme
     assert "| Command |" not in readme
-    for page in (ROOT / "README.md", ROOT / "DISCLAIMER.md", ROOT / "SECURITY.md"):
-        assert "when those commands are added" in page.read_text(encoding="utf-8") or page.name == "README.md"
+    assert "rear trunk" in readme.lower()
+    assert "remote start" in readme.lower()
+    assert "when those commands are added" not in (ROOT / "DISCLAIMER.md").read_text(encoding="utf-8")
+    assert "when those commands are added" not in (ROOT / "SECURITY.md").read_text(encoding="utf-8")
 
 
 def test_local_tesla_control_build_gains_max_defrost_without_a_manual_override(tmp_path):

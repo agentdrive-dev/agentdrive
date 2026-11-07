@@ -396,8 +396,12 @@ def test_ranges_and_signed_commands(monkeypatch):
         parse_limit("49")
     with pytest.raises(ConfigError):
         parse_limit("101")
-    assert "trunk" not in PUBLIC_COMMANDS
-    assert "frunk" not in PUBLIC_COMMANDS
+    assert PUBLIC_COMMANDS["trunk-open"] == "trunk_open"
+    assert PUBLIC_COMMANDS["trunk-close"] == "trunk_close"
+    assert PUBLIC_COMMANDS["frunk-open"] == "frunk_open"
+    assert PUBLIC_COMMANDS["remote-start"] == "remote_start"
+    assert "frunk-close" not in PUBLIC_COMMANDS
+    assert "close-frunk" not in PUBLIC_COMMANDS
 
     http = Http(listed("online"), vehicle_payload())
     control = Control()
@@ -434,6 +438,87 @@ def test_set_temp_uses_the_signed_command_arguments():
     assert runner.calls[0]["args"] == ["climate-set-temp", "21"]
 
 
+def test_trunk_frunk_and_remote_start_use_the_signed_path(monkeypatch):
+    monkeypatch.setattr("core.ops.sys.stdin.isatty", lambda: False)
+    http = Http(listed("online"), vehicle_payload())
+    control = Control()
+    app = make_app(http, control)
+
+    with pytest.raises(ConfirmationRequired) as missing:
+        app.command("trunk-open", preferred=None, argument=None, statement=None, sleep=lambda _seconds: None)
+    assert "open rear trunk" in str(missing.value)
+    assert "password" not in str(missing.value).lower()
+    assert control.calls == []
+
+    with pytest.raises(ConfirmationRequired):
+        app.command("remote-start", preferred=None, argument=None, statement="I confirm unlock", sleep=lambda _seconds: None)
+    assert control.calls == []
+
+    with pytest.raises(ConfigError):
+        app.command("frunk-close", preferred=None, argument=None, statement="I confirm open frunk", sleep=lambda _seconds: None)
+    with pytest.raises(ConfigError):
+        app.command("close-frunk", preferred=None, argument=None, statement="I confirm open frunk", sleep=lambda _seconds: None)
+    assert control.calls == []
+
+    driving = Http(listed("online"), vehicle_payload(drive_state={"shift_state": "D", "speed": 8}))
+    driving_control = Control()
+    with pytest.raises(NotParked):
+        make_app(driving, driving_control).command(
+            "frunk-open",
+            preferred=None,
+            argument=None,
+            statement="I confirm open frunk",
+            sleep=lambda _seconds: None,
+        )
+    assert driving_control.calls == []
+
+    cases = (
+        ("trunk-open", "I confirm open rear trunk", {"rt": 1}, ["trunk-open"]),
+        ("trunk-close", "I confirm close rear trunk", {"rt": 0}, ["trunk-close"]),
+        ("frunk-open", "I confirm open frunk", {"ft": 1}, ["frunk-open"]),
+        ("remote-start", "I confirm enable remote start", {}, ["drive"]),
+    )
+    for name, statement, vehicle_state, args in cases:
+        http = Http(listed("online"), vehicle_payload(vehicle_state=vehicle_state))
+        control = Control()
+        text = make_app(http, control).command(
+            name,
+            preferred=None,
+            argument=None,
+            statement=statement,
+            sleep=lambda _seconds: None,
+        )
+        assert text == f"OK: {name}"
+        assert control.calls[0]["args"] == args
+        assert control.calls[0]["vin"] == VIN
+        assert TOKEN not in text
+        assert len(control.calls) == 1
+
+
+def test_remote_start_wakes_a_sleeping_car_and_check_still_does_not():
+    http = Http(
+        listed("asleep"),
+        vehicle_payload(),
+        polls=[{"response": {"state": "online", "vin": VIN}}],
+    )
+    control = Control()
+    text = make_app(http, control).command(
+        "remote-start",
+        preferred=None,
+        argument=None,
+        statement="I confirm enable remote start",
+        sleep=lambda _seconds: None,
+    )
+    assert text == "OK: remote-start"
+    assert control.calls[0]["args"] == ["drive"]
+    assert sum(1 for url in urls(http) if url.endswith("/wake_up")) == 1
+
+    quiet = Http(listed("asleep"), vehicle_payload())
+    report = make_app(quiet, Control()).check(preferred=None, tyre_bar=2.5, low_battery_percent=30)
+    assert report.skipped is True
+    assert not any(url.endswith("/wake_up") for url in urls(quiet))
+
+
 def test_driving_refuses_a_command_before_the_tool_runs():
     http = Http(listed("online"), vehicle_payload(drive_state={"shift_state": "D", "speed": 10}))
     control = Control()
@@ -453,7 +538,7 @@ def test_fleet_status_posts_the_vehicle_list():
     assert json.loads(body.decode()) == {"vins": [VIN]}
 
 
-def test_cli_rejects_trunk_and_bad_ranges(tmp_path, capsys):
+def test_cli_lists_parked_commands_and_rejects_bad_ranges(tmp_path, capsys):
     choices = set(build_parser()._subparsers._group_actions[0].choices)
     for name in (
         "status",
@@ -479,11 +564,18 @@ def test_cli_rejects_trunk_and_bad_ranges(tmp_path, capsys):
         "defrost-on",
         "defrost-off",
         "precondition",
+        "trunk-open",
+        "trunk-close",
+        "frunk-open",
+        "remote-start",
     ):
         assert name in choices
-    assert "trunk" not in choices
-    assert "frunk" not in choices
+    assert "frunk-close" not in choices
+    assert "close-frunk" not in choices
     assert "precondition-schedule" not in choices
+    with pytest.raises(SystemExit) as caught:
+        main(["--home", str(tmp_path), "frunk-close"])
+    assert caught.value.code == 2
     assert main(["--home", str(tmp_path), "set-temp", "10"]) == 2
     assert "15-28" in capsys.readouterr().err
     assert main(["--home", str(tmp_path), "charge-limit", "40"]) == 2
