@@ -47,15 +47,17 @@ Security trade-off of a shared key: every agent that can read the private key fi
 
 ## Health check
 
-On install, schedule a routine that runs `agentdrive check --json` every few hours. Exit 0 means there is nothing to report, including when the vehicle is asleep, so stay quiet. Exit 1 means an alert the user should hear. Notify only when the exit code is 1. Do not schedule unlock or a charging change. `charge-schedule set` and `charge-schedule remove` are charging changes. Do not put `agentdrive report` on that health-check loop.
+On install, schedule a routine that runs `agentdrive check --json` every few hours. Exit 0 means there is nothing to report, including when the vehicle is asleep, so stay quiet. Exit 1 means an alert the user should hear. Notify only when the exit code is 1. Do not schedule unlock or a charging change. `charge-schedule set` and `charge-schedule remove` are charging changes. Do not put `agentdrive report` or `agentdrive history due` on that health-check loop. When the car is already online, `check` also saves local history. It does not wake the car to do that.
 
-## Daily vehicle report
+## Morning history
 
-On install, also create one daily job. Run `agentdrive report-schedule`. The default is 07:30 local time and enabled, until the user changes it. The job runs `agentdrive report` and you send the printed result to the user every time. Send the skip line too when the vehicle is asleep, offline, or the read times out. The command is read-only and does not wake the vehicle.
+On install, create one daily job. Run `agentdrive report-schedule`. The default is 07:30 local time and enabled, until the user changes it. The job runs `agentdrive history due` and you send that usage briefing. On Monday it is the previous week, on the 1st it is the previous month, and on 1 January it is the previous year. Every other morning it is the previous day. The command reads saved history only. It does not wake the car. This one job is enough. A short tip is included only on some mornings, and the same tip is not repeated for two calendar months. A service reminder is included when one is due and was not sent in the last two months. On a Monday weekly briefing, include one new official item from the Tesla site for the profile country when `history due` prints one. The item is a short summary plus the official link. When that part is absent, send the briefing without it. Do not add a second job, and do not fill the gap with a usage tip. `agentdrive news` prints the same official item on demand and prints nothing when there is nothing new. `agentdrive report` is the live parked snapshot. Run it when the user wants the car's current status, and send the skip line when the car is asleep.
 
-If the user asks for a different time, run `agentdrive report-schedule set HH:MM` and move the job to that time. If the user asks to turn the report off, run `agentdrive report-schedule disable` and remove the job. `agentdrive report-schedule enable` turns it back on. AgentDrive only stores the time in the private config home. It does not run in the background and it does not update the job for you. A host cron can use the example line the schedule command prints. Do not install a crontab unless the user asked for cron.
+`agentdrive history trips`, `history charges`, and `history snapshots` read the same saved history. `agentdrive tips` says whether a tip is due. `agentdrive service` shows kilometres since a tyre change or a service the user told you about. Log that with `agentdrive service log rotation`, `replacement`, or `maintenance`. If no odometer is saved yet, wait for the next online check or report, then log it. That does not wake the car.
 
-The same job is used for every shell-capable AI agent. Do not invent a second report command.
+If the user asks for a different time, run `agentdrive report-schedule set HH:MM` and move the job to that time. If the user asks to turn the briefing off, run `agentdrive report-schedule disable` and remove the job. `agentdrive report-schedule enable` turns it back on. AgentDrive only stores the time in the private config home. It does not run in the background and it does not update the job for you. A host cron can use the example line the schedule command prints. Do not install a crontab unless the user asked for cron.
+
+The same job is used for every shell-capable AI agent. Do not invent a second morning command. The history key stays in the config home. Do not paste it into chat.
 
 ## Secrets
 

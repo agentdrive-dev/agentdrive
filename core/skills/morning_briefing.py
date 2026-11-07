@@ -1,7 +1,8 @@
 """One parked readout. Speak only when the owner needs to do something.
 
-The daily briefing an assistant sends is ``agentdrive report``. This skill
-is not that job, and it does not schedule itself.
+The morning usage briefing is ``agentdrive history due``. The live parked
+snapshot is ``agentdrive report``. This skill is neither of those jobs, and
+it does not schedule itself.
 """
 
 from __future__ import annotations

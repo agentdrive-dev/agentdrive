@@ -17,7 +17,7 @@ After you approve the scopes, the browser opens the redirect URI. A page that sa
 
 Pairing can be checked with `POST /api/1/vehicles/fleet_status` and a JSON body `{"vins":["<vin>"]}`. `unpaired_vins` still needs the phone step. `key_paired_vins` means the key is on the account. Mask the VIN. Do not print the access token. Details are in [Troubleshooting](09-troubleshooting.md).
 
-The authorize URL and the fleet host come from `config/regions.yaml`. China-region hosts are not in that file.
+The authorize URL and the fleet host come from `config/regions.yaml`.
 
 ## Expected result
 

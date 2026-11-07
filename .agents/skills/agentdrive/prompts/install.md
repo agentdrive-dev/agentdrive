@@ -27,9 +27,11 @@ The read-only check is `agentdrive check`. It does not wake a sleeping vehicle a
 Do not flash, lock, unlock, or change climate or charging until doctor and that check have finished.
 
 Then read `agentdrive report-schedule`. The default is 07:30 local time and enabled.
-Create a daily job at that time that runs `agentdrive report` and send every result to me, including the skip line when the vehicle is asleep.
+Create one daily job at that time that runs `agentdrive history due` and send me that usage briefing.
+On Monday send the previous week, on the 1st the previous month, and on 1 January the previous year.
+Every other morning send the previous day. `agentdrive report` is the live snapshot when I want the car's current status, including the skip line when the vehicle is asleep.
 If I later ask for a different time, run `agentdrive report-schedule set HH:MM` and update the job.
-If I ask to turn the report off, run `agentdrive report-schedule disable` and remove the job.
+If I ask to turn the briefing off, run `agentdrive report-schedule disable` and remove the job.
 AgentDrive stores the time and does not run in the background.
 The same daily job is used for every shell-capable AI agent.
 Keep every secret in the config home or in the existing key and token files.

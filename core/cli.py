@@ -16,6 +16,9 @@ from core.fleet.area import format_where, format_where_json
 from core.fleet.charge_schedule import format_schedule_report, format_schedule_report_json, parse_schedule_id, parse_schedule_write
 from core.fleet.http import UrllibClient
 from core.fleet.report import format_report, format_report_json
+from core.history.official import render_news
+from core.history.service import perform_log, render_service_status
+from core.history.usage import render_briefing, render_list, render_tips
 from core.ops import PUBLIC_COMMANDS, build_app, format_check, format_check_json, parse_limit, parse_temp, preferred_vin, resolve_thresholds
 from core.report_schedule import DAILY_REPORT_NOTE, format_schedule, load_report_schedule, set_report_enabled, set_report_time
 from core.paths import resolve_home, resolve_key, resolve_token_file
@@ -101,6 +104,35 @@ def build_parser() -> argparse.ArgumentParser:
     where = sub.add_parser("where", help="Print a coarse area. Does not wake the vehicle or print coordinates.")
     where.add_argument("--json", action="store_true")
 
+    history = sub.add_parser("history", help="Read saved vehicle history on this computer. Does not contact the car.")
+    history_sub = history.add_subparsers(dest="history_action", required=True)
+    for name in ("trips", "charges", "snapshots", "alerts", "config"):
+        listed = history_sub.add_parser(name, help="Read saved history. Does not contact the car.")
+        listed.add_argument("--json", action="store_true")
+        listed.add_argument("--limit", type=int, default=20)
+    for name in ("due", "daily", "weekly", "monthly", "yearly"):
+        period = history_sub.add_parser(name, help="Print a usage briefing from saved history. Does not contact the car.")
+        period.add_argument("--json", action="store_true")
+
+    tips = sub.add_parser("tips", help="Say whether a usage tip is due this morning. Does not contact the car.")
+    tips.add_argument("--json", action="store_true")
+
+    news = sub.add_parser(
+        "news",
+        help="Print one new official Tesla item for this locale, when there is one. Does not wake the car.",
+    )
+    news.add_argument("--json", action="store_true")
+
+    service = sub.add_parser("service", help="Log or read service events from the saved odometer. Does not wake the car.")
+    service.add_argument("--json", action="store_true")
+    service_sub = service.add_subparsers(dest="service_action")
+    service_log = service_sub.add_parser("log", help="Record a tyre or service event against the saved odometer.")
+    service_log.add_argument("kind", choices=("rotation", "replacement", "maintenance"))
+    service_log.add_argument("--note", default="")
+    service_log.add_argument("--interval-km", type=float, default=None)
+    service_status = service_sub.add_parser("status", help="Show kilometres since logged service. Does not wake the car.")
+    service_status.add_argument("--json", action="store_true")
+
     sub.add_parser("update")
     return parser
 
@@ -135,6 +167,14 @@ def main(argv: list[str] | None = None) -> int:
             return _report_schedule(args, home)
         if args.command == "where":
             return _where(args, home)
+        if args.command == "history":
+            return _history(args, home)
+        if args.command == "tips":
+            return _tips(args, home)
+        if args.command == "news":
+            return _news(args, home)
+        if args.command == "service":
+            return _service(args, home)
         if args.command == "charge-schedule":
             return _charge_schedule(args, home)
         if args.command in {"refresh", "status", *PUBLIC_COMMANDS}:
@@ -259,6 +299,38 @@ def _where(args, home: Path) -> int:
     rendered = format_where_json(report) if args.json else format_where(report)
     print(scrub(rendered))
     return report.exit_code
+
+
+def _history(args, home: Path) -> int:
+    action = args.history_action
+    if action in {"trips", "charges", "snapshots", "alerts", "config"}:
+        if args.limit < 1 or args.limit > 200:
+            raise ConfigError("The history limit must be from 1 to 200.")
+        print(scrub(render_list(home, action, limit=args.limit, as_json=args.json)))
+        return 0
+    print(scrub(render_briefing(home, action, as_json=args.json)))
+    return 0
+
+
+def _tips(args, home: Path) -> int:
+    print(scrub(render_tips(home, as_json=args.json)))
+    return 0
+
+
+def _news(args, home: Path) -> int:
+    text = render_news(home, as_json=args.json)
+    if text:
+        print(scrub(text))
+    return 0
+
+
+def _service(args, home: Path) -> int:
+    if args.service_action == "log":
+        print(scrub(perform_log(home, args.kind, note=args.note, interval_km=args.interval_km)))
+        return 0
+    as_json = bool(args.json)
+    print(scrub(render_service_status(home, as_json=as_json)))
+    return 0
 
 
 def _charge_schedule(args, home: Path) -> int:

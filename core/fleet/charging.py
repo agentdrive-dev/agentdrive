@@ -2,8 +2,7 @@
 
 Field names below are candidates. They are marked unconfirmed until an owner
 compares them with a live response. Nearby sites expose location and stall
-counts only. This module does not request live Supercharger pricing, and it
-does not call the business-only sessions route.
+counts.
 """
 
 from __future__ import annotations
@@ -129,8 +128,8 @@ def normalize_nearby(payload: dict) -> dict:
         "pricing": None,
         "ignored_pricing_fields": _price_keys(payload),
         "note": (
-            "Nearby charging results are limited to location and stall counts. "
-            "No live Supercharger pricing is available. Field names must be confirmed against a real call."
+            "Nearby charging results are location and stall counts. "
+            "Field names must be confirmed against a real call."
         ),
         "matched_list_keys": matched,
     }

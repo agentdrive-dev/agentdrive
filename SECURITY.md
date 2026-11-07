@@ -18,6 +18,8 @@ Never commit or paste a private key, client secret, access token, refresh token,
 
 Local secret files should be readable only by your user. The doctor command checks that the private-key file is present and, on macOS and Linux, not group- or world-readable. On Windows, limit the file ACL to your user. Unix mode bits are not how Windows records that restriction. The token store writes the replacement refresh token with an atomic rename before the previous value is dropped from memory.
 
+Vehicle history is an encrypted file in the same config home (`history.db`). The key is `history.key`, created on first save, mode 600 on macOS and Linux. Encryption is AES-256-GCM from the Python `cryptography` package. Keep that key in the config home. Do not commit it and do not paste it into chat.
+
 A private key that is already paired with another agent you trust can be the key AgentDrive uses. That is one signing key for every program that can read the file. A second copy is a second secret. The token file rotates: keep one file and one writer, because a refresh replaces the refresh token and two writers can invalidate each other.
 
 ## Commands

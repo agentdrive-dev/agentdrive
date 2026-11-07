@@ -4,6 +4,10 @@ Status wakes a sleeping vehicle and polls for up to 45 seconds. The health
 check, the daily report, where, and charge-schedule show never wake. Unlock
 and other sensitive commands go through the safety gateway, which asks for a
 one-time confirmation.
+
+Check and report also save local history when the car is already online.
+That write does not wake the car, and a history problem does not change the
+check result or the report text.
 """
 
 from __future__ import annotations
@@ -160,12 +164,22 @@ def resolve_thresholds(
 class App:
     """Wires the fleet reader, token manager, and signed-command runner."""
 
-    def __init__(self, home: Path, *, reader: FleetReader, tokens: TokenManager, control: TeslaControl, region: str):
+    def __init__(
+        self,
+        home: Path,
+        *,
+        reader: FleetReader,
+        tokens: TokenManager,
+        control: TeslaControl,
+        region: str,
+        history: bool = False,
+    ):
         self.home = Path(home)
         self.reader = reader
         self.tokens = tokens
         self.control = control
         self.region = region
+        self.history = history
         self.gateway = Gateway(control)
 
     def refresh(self) -> str:
@@ -184,7 +198,9 @@ class App:
             return skipped_report(state, tyre_bar=tyre_bar, low_battery_percent=low_battery_percent)
         payload = self.reader.vehicle_data(vehicle_key(chosen), DATA_ENDPOINTS)
         observation = from_vehicle_data(payload)
-        return report_from_observation(observation, tyre_bar=tyre_bar, low_battery_percent=low_battery_percent)
+        report = report_from_observation(observation, tyre_bar=tyre_bar, low_battery_percent=low_battery_percent)
+        self._remember(payload, observation, tyre_bar=tyre_bar, low_battery_percent=low_battery_percent)
+        return report
 
     def report(self, *, preferred: str | None) -> VehicleReport:
         """Read-only briefing. A car that is not online, a timeout, or HTTP 408 is a skip.
@@ -211,6 +227,7 @@ class App:
         observation = from_vehicle_data(payload)
         name = str(chosen.get("display_name") or "Vehicle")
         briefing = vehicle_report(name, observation)
+        self._remember(payload, observation)
         secrets = [item for item in (str(chosen.get("vin") or ""), preferred or "") if item]
         return _redact_report(briefing, secrets)
 
@@ -322,6 +339,25 @@ class App:
         if extra:
             return f"OK: {name} {' '.join(extra)}"
         return f"OK: {name}"
+
+    def _remember(self, payload, observation, *, tyre_bar=None, low_battery_percent=None) -> None:
+        """Save a parked snapshot. A failure is printed and does not change the command."""
+        if not self.history:
+            return
+        try:
+            if tyre_bar is None or low_battery_percent is None:
+                tyre_bar, low_battery_percent = resolve_thresholds(self.home)
+            from core.history.store import record_parked_snapshot
+
+            record_parked_snapshot(
+                self.home,
+                payload if isinstance(payload, dict) else {},
+                observation,
+                tyre_bar=float(tyre_bar),
+                low_battery_percent=int(low_battery_percent),
+            )
+        except Exception as exc:
+            _remember_failure(exc)
 
     def _online(self, preferred: str | None, *, sleep) -> tuple[dict, str, Observation]:
         chosen = select_vehicle(self.reader.list_vehicles(), preferred)
@@ -483,7 +519,15 @@ def build_app(home: Path, *, region: str | None = None) -> App:
         session_cache=home / ".session-cache.json",
         token_dir=home,
     )
-    return App(home, reader=reader, tokens=tokens, control=control, region=chosen)
+    return App(home, reader=reader, tokens=tokens, control=control, region=chosen, history=True)
+
+
+def _remember_failure(exc: BaseException) -> None:
+    """A history problem must not change check or report. The line has no secrets."""
+    print(
+        f"history: the local history could not be saved ({type(exc).__name__})",
+        file=sys.stderr,
+    )
 
 
 def _pct(value) -> str:

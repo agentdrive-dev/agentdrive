@@ -297,7 +297,7 @@ def test_schedule_defaults_to_0730_and_can_be_changed(tmp_path, capsys):
     shown = capsys.readouterr().out
     assert "report schedule: 07:30 local time" in shown
     assert "enabled: yes" in shown
-    assert "crontab example: 30 7 * * * agentdrive report" in shown
+    assert "crontab example: 30 7 * * * agentdrive history due" in shown
     assert "does not install the job" in shown
     assert not (home / "runtime.yaml").exists()
 
@@ -305,7 +305,7 @@ def test_schedule_defaults_to_0730_and_can_be_changed(tmp_path, capsys):
     updated = capsys.readouterr().out
     assert "report schedule: 08:15 local time" in updated
     assert "enabled: yes" in updated
-    assert "crontab example: 15 8 * * * agentdrive report" in updated
+    assert "crontab example: 15 8 * * * agentdrive history due" in updated
     assert "update its daily job" in updated
     saved = yaml.safe_load((home / "runtime.yaml").read_text(encoding="utf-8"))
     assert saved["report_schedule"] == {"enabled": True, "time": "08:15"}
@@ -328,7 +328,7 @@ def test_schedule_defaults_to_0730_and_can_be_changed(tmp_path, capsys):
     assert main(["--home", str(home), "report-schedule", "enable"]) == 0
     enabled = capsys.readouterr().out
     assert "enabled: yes" in enabled
-    assert "crontab example: 5 6 * * * agentdrive report" in enabled
+    assert "crontab example: 5 6 * * * agentdrive history due" in enabled
     assert load_report_schedule(home).enabled is True
 
 
@@ -352,8 +352,8 @@ def test_schedule_rejects_bad_times_and_keeps_other_runtime_keys(tmp_path, capsy
     assert loaded["token_file"] == "/tmp/example-tokens.json"
     assert loaded["report_schedule"]["time"] == "09:05"
     assert loaded["report_schedule"]["enabled"] is True
-    assert crontab_example(load_report_schedule(home)) == "5 9 * * * agentdrive report"
-    assert crontab_example(load_report_schedule(tmp_path / "empty")) == "30 7 * * * agentdrive report"
+    assert crontab_example(load_report_schedule(home)) == "5 9 * * * agentdrive history due"
+    assert crontab_example(load_report_schedule(tmp_path / "empty")) == "30 7 * * * agentdrive history due"
 
 
 def test_unquoted_clock_time_in_runtime_yaml_is_rejected(tmp_path):
@@ -368,7 +368,7 @@ def test_unquoted_clock_time_in_runtime_yaml_is_rejected(tmp_path):
     assert set_report_time(fresh, "23:59").time == "23:59"
     assert '"23:59"' in (fresh / "runtime.yaml").read_text(encoding="utf-8")
     assert load_report_schedule(fresh).time == "23:59"
-    assert crontab_example(load_report_schedule(fresh)) == "59 23 * * * agentdrive report"
+    assert crontab_example(load_report_schedule(fresh)) == "59 23 * * * agentdrive history due"
 
 
 def test_template_install_prints_the_daily_report_note(tmp_path, capsys):

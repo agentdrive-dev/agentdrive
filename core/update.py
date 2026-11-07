@@ -31,6 +31,9 @@ PRIVATE_NAMES = (
     "secrets",
     ".refresh.lock",
     ".session-cache.json",
+    "history.key",
+    "history.db",
+    ".history.lock",
 )
 
 
