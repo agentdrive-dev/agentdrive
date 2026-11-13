@@ -10,6 +10,7 @@ from core import __version__
 from core.cli import main
 from core.config import load_regions
 from core.fleet.area import SCOPE_HINT, WhereReport, area_from_vehicle_payload, format_where, format_where_json
+from core.history.crypto import database_paths
 from core.fleet.auth import build_authorize_url, default_scopes, request_partner_token
 from core.fleet.health import skipped_report
 from core.fleet.http import USER_AGENT, UrllibClient
@@ -175,6 +176,58 @@ def test_where_cli_stdout_and_stderr_omit_coordinates(tmp_path, monkeypatch, cap
     assert_secret_free(as_json.out)
     assert_secret_free(as_json.err)
     assert_secret_free(caplog.text)
+
+
+def test_precise_where_prints_a_map_link_without_waking_or_geocoding_or_history(tmp_path):
+    http = Http()
+    app = make_app(http, home=tmp_path)
+    app.history = True
+    report = app.where(preferred=None, precise=True)
+    assert report.kind == "precise"
+    assert report.exit_code == 0
+    assert report.latitude == RAW_LAT
+    assert report.longitude == RAW_LON
+    text = format_where(report)
+    body = json.loads(format_where_json(report))
+    assert text == f"latitude: {RAW_LAT}\nlongitude: {RAW_LON}\nmap: {report.map_url}"
+    assert body == {"latitude": RAW_LAT, "longitude": RAW_LON, "map": report.map_url}
+    assert report.map_url.startswith("https://www.openstreetmap.org/?mlat=")
+    assert f"mlat={RAW_LAT}" in report.map_url
+    assert f"mlon={RAW_LON}" in report.map_url
+    assert nominatim_calls(http) == []
+    assert not any(call["url"].endswith("/wake_up") for call in http.calls)
+    assert not database_paths(tmp_path)[1].exists()
+
+    for state in ("asleep", "offline"):
+        sleeping = Http(state=state)
+        skipped = make_app(sleeping).where(preferred=None, precise=True)
+        assert skipped.kind == "skipped"
+        assert skipped.exit_code == 0
+        assert skipped.latitude == ""
+        rendered_skip = rendered(skipped)
+        assert "skipped: the vehicle is not online, so it was not woken" in rendered_skip
+        assert_secret_free(rendered_skip)
+        assert nominatim_calls(sleeping) == []
+        assert not any("vehicle_data" in call["url"] or call["url"].endswith("/wake_up") for call in sleeping.calls)
+
+
+def test_precise_where_cli_prints_the_point_and_the_default_still_hides_it(tmp_path, monkeypatch, capsys):
+    monkeypatch.delenv("AGENTDRIVE_VIN", raising=False)
+    monkeypatch.delenv("TESLA_VIN", raising=False)
+    monkeypatch.setattr("core.cli.build_app", lambda home: make_app(Http()))
+    assert main(["--home", str(tmp_path), "where", "--precise"]) == 0
+    plain = capsys.readouterr().out
+    assert f"latitude: {RAW_LAT}" in plain
+    assert f"longitude: {RAW_LON}" in plain
+    assert "https://www.openstreetmap.org/?mlat=" in plain
+    assert main(["--home", str(tmp_path), "where", "--precise", "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["latitude"] == RAW_LAT
+    assert payload["longitude"] == RAW_LON
+    assert main(["--home", str(tmp_path), "where"]) == 0
+    coarse = capsys.readouterr()
+    assert "suburb: Northside" in coarse.out
+    assert_secret_free(coarse.out)
 
 
 def test_asleep_and_offline_skip_without_waking_or_geocoding():

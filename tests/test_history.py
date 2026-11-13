@@ -14,7 +14,7 @@ from core.errors import HistoryError
 from core.fleet.queries import FleetReader
 from core.fleet.snapshot import from_vehicle_data
 from core.history.crypto import database_paths, open_sealed
-from core.history.store import history_session, isoformat_utc, record_parked_snapshot, save_notice
+from core.history.store import SCHEMA, history_session, isoformat_utc, record_parked_snapshot, save_notice
 from core.history.tips import CATALOG, add_calendar_months, is_tip_day, on_cooldown
 from core.history.usage import covered, due_period, render_briefing, render_list, render_tips
 from core.ops import App, format_check
@@ -241,6 +241,12 @@ def test_report_also_saves_and_keeps_its_text(tmp_path):
     assert VIN not in loud.text
     assert LAT not in loud.text
     assert json.loads(render_list(home, "snapshots", limit=5, as_json=True))["total"] == 1
+
+
+def test_history_schema_has_no_coordinate_columns():
+    folded = SCHEMA.lower()
+    for name in ("latitude", "longitude", "gps", "polyline", "track", "heading"):
+        assert name not in folded
 
 
 def test_coordinates_and_vin_are_absent_from_the_database(tmp_path):

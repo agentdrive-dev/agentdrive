@@ -1,10 +1,10 @@
 """Normalize a vehicle_data payload into the fields the safety checks need.
 
-Drive-state latitude and longitude are ignored on purpose so a readout cannot
-be copied into assistant memory by accident. Charging-timetable coordinates
-stay on the schedule rows, which only the charge-schedule command prints.
-Departure-schedule coordinates stay on those rows, which only the departure
-command prints.
+Drive-state latitude and longitude are not copied onto this observation.
+status, check, and report do not request location_data. Precise coordinates
+are read only when the caller asks: where --precise, or a departure place
+taken from the car. History does not store them. Charging-timetable and
+departure-schedule places stay on those rows, which only those commands print.
 """
 
 from __future__ import annotations

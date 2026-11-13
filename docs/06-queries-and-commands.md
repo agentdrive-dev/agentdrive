@@ -4,7 +4,7 @@
 
 ![Park check, one-time confirmation for sensitive actions, then one send and a fresh read](images/command-safety.svg)
 
-Reads use the Fleet API: the vehicle list, `vehicle_data`, and wake. Location on firmware 2023.38 and later needs the `location_data` endpoint and the `vehicle_location` scope. `status` and `check` do not request that endpoint. `where` requests it only when the vehicle list already says the car is online. Coordinates are not copied into the AI agent's memory.
+Reads use the Fleet API: the vehicle list, `vehicle_data`, and wake. Location on firmware 2023.38 and later needs the `location_data` endpoint and the `vehicle_location` scope. `status` and `check` do not request that endpoint. `where` and `where --precise` request it only when the vehicle list already says the car is online. Precise coordinates are used only when you ask for them (`where --precise`, or a departure place taken from the car) and are not written to the local history.
 
 `agentdrive status` reads charge, climate, and vehicle state, including tyre pressures and TPMS warnings. If the vehicle list says the car is asleep, status sends one wake and then polls for up to 45 seconds. The VIN is masked. Tokens are not printed. When the account has more than one vehicle, set `AGENTDRIVE_VIN` to choose one. Otherwise the first vehicle on the account is used.
 
@@ -14,7 +14,15 @@ Reads use the Fleet API: the vehicle list, `vehicle_data`, and wake. Location on
 
 Before that point leaves the process, latitude and longitude are rounded to two decimal places, about 1 km. The command sends that rounded point to OpenStreetMap Nominatim for one reverse lookup at zoom 14, with the `AgentDrive/<version>` User-Agent. It does not retry, and it does not send the precise point. Nominatim's usage policy allows this kind of light use and asks callers not to bulk-geocode. Place names are OpenStreetMap data.
 
-The command prints a suburb or locality, a state or region, and a country. The text labels are `suburb`, `region`, and `country`. `suburb` is the suburb when Nominatim has one, and otherwise a neighbourhood, locality, village, town, or city. `--json` prints those three fields. Stdout, JSON, and errors do not contain coordinates. If the lookup fails, the command prints `area unavailable` and exits 1.
+The default command prints a suburb or locality, a state or region, and a country. The text labels are `suburb`, `region`, and `country`. `suburb` is the suburb when Nominatim has one, and otherwise a neighbourhood, locality, village, town, or city. `--json` prints those three fields. That default text, JSON, and the errors do not contain coordinates. If the lookup fails, the command prints `area unavailable` and exits 1.
+
+`agentdrive where --precise` prints the precise latitude and longitude and an OpenStreetMap link when the car is already online. It uses the same non-waking read. It does not call Nominatim. If the car is asleep or offline, it skips and does not wake the car. `--json` prints `latitude`, `longitude`, and `map`.
+
+```bash
+agentdrive where
+agentdrive where --precise
+agentdrive where --precise --json
+```
 
 A location read needs the official `vehicle_location` scope. The owner sign-in scope list is `openid`, `offline_access`, `user_data`, `vehicle_device_data`, `vehicle_location`, and `vehicle_cmds`. If the token lacks `vehicle_location`, or the firmware refuses the read until that scope is granted, the command tells you to re-authorize and include `vehicle_location`, and it exits 1. Sign in again so the new token carries that scope. `status` and `check` stay free of location.
 
@@ -37,6 +45,7 @@ Commands:
 | Command | What it sends | Confirmation |
 | --- | --- | --- |
 | `where` | no signed command; one `location_data` read when the car is already online | no |
+| `where --precise` | no signed command; the same non-waking `location_data` read, then latitude, longitude, and a map link | no |
 | `wake` | signed `wake` | no, and it does not use the park check |
 | `flash` | signed `flash-lights` | no |
 | `honk` | signed `honk` | no |
@@ -51,7 +60,7 @@ Commands:
 | `defrost-on`, `defrost-off` | signed `preconditioning-max` | no |
 | `precondition` | signed `climate-on` | no |
 | `departure show` | read `preconditioning_schedule_data` | no, and it does not wake |
-| `departure set <days> <time> <latitude> <longitude>` | signed `precondition-schedule-add` | yes, one time |
+| `departure set <days> <time> [latitude longitude]` | signed `precondition-schedule-add` | yes, one time |
 | `departure remove <id>` | signed `precondition-schedule-remove` | yes, one time |
 | `charge-start`, `charge-stop` | signed charging command | yes, one time |
 | `charge-limit <percent>` | signed `charging-set-limit` | yes, one time, and only 50 to 100 |
@@ -131,6 +140,7 @@ The amps value is a whole number from 1 to 80. 80 is the highest AC current a Te
 ```bash
 agentdrive departure show
 agentdrive departure show --json
+agentdrive departure set weekdays 07:30 --confirm "I confirm departure schedule set"
 agentdrive departure set weekdays 07:30 1 2 --confirm "I confirm departure schedule set"
 agentdrive departure set all 08:00 1 2 --once --confirm "I confirm departure schedule set"
 agentdrive departure set Mon,Wed 07:30 1 2 --id 1700000000 --confirm "I confirm departure schedule set"
@@ -145,7 +155,7 @@ agentdrive departure remove 1700000000 --confirm "I confirm departure schedule r
 | --- | --- |
 | `days` | `all`, `weekdays`, or a comma-separated list of `Sun`, `Mon`, `Tues`, `Wed`, `Thurs`, `Fri`, `Sat`. Full day names are accepted. |
 | `time` | 24-hour local time, `HH:MM`. This is when the cabin should be ready, as minutes after midnight. It is not a start-and-end window. |
-| `latitude` `longitude` | Decimal degrees, from -180 to 180. The signed command requires both. The schedule applies at that place. |
+| `latitude` `longitude` | Optional. Decimal degrees. Latitude is from -90 to 90 and longitude is from -180 to 180. Pass both, or omit both. Omit both and the command reads the car's current location with `location_data` after the same wake other parked changes use. If that read says the car is asleep, it is not woken again. The command then says the car must be online, or you can pass coordinates. The schedule applies at that place. |
 | `--once` | The row runs once. Omit it and the row repeats every week. |
 | `--enabled` | `true` (the default) or `false`. |
 | `--id` | Change the row with this id. Omit it to add a row. |
@@ -217,7 +227,7 @@ agentdrive update
 
 ## Expected result
 
-A status question returns a short readout with tyre pressures, no coordinates, and a masked VIN. `agentdrive where` returns a suburb, region, and country, or says that it skipped when the car is asleep. A parked lights flash runs once and is followed by another read. A sleeping car makes `agentdrive check`, `agentdrive report`, `agentdrive where`, `agentdrive charge-schedule show`, and `agentdrive departure show` exit 0 without a wake. The AI agent still sends the report, including that skip line.
+A status question returns a short readout with tyre pressures and a masked VIN. `status` and `check` do not request location. `agentdrive where` returns a suburb, region, and country, or says that it skipped when the car is asleep. `agentdrive where --precise` prints latitude, longitude, and a map link when the car is already online, and it still skips without a wake when the car is asleep. A parked lights flash runs once and is followed by another read. A sleeping car makes `agentdrive check`, `agentdrive report`, `agentdrive where`, `agentdrive where --precise`, `agentdrive charge-schedule show`, and `agentdrive departure show` exit 0 without a wake. The AI agent still sends the report, including that skip line.
 
 Illustrative sample. These figures are sample data, not a vehicle reading:
 

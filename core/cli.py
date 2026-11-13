@@ -141,8 +141,8 @@ def build_parser() -> argparse.ArgumentParser:
     departure_set = departure_sub.add_parser("set", parents=[confirmed], help="Add or change a departure precondition schedule")
     departure_set.add_argument("days", help="all, weekdays, or comma-separated Sun, Mon, Tues, Wed, Thurs, Fri, Sat")
     departure_set.add_argument("time", help="Cabin ready by this local time, HH:MM")
-    departure_set.add_argument("latitude")
-    departure_set.add_argument("longitude")
+    departure_set.add_argument("latitude", nargs="?", default=None, help="Optional. Omit both coordinates to use the car's current location.")
+    departure_set.add_argument("longitude", nargs="?", default=None)
     departure_set.add_argument("--once", action="store_true", help="Run once. Omit to repeat every week.")
     departure_set.add_argument(
         "--enabled",
@@ -170,8 +170,13 @@ def build_parser() -> argparse.ArgumentParser:
     report_action.add_parser("enable")
     report_action.add_parser("disable")
 
-    where = sub.add_parser("where", help="Print a coarse area. Does not wake the vehicle or print coordinates.")
+    where = sub.add_parser("where", help="Print a coarse area. Does not wake the vehicle.")
     where.add_argument("--json", action="store_true")
+    where.add_argument(
+        "--precise",
+        action="store_true",
+        help="Print latitude, longitude, and a map link when the car is already online. Does not wake the car.",
+    )
 
     history = sub.add_parser("history", help="Read saved vehicle history on this computer. Does not contact the car.")
     history_sub = history.add_subparsers(dest="history_action", required=True)
@@ -366,7 +371,7 @@ def _report_schedule(args, home: Path) -> int:
 
 
 def _where(args, home: Path) -> int:
-    report = build_app(home).where(preferred=preferred_vin())
+    report = build_app(home).where(preferred=preferred_vin(), precise=bool(args.precise))
     rendered = format_where_json(report) if args.json else format_where(report)
     print(scrub(rendered))
     return report.exit_code

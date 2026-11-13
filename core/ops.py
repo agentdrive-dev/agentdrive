@@ -20,7 +20,7 @@ from pathlib import Path
 from adapters.template import TemplateAdapter
 from core.config import load_regions
 from core.errors import ConfigError, ConfirmationRequired, TokenError
-from core.fleet.area import WhereReport, area_from_vehicle_payload
+from core.fleet.area import WhereReport, area_from_vehicle_payload, precise_from_vehicle_payload, precise_point
 from core.fleet.charge_schedule import (
     ScheduleReport,
     ScheduleWrite,
@@ -45,7 +45,7 @@ from core.fleet.health import (
     skipped_report,
 )
 from core.fleet.http import HttpError, UrllibClient
-from core.fleet.queries import FleetReader, QueryError, VehicleAsleep
+from core.fleet.queries import FleetReader, QueryError, VehicleAsleep, location_scope_denied
 from core.fleet.report import VehicleReport, skipped_vehicle_report, skip_text, vehicle_report
 from core.fleet.snapshot import SEAT_API_FIELDS, SEAT_HEATER_LEVELS, Observation, from_vehicle_data, seat_heater_names
 from core.fleet.tokens import AtomicTokenStore, FleetTokenRefresher, TokenManager, audience_for
@@ -298,8 +298,8 @@ class App:
         secrets = [item for item in (str(chosen.get("vin") or ""), preferred or "") if item]
         return _redact_report(briefing, secrets)
 
-    def where(self, *, preferred: str | None) -> WhereReport:
-        """Coarse area. A sleeping or offline vehicle is skipped and is not woken."""
+    def where(self, *, preferred: str | None, precise: bool = False) -> WhereReport:
+        """Area or a precise point. A sleeping or offline vehicle is not woken."""
         try:
             chosen = select_vehicle(self.reader.list_vehicles(), preferred)
         except VehicleAsleep:
@@ -317,6 +317,8 @@ class App:
             return WhereReport(kind="unavailable")
         except Exception:
             return WhereReport(kind="unavailable")
+        if precise:
+            return precise_from_vehicle_payload(payload)
         return area_from_vehicle_payload(self.reader.http, payload)
 
     def charge_schedule_show(self, *, preferred: str | None) -> ScheduleReport:
@@ -516,7 +518,8 @@ class App:
     ) -> str:
         return self._departure_command(
             "departure_schedule_set",
-            spec.tool_args(),
+            None if spec.latitude is None or spec.longitude is None else spec.tool_args(),
+            spec=spec,
             preferred=preferred,
             statement=statement,
             sleep=sleep,
@@ -539,16 +542,41 @@ class App:
             sleep=sleep,
         )
 
+    def _read_precise_location(self, key: str) -> tuple[str, str]:
+        """Read location_data. A 408 is not followed by another wake."""
+        try:
+            payload = self.reader.vehicle_data(key, LOCATION_ENDPOINTS)
+        except VehicleAsleep as exc:
+            raise ConfigError(
+                "The car must be online to read its location. Wake it, or pass latitude and longitude."
+            ) from exc
+        if location_scope_denied(payload):
+            raise ConfigError(
+                "The token cannot read vehicle location. "
+                "Re-authorize and include the vehicle_location scope, or pass latitude and longitude."
+            )
+        point = precise_point(payload)
+        if point is None:
+            raise ConfigError("The car did not return a location. Pass latitude and longitude.")
+        return point
+
     def _departure_command(
         self,
         spec_name: str,
-        tool_args: list[str],
+        tool_args: list[str] | None,
         *,
         preferred: str | None,
         statement: str | None,
         sleep,
+        spec: DepartureWrite | None = None,
     ) -> str:
         key, _observation = self._read_online(preferred, sleep=sleep)
+        if spec is not None and (spec.latitude is None or spec.longitude is None):
+            latitude, longitude = self._read_precise_location(key)
+            spec = spec.with_location(latitude, longitude)
+            tool_args = spec.tool_args()
+        if not tool_args:
+            raise ConfigError("latitude and longitude are required before the command is sent")
         token = self.tokens.access_token()
 
         def observe() -> Observation:

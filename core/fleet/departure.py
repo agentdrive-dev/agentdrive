@@ -18,9 +18,10 @@ from __future__ import annotations
 
 import json
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from core.errors import ConfigError
+from core.fleet.area import format_latitude, format_longitude
 from core.fleet.charge_schedule import format_days, parse_days, parse_degree, parse_schedule_id
 
 # precondition-schedule-add optionals are positional: REPEAT, ID, ENABLED.
@@ -35,15 +36,20 @@ _REPEAT_WEEKLY = "weekly"
 class DepartureWrite:
     days: str
     ready_time: str
-    latitude: str
-    longitude: str
+    latitude: str | None
+    longitude: str | None
     once: bool
     enabled: bool
     days_mask: int
     ready_minutes: int
     schedule_id: str | None
 
+    def with_location(self, latitude, longitude) -> DepartureWrite:
+        return replace(self, latitude=format_latitude(latitude), longitude=format_longitude(longitude))
+
     def tool_args(self) -> list[str]:
+        if self.latitude is None or self.longitude is None:
+            raise ConfigError("latitude and longitude are required before the command is sent")
         args = ["precondition-schedule-add", self.days, self.ready_time, self.latitude, self.longitude]
         if self.schedule_id is None and self.enabled:
             if self.once:
@@ -120,8 +126,8 @@ def parse_ready_time(value: str) -> tuple[str, int]:
 def parse_departure_write(
     days: str,
     ready_time: str,
-    latitude: str,
-    longitude: str,
+    latitude: str | None = None,
+    longitude: str | None = None,
     *,
     once: bool,
     enabled: bool,
@@ -134,17 +140,28 @@ def parse_departure_write(
         identified = parse_schedule_id(schedule_id)
     if not enabled and identified is None:
         raise ConfigError("a disabled departure schedule needs an id")
+    lat_text, lon_text = _optional_place(latitude, longitude)
     return DepartureWrite(
         days=day_text,
         ready_time=clock,
-        latitude=parse_degree(latitude),
-        longitude=parse_degree(longitude),
+        latitude=lat_text,
+        longitude=lon_text,
         once=bool(once),
         enabled=bool(enabled),
         days_mask=day_mask,
         ready_minutes=minutes,
         schedule_id=identified,
     )
+
+
+def _optional_place(latitude, longitude) -> tuple[str | None, str | None]:
+    lat_missing = latitude is None or str(latitude).strip() == ""
+    lon_missing = longitude is None or str(longitude).strip() == ""
+    if lat_missing and lon_missing:
+        return None, None
+    if lat_missing or lon_missing:
+        raise ConfigError("pass both latitude and longitude, or omit both to use the car's current location")
+    return format_latitude(latitude), format_longitude(longitude)
 
 
 def schedules_from_vehicle_data(payload: dict) -> tuple[bool, bool, tuple[DepartureRow, ...]]:

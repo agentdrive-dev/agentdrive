@@ -217,6 +217,114 @@ def test_departure_tool_args_match_precondition_schedule_add():
         parse_departure_write("weekdays", "07:30", "1", "2", once=False, enabled=False)
 
 
+def test_departure_coordinates_are_optional_and_checked():
+    omitted = parse_departure_write("weekdays", "07:30", once=False, enabled=True)
+    assert omitted.latitude is None
+    assert omitted.longitude is None
+    with pytest.raises(ConfigError):
+        omitted.tool_args()
+    filled = omitted.with_location(12.25, -3.5)
+    assert filled.tool_args()[:5] == ["precondition-schedule-add", "weekdays", "07:30", "12.25", "-3.5"]
+    assert parse_departure_write("weekdays", "07:30", "90", "180", once=False, enabled=True).latitude == "90"
+    for days, ready, lat, lon in (
+        ("weekdays", "07:30", "91", "2"),
+        ("weekdays", "07:30", "-90.1", "2"),
+        ("weekdays", "07:30", "1", "181"),
+        ("weekdays", "07:30", "1", None),
+        ("weekdays", "07:30", None, "2"),
+    ):
+        with pytest.raises(ConfigError):
+            parse_departure_write(days, ready, lat, lon, once=False, enabled=True)
+
+
+def test_omitted_coordinates_use_the_car_after_the_write_wake():
+    row = _row(latitude=12.25, longitude=-3.5)
+    payload = _payload(row, drive_state={"latitude": 12.25, "longitude": -3.5})
+    http = Http(listed("online"), payload)
+    control = Control()
+    spec = parse_departure_write("weekdays", "07:30", once=False, enabled=True)
+    text = make_app(http, control).departure_set(
+        spec,
+        preferred=None,
+        statement="I confirm departure schedule set",
+        sleep=lambda _seconds: None,
+    )
+    assert text == "OK: departure set id 1700000000"
+    assert control.calls[0]["args"][:5] == ["precondition-schedule-add", "weekdays", "07:30", "12.25", "-3.5"]
+    data_urls = [url for url in urls(http) if "vehicle_data" in url]
+    assert sum("location_data" in url for url in data_urls) == 1
+    assert not any(url.endswith("/wake_up") for url in urls(http))
+
+    asleep = Http(listed("asleep"), payload, polls=[{"response": {"state": "online"}}])
+    control = Control()
+    text = make_app(asleep, control).departure_set(
+        spec,
+        preferred=None,
+        statement="I confirm departure schedule set",
+        sleep=lambda _seconds: None,
+    )
+    assert text == "OK: departure set id 1700000000"
+    assert sum(1 for url in urls(asleep) if url.endswith("/wake_up")) == 1
+    assert control.calls[0]["args"][3:5] == ["12.25", "-3.5"]
+
+
+def test_a_location_read_that_says_asleep_is_not_woken_again():
+    class LocationAsleep(Http):
+        def request_json(self, method, url, headers, timeout=30, body=None):
+            if "vehicle_data" in url and "location_data" in url:
+                self.calls.append((method, url, body))
+                return 408, {"error": "asleep"}
+            return super().request_json(method, url, headers, timeout=timeout, body=body)
+
+    online = LocationAsleep(listed("online"), vehicle_payload())
+    spec = parse_departure_write("weekdays", "07:30", once=False, enabled=True)
+    with pytest.raises(ConfigError) as caught:
+        make_app(online, Control()).departure_set(
+            spec,
+            preferred=None,
+            statement="I confirm departure schedule set",
+            sleep=lambda _seconds: None,
+        )
+    assert "must be online" in str(caught.value)
+    assert not any(url.endswith("/wake_up") for url in urls(online))
+
+    asleep = LocationAsleep(listed("asleep"), vehicle_payload(), polls=[{"response": {"state": "online"}}])
+    with pytest.raises(ConfigError) as caught:
+        make_app(asleep, Control()).departure_set(
+            spec,
+            preferred=None,
+            statement="I confirm departure schedule set",
+            sleep=lambda _seconds: None,
+        )
+    assert "must be online" in str(caught.value)
+    assert sum(1 for url in urls(asleep) if url.endswith("/wake_up")) == 1
+
+    missing = Http(listed("online"), vehicle_payload())
+    with pytest.raises(ConfigError) as caught:
+        make_app(missing, Control()).departure_set(
+            spec,
+            preferred=None,
+            statement="I confirm departure schedule set",
+            sleep=lambda _seconds: None,
+        )
+    assert "did not return a location" in str(caught.value)
+    assert not any(url.endswith("/wake_up") for url in urls(missing))
+
+
+def test_explicit_coordinates_do_not_read_location_data():
+    http = Http(listed("online"), _payload(_row()))
+    control = Control()
+    spec = parse_departure_write("weekdays", "07:30", "1", "2", once=False, enabled=True)
+    text = make_app(http, control).departure_set(
+        spec,
+        preferred=None,
+        statement="I confirm departure schedule set",
+        sleep=lambda _seconds: None,
+    )
+    assert text == "OK: departure set id 1700000000"
+    assert "location_data" not in "".join(urls(http))
+
+
 def test_rejected_departure_shapes():
     for days, ready, lat, lon in (
         ("marketday", "07:30", "1", "2"),
@@ -496,6 +604,9 @@ def test_cli_rejects_bad_arguments_before_the_app_and_accepts_the_phrases(tmp_pa
     assert main(["--home", str(tmp_path), "charge-amps", "81"]) == 2
     assert main(["--home", str(tmp_path), "departure", "set", "weekdays", "25:00", "1", "2"]) == 2
     assert "07:30" in capsys.readouterr().err
+    assert main(["--home", str(tmp_path), "departure", "set", "weekdays", "07:30", "1"]) == 2
+    assert "both" in capsys.readouterr().err
+    assert main(["--home", str(tmp_path), "departure", "set", "weekdays", "07:30", "91", "2"]) == 2
     assert main(["--home", str(tmp_path), "departure", "remove", "0"]) == 2
 
     seen = {}
@@ -512,7 +623,7 @@ def test_cli_rejects_bad_arguments_before_the_app_and_accepts_the_phrases(tmp_pa
             return DepartureReport("asleep", True, False, False, ())
 
         def departure_set(self, spec, **kwargs):
-            seen["set"] = (spec.tool_args(), kwargs)
+            seen["set"] = (spec, kwargs)
             return "OK: departure set"
 
         def departure_remove(self, schedule_id, **kwargs):
@@ -543,7 +654,22 @@ def test_cli_rejects_bad_arguments_before_the_app_and_accepts_the_phrases(tmp_pa
             "I confirm departure schedule set",
         ]
     ) == 0
-    assert seen["set"][0] == ["precondition-schedule-add", "weekdays", "07:30", "1", "2", "weekly", "1700000000", "false"]
+    assert seen["set"][0].tool_args() == ["precondition-schedule-add", "weekdays", "07:30", "1", "2", "weekly", "1700000000", "false"]
+    assert seen["set"][1]["statement"] == "I confirm departure schedule set"
+    assert main(
+        [
+            "--home",
+            str(tmp_path),
+            "departure",
+            "set",
+            "weekdays",
+            "07:30",
+            "--confirm",
+            "I confirm departure schedule set",
+        ]
+    ) == 0
+    assert seen["set"][0].latitude is None
+    assert seen["set"][0].longitude is None
     assert seen["set"][1]["statement"] == "I confirm departure schedule set"
     assert main(
         [

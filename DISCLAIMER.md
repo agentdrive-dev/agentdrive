@@ -12,4 +12,6 @@ Follow Tesla's current safety guidance, developer terms, and Fleet API terms. Wh
 
 A private key together with an access token can operate the vehicle inside the scopes you approved. Keep both of them private. The author is not responsible if they leak, or if a command is sent in error.
 
+Precise coordinates are used only when you ask for a precise location or a departure place taken from the car. They are not written to the local history.
+
 Reported problems, safety issues, and suspected abuse are reviewed and fixed promptly. Ordinary reports go to GitHub Issues. Security reports go through GitHub private vulnerability reporting, as described in SECURITY.md.
