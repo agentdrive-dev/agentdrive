@@ -1,9 +1,9 @@
 """Vehicle reads and signed commands used by the command line.
 
 Status wakes a sleeping vehicle and polls for up to 45 seconds. The health
-check, the daily report, where, and charge-schedule show never wake. Unlock
-and other sensitive commands go through the safety gateway, which asks for a
-one-time confirmation.
+check, the daily report, where, charge-schedule show, and departure show
+never wake. Unlock and other sensitive commands go through the safety
+gateway, which asks for a one-time confirmation.
 
 Check and report also save local history when the car is already online.
 That write does not wake the car, and a history problem does not change the
@@ -28,6 +28,12 @@ from core.fleet.charge_schedule import (
     parse_schedule_id,
     schedules_from_vehicle_data,
 )
+from core.fleet.departure import (
+    DepartureReport,
+    DepartureWrite,
+    matching_ids as matching_departure_ids,
+    schedules_from_vehicle_data as departure_schedules_from_vehicle_data,
+)
 from core.fleet.commands import TeslaControl
 from core.fleet.credentials import load_client_credentials
 from core.fleet.check_state import apply_rising_edge
@@ -51,6 +57,9 @@ from core.safety.gateway import Gateway
 MILES_TO_KM = 1.609344
 DATA_ENDPOINTS = ["charge_state", "climate_state", "vehicle_state", "drive_state"]
 CHARGE_SCHEDULE_ENDPOINT = "charge_schedule_data"
+DEPARTURE_ENDPOINT = "preconditioning_schedule_data"
+CHARGE_AMPS_MIN = 1
+CHARGE_AMPS_MAX = 80
 LOCATION_ENDPOINTS = ["location_data"]
 
 PUBLIC_COMMANDS = {
@@ -65,6 +74,7 @@ PUBLIC_COMMANDS = {
     "charge-start": "charging_start",
     "charge-stop": "charging_stop",
     "charge-limit": "charging_set_limit",
+    "charge-amps": "charging_set_amps",
     "sentry-on": "sentry_on",
     "sentry-off": "sentry_off",
     "seat-heat": "seat_heater",
@@ -119,6 +129,30 @@ def parse_limit(value: str) -> str:
     if number < 50 or number > 100:
         raise ConfigError("limit must be 50-100")
     return str(number)
+
+
+def parse_amps(value: str) -> str:
+    """Whole amps from 1 to 80. The car may still use less."""
+    text = str(value).strip()
+    if not text.isdigit():
+        raise ConfigError(f"amps must be a whole number from {CHARGE_AMPS_MIN} to {CHARGE_AMPS_MAX}")
+    number = int(text)
+    if number < CHARGE_AMPS_MIN or number > CHARGE_AMPS_MAX:
+        raise ConfigError(f"amps must be a whole number from {CHARGE_AMPS_MIN} to {CHARGE_AMPS_MAX}")
+    return str(number)
+
+
+def charge_amps_result(requested: str, observed: Observation) -> str:
+    """Say what was asked, and when the car clamped it to the charger."""
+    setting = observed.charge_current_request
+    if setting is None:
+        setting = observed.charge_amps
+    if setting is not None and str(setting) != str(requested):
+        return (
+            f"OK: charge-amps {requested}\n"
+            f"The car kept {setting} A. It clamps to what the charger allows."
+        )
+    return f"OK: charge-amps {requested}\nThe car may clamp this to what the charger allows."
 
 
 def vehicle_rows(payload: dict) -> list[dict]:
@@ -367,7 +401,7 @@ class App:
             payload = self.reader.vehicle_data(_key, DATA_ENDPOINTS)
             return from_vehicle_data(payload)
 
-        self.gateway.execute(
+        observed = self.gateway.execute(
             spec,
             shift_state=observation.shift_state,
             speed=observation.speed,
@@ -378,6 +412,8 @@ class App:
             observe=observe,
             extra_args=extra_args,
         )
+        if name == "charge-amps" and extra_args:
+            return charge_amps_result(extra_args[0], observed)
         if extra_args:
             return f"OK: {name} {' '.join(extra_args)}"
         return f"OK: {name}"
@@ -448,6 +484,95 @@ class App:
             return "OK: charge-schedule set"
         return f"OK: charge-schedule remove {tool_args[-1]}"
 
+    def departure_show(self, *, preferred: str | None) -> DepartureReport:
+        """Read departure schedules. A car that is not online is left asleep."""
+        chosen = select_vehicle(self.reader.list_vehicles(), preferred)
+        state = vehicle_state_name(chosen) or "unknown"
+        if state != "online":
+            return DepartureReport(
+                state=state,
+                skipped=True,
+                section_present=False,
+                list_present=False,
+                schedules=(),
+            )
+        payload = self.reader.vehicle_data(vehicle_key(chosen), [DEPARTURE_ENDPOINT])
+        section_present, list_present, schedules = departure_schedules_from_vehicle_data(payload)
+        return DepartureReport(
+            state="online",
+            skipped=False,
+            section_present=section_present,
+            list_present=list_present,
+            schedules=schedules,
+        )
+
+    def departure_set(
+        self,
+        spec: DepartureWrite,
+        *,
+        preferred: str | None,
+        statement: str | None,
+        sleep=time.sleep,
+    ) -> str:
+        return self._departure_command(
+            "departure_schedule_set",
+            spec.tool_args(),
+            preferred=preferred,
+            statement=statement,
+            sleep=sleep,
+        )
+
+    def departure_remove(
+        self,
+        schedule_id: str,
+        *,
+        preferred: str | None,
+        statement: str | None,
+        sleep=time.sleep,
+    ) -> str:
+        identified = parse_schedule_id(schedule_id)
+        return self._departure_command(
+            "departure_schedule_remove",
+            ["precondition-schedule-remove", "id", identified],
+            preferred=preferred,
+            statement=statement,
+            sleep=sleep,
+        )
+
+    def _departure_command(
+        self,
+        spec_name: str,
+        tool_args: list[str],
+        *,
+        preferred: str | None,
+        statement: str | None,
+        sleep,
+    ) -> str:
+        key, _observation = self._read_online(preferred, sleep=sleep)
+        token = self.tokens.access_token()
+
+        def observe() -> Observation:
+            payload = self.reader.vehicle_data(key, [*DATA_ENDPOINTS, DEPARTURE_ENDPOINT])
+            return from_vehicle_data(payload)
+
+        observed = self.gateway.execute(
+            spec_name,
+            shift_state=_observation.shift_state,
+            speed=_observation.speed,
+            adapter=_cli_adapter(statement),
+            via_schedule=False,
+            vin=key,
+            access_token=token,
+            observe=observe,
+            extra_args=tool_args[1:],
+        )
+        if spec_name == "departure_schedule_set":
+            found = matching_departure_ids(observed.departure_schedules, tool_args[1:])
+            if found:
+                return "OK: departure set id " + " ".join(found)
+            return "OK: departure set"
+        return f"OK: departure remove {tool_args[-1]}"
+
 
 def _extra(name: str, argument: str | None) -> list[str] | None:
     if name == "seat-heat":
@@ -462,6 +587,10 @@ def _extra(name: str, argument: str | None) -> list[str] | None:
         if argument is None:
             raise ConfigError("limit must be 50-100")
         return [parse_limit(argument)]
+    if name == "charge-amps":
+        if argument is None:
+            raise ConfigError(f"amps must be a whole number from {CHARGE_AMPS_MIN} to {CHARGE_AMPS_MAX}")
+        return [parse_amps(argument)]
     if argument is not None:
         raise ConfigError("unknown command")
     return None

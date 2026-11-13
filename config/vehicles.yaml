@@ -37,6 +37,7 @@ capabilities:
     - vehicle_config
     - location_data
     - charge_schedule_data
+    - preconditioning_schedule_data
   phase_1_commands:
     - flash_lights
     - climate_on
@@ -64,6 +65,8 @@ capabilities:
     - charging_set_amps
     - charging_schedule_set
     - charging_schedule_remove
+    - departure_schedule_set
+    - departure_schedule_remove
   charging_reads:
     - nearby_charging_sites
     - charging_history

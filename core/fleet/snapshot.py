@@ -3,6 +3,8 @@
 Drive-state latitude and longitude are ignored on purpose so a readout cannot
 be copied into assistant memory by accident. Charging-timetable coordinates
 stay on the schedule rows, which only the charge-schedule command prints.
+Departure-schedule coordinates stay on those rows, which only the departure
+command prints.
 """
 
 from __future__ import annotations
@@ -10,6 +12,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from core.fleet.charge_schedule import ChargeScheduleRow, schedules_from_vehicle_data
+from core.fleet.departure import DepartureRow
+from core.fleet.departure import schedules_from_vehicle_data as departure_schedules_from_vehicle_data
 
 
 @dataclass
@@ -25,6 +29,8 @@ class Observation:
     charging_state: str | None = None
     charge_limit_soc: int | None = None
     charge_amps: int | None = None
+    charge_current_request: int | None = None
+    charge_current_request_max: int | None = None
     tpms_soft_warning: bool | None = None
     tpms_hard_warning: bool | None = None
     tyre_fl: float | None = None
@@ -44,6 +50,9 @@ class Observation:
     charge_schedules: tuple[ChargeScheduleRow, ...] = ()
     charge_schedule_section_present: bool = False
     charge_schedule_list_present: bool = False
+    departure_schedules: tuple[DepartureRow, ...] = ()
+    departure_schedule_section_present: bool = False
+    departure_schedule_list_present: bool = False
 
 
 def _section(payload: dict, name: str) -> dict:
@@ -210,9 +219,13 @@ def from_vehicle_data(payload: dict) -> Observation:
     vehicle = _section(payload, "vehicle_state")
     climate = _section(payload, "climate_state")
     charge = _section(payload, "charge_state")
-    amps = charge.get("charge_amps", charge.get("charge_current_request"))
+    request = charge.get("charge_current_request")
+    amps = charge.get("charge_amps")
+    if amps is None:
+        amps = request
     shift = drive.get("shift_state")
     section_present, list_present, schedules = schedules_from_vehicle_data(payload)
+    departure_section, departure_list, departures = departure_schedules_from_vehicle_data(payload)
     return Observation(
         shift_state=str(shift) if shift not in (None, "") else None,
         speed=_optional_float(drive.get("speed")),
@@ -225,6 +238,10 @@ def from_vehicle_data(payload: dict) -> Observation:
         charging_state=str(charge["charging_state"]) if charge.get("charging_state") else None,
         charge_limit_soc=_optional_int(charge.get("charge_limit_soc")),
         charge_amps=_optional_int(amps),
+        charge_current_request=_optional_int(request) if "charge_current_request" in charge else None,
+        charge_current_request_max=_optional_int(charge.get("charge_current_request_max"))
+        if "charge_current_request_max" in charge
+        else None,
         tpms_soft_warning=_flag_group(vehicle, _SOFT_WARNINGS),
         tpms_hard_warning=_flag_group(vehicle, _HARD_WARNINGS),
         tyre_fl=_optional_float(vehicle.get("tpms_pressure_fl")),
@@ -244,4 +261,7 @@ def from_vehicle_data(payload: dict) -> Observation:
         charge_schedules=schedules,
         charge_schedule_section_present=section_present,
         charge_schedule_list_present=list_present,
+        departure_schedules=departures,
+        departure_schedule_section_present=departure_section,
+        departure_schedule_list_present=departure_list,
     )

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import time
 from pathlib import Path
 
 from adapters.detect import VALID_ADAPTERS, resolve_adapter
@@ -15,6 +16,7 @@ from core.doctor import run_doctor
 from core.errors import AgentDriveError, AmbiguousAdapter, ConfigError
 from core.fleet.area import format_where, format_where_json
 from core.fleet.charge_schedule import format_schedule_report, format_schedule_report_json, parse_schedule_id, parse_schedule_write
+from core.fleet.departure import format_departure_report, format_departure_report_json, parse_departure_write
 from core.fleet.http import UrllibClient
 from core.fleet.report import format_report, format_report_json
 from core.history.official import render_news
@@ -25,6 +27,7 @@ from core.ops import (
     build_app,
     format_check,
     format_check_json,
+    parse_amps,
     parse_limit,
     parse_on_off,
     parse_seat_heat,
@@ -105,6 +108,12 @@ def build_parser() -> argparse.ArgumentParser:
     steering_heat.add_argument("state")
     charge_limit = sub.add_parser("charge-limit", parents=[confirmed])
     charge_limit.add_argument("percent")
+    charge_amps = sub.add_parser(
+        "charge-amps",
+        parents=[confirmed],
+        help="Set the charging current in amps. Needs a confirmation. The car may use less.",
+    )
+    charge_amps.add_argument("amps")
 
     schedule = sub.add_parser("charge-schedule", help="Read or change the in-car charging timetable")
     schedule_sub = schedule.add_subparsers(dest="schedule_action", required=True)
@@ -124,6 +133,26 @@ def build_parser() -> argparse.ArgumentParser:
     )
     remove = schedule_sub.add_parser("remove", parents=[confirmed], help="Remove one in-car charging schedule by id")
     remove.add_argument("schedule_id", metavar="ID")
+
+    departure = sub.add_parser("departure", help="Read or change a departure time that preconditions the cabin")
+    departure_sub = departure.add_subparsers(dest="departure_action", required=True)
+    departure_show = departure_sub.add_parser("show", help="Read departure schedules. Does not wake the car.")
+    departure_show.add_argument("--json", action="store_true")
+    departure_set = departure_sub.add_parser("set", parents=[confirmed], help="Add or change a departure precondition schedule")
+    departure_set.add_argument("days", help="all, weekdays, or comma-separated Sun, Mon, Tues, Wed, Thurs, Fri, Sat")
+    departure_set.add_argument("time", help="Cabin ready by this local time, HH:MM")
+    departure_set.add_argument("latitude")
+    departure_set.add_argument("longitude")
+    departure_set.add_argument("--once", action="store_true", help="Run once. Omit to repeat every week.")
+    departure_set.add_argument(
+        "--enabled",
+        choices=("true", "false"),
+        default="true",
+        help="true adds an enabled schedule. false adds a disabled schedule.",
+    )
+    departure_set.add_argument("--id", default=None, help="Change this schedule id. Omit to add a schedule.")
+    departure_remove = departure_sub.add_parser("remove", parents=[confirmed], help="Remove one departure schedule by id")
+    departure_remove.add_argument("schedule_id", metavar="ID")
 
     check = sub.add_parser("check")
     check.add_argument("--json", action="store_true")
@@ -217,6 +246,8 @@ def main(argv: list[str] | None = None) -> int:
             return _service(args, home)
         if args.command == "charge-schedule":
             return _charge_schedule(args, home)
+        if args.command == "departure":
+            return _departure(args, home)
         if args.command in {"refresh", "status", *PUBLIC_COMMANDS}:
             return _vehicle(args, home)
     except AmbiguousAdapter as exc:
@@ -414,6 +445,51 @@ def _charge_schedule(args, home: Path) -> int:
     raise ConfigError("unknown command")
 
 
+def _departure(args, home: Path) -> int:
+    if args.departure_action == "show":
+        report = build_app(home).departure_show(preferred=preferred_vin())
+        text = format_departure_report_json(report) if args.json else format_departure_report(report)
+        print(scrub(text))
+        return 0
+    statement = getattr(args, "confirm", None)
+    if args.departure_action == "set":
+        schedule_id = args.id
+        if args.enabled == "false" and not schedule_id:
+            schedule_id = str(int(time.time()))
+        spec = parse_departure_write(
+            args.days,
+            args.time,
+            args.latitude,
+            args.longitude,
+            once=args.once,
+            enabled=args.enabled == "true",
+            schedule_id=schedule_id,
+        )
+        print(
+            scrub(
+                build_app(home).departure_set(
+                    spec,
+                    preferred=preferred_vin(),
+                    statement=statement,
+                )
+            )
+        )
+        return 0
+    if args.departure_action == "remove":
+        schedule_id = parse_schedule_id(args.schedule_id)
+        print(
+            scrub(
+                build_app(home).departure_remove(
+                    schedule_id,
+                    preferred=preferred_vin(),
+                    statement=statement,
+                )
+            )
+        )
+        return 0
+    raise ConfigError("unknown command")
+
+
 def _vehicle(args, home: Path) -> int:
     argument = None
     extra = None
@@ -423,6 +499,9 @@ def _vehicle(args, home: Path) -> int:
     elif args.command == "charge-limit":
         argument = args.percent
         parse_limit(argument)
+    elif args.command == "charge-amps":
+        argument = args.amps
+        parse_amps(argument)
     elif args.command == "seat-heat":
         extra = list(parse_seat_heat(args.seat, args.level))
     elif args.command == "steering-heat":

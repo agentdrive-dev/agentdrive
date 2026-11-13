@@ -12,6 +12,9 @@ from core.errors import ConfigError
 # The rear trunk can open (`trunk-open`) and, on vehicles that can close it, `trunk-close`.
 # The front trunk can open. The signed tool has no command that closes it.
 # Cabin preconditioning now is `climate-on` (auto conditioning start).
+# A later departure is `precondition-schedule-add` / `precondition-schedule-remove`.
+# Those subcommands are upstream. They are not the older scheduled-departure command.
+# Charging current is upstream `charging-set-amps` (`set_charging_amps`).
 # Max defrost is `preconditioning-max`, added to the local tesla-control build because
 # upstream does not register SetPreconditioningMax. The manual override is not sent.
 TOOL_ARGS: dict[str, tuple[str, ...]] = {
@@ -39,6 +42,8 @@ TOOL_ARGS: dict[str, tuple[str, ...]] = {
     "charging_set_amps": ("charging-set-amps",),
     "charging_schedule_set": ("charging-schedule-add",),
     "charging_schedule_remove": ("charging-schedule-remove",),
+    "departure_schedule_set": ("precondition-schedule-add",),
+    "departure_schedule_remove": ("precondition-schedule-remove",),
 }
 
 VERIFY_KIND = {
@@ -66,6 +71,8 @@ VERIFY_KIND = {
     "charging_set_amps": "charge_amps",
     "charging_schedule_set": "charge_schedule_set",
     "charging_schedule_remove": "charge_schedule_remove",
+    "departure_schedule_set": "departure_schedule_set",
+    "departure_schedule_remove": "departure_schedule_remove",
 }
 
 
@@ -141,6 +148,9 @@ def schedule_blocks(command, sensitive: set[str] | None = None) -> bool:
 
     Health check (`check`) and the morning history (`history`) stay allowed.
     Trunk, frunk, and remote start are interactive owner commands.
+    Charging changes, including charge current and the charging timetable,
+    are blocked. Setting or removing a departure schedule is blocked.
+    `departure show` is a read and stays allowed.
     """
     if not isinstance(command, str):
         return False
@@ -153,7 +163,31 @@ def schedule_blocks(command, sensitive: set[str] | None = None) -> bool:
     text = _schedule_text(raw)
     if text in _SCHEDULE_BLOCKED or text.replace(" ", "_") in names:
         return True
-    if raw == "charge-schedule" or raw.startswith("charge-schedule ") or text == "charge schedule" or text.startswith("charge schedule "):
+    if _blocks_charge_schedule(raw, text) or _blocks_charge_amps(text) or _blocks_departure_change(text):
         return True
     head = _schedule_text(raw.split()[0])
     return head in _SCHEDULE_BLOCKED or head.replace(" ", "_") in names
+
+
+def _blocks_charge_schedule(raw: str, text: str) -> bool:
+    if raw == "charge-schedule" or raw.startswith("charge-schedule "):
+        return True
+    return text == "charge schedule" or text.startswith("charge schedule ")
+
+
+def _blocks_charge_amps(text: str) -> bool:
+    if text in {"charge amps", "charging set amps"}:
+        return True
+    return text.startswith("charge amps ") or text.startswith("charging set amps ")
+
+
+def _blocks_departure_change(text: str) -> bool:
+    """Block departure writes. A show read stays allowed."""
+    parts = text.split()
+    if parts[:2] == ["departure", "show"] or parts[:3] == ["departure", "schedule", "show"]:
+        return False
+    if parts[:1] == ["departure"]:
+        return True
+    if text in {"precondition schedule add", "precondition schedule remove"}:
+        return True
+    return text.startswith("precondition schedule add ") or text.startswith("precondition schedule remove ")
