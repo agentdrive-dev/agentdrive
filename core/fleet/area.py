@@ -1,9 +1,9 @@
-"""Coarse area for a vehicle that is already online.
+"""Location reads for a vehicle that is already online.
 
-Latitude and longitude are rounded to two decimal places before any value
-leaves the process. The only outbound use of that rounded point is one
-OpenStreetMap Nominatim reverse lookup. Raw and rounded coordinates are not
-returned, printed, or logged.
+The default area rounds latitude and longitude to two decimal places before
+that point is sent to Nominatim. The rounded point is not printed. A precise
+point is formatted and returned only when the caller asks for it, and that
+point is not sent to Nominatim. History does not store either point.
 
 Nominatim's usage policy allows light use: at most one request per second,
 a User-Agent that identifies the application, and no bulk geocoding. This
@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from decimal import Decimal, ROUND_HALF_UP
 from urllib.parse import urlencode
 
+from core.errors import ConfigError
 from core.fleet.http import HttpClient
 from core.fleet.queries import location_scope_denied
 
@@ -55,17 +56,20 @@ class AreaUnavailable(Exception):
 
 @dataclass(frozen=True)
 class WhereReport:
-    """Public result. This object has no coordinate fields."""
+    """Public result. A coarse area has no coordinates. A precise result does."""
 
     kind: str
     state: str = ""
     suburb: str = ""
     region: str = ""
     country: str = ""
+    latitude: str = ""
+    longitude: str = ""
+    map_url: str = ""
 
     @property
     def exit_code(self) -> int:
-        if self.kind in {"area", "skipped"}:
+        if self.kind in {"area", "precise", "skipped"}:
             return 0
         return 1
 
@@ -92,6 +96,10 @@ def format_where(report: WhereReport) -> str:
         return f"state: {state}\nskipped: the vehicle is not online, so it was not woken"
     if report.kind == "scope":
         return SCOPE_HINT
+    if report.kind == "precise":
+        if not report.latitude or not report.longitude or not report.map_url:
+            return AREA_UNAVAILABLE
+        return f"latitude: {report.latitude}\nlongitude: {report.longitude}\nmap: {report.map_url}"
     if report.kind != "area":
         return AREA_UNAVAILABLE
     lines = []
@@ -112,6 +120,12 @@ def format_where_json(report: WhereReport) -> str:
         payload: dict = {"skipped": True, "state": report.state or "unknown"}
     elif report.kind == "scope":
         payload = {"error": SCOPE_HINT}
+    elif report.kind == "precise":
+        if not report.latitude or not report.longitude or not report.map_url:
+            payload = {"error": AREA_UNAVAILABLE}
+        else:
+            payload = {"latitude": report.latitude, "longitude": report.longitude, "map": report.map_url}
+        return json.dumps(payload, indent=2)
     elif report.kind != "area":
         payload = {"error": AREA_UNAVAILABLE}
     else:
@@ -119,6 +133,58 @@ def format_where_json(report: WhereReport) -> str:
     rendered = json.dumps(payload, indent=2)
     if _PRECISE.search(rendered):
         return json.dumps({"error": AREA_UNAVAILABLE}, indent=2)
+    return rendered
+
+
+def precise_point(payload: object) -> tuple[str, str] | None:
+    """Formatted latitude and longitude, or None when the payload has no usable point."""
+    if not isinstance(payload, dict):
+        return None
+    pair = _coordinates(payload)
+    if pair is None:
+        return None
+    try:
+        return format_latitude(pair[0]), format_longitude(pair[1])
+    except ConfigError:
+        return None
+
+
+def precise_from_vehicle_payload(payload: object) -> WhereReport:
+    """Precise point and a map link. This does not call Nominatim."""
+    if isinstance(payload, dict) and location_scope_denied(payload):
+        return WhereReport(kind="scope")
+    point = precise_point(payload)
+    if point is None:
+        return WhereReport(kind="unavailable")
+    latitude, longitude = point
+    return WhereReport(kind="precise", latitude=latitude, longitude=longitude, map_url=map_link(latitude, longitude))
+
+
+def map_link(latitude: str, longitude: str) -> str:
+    return f"https://www.openstreetmap.org/?mlat={latitude}&mlon={longitude}#map=16/{latitude}/{longitude}"
+
+
+def format_latitude(value) -> str:
+    return _format_axis(value, 90, "latitude must be from -90 to 90")
+
+
+def format_longitude(value) -> str:
+    return _format_axis(value, 180, "longitude must be from -180 to 180")
+
+
+def _format_axis(value, limit: int, message: str) -> str:
+    if isinstance(value, bool) or value is None:
+        raise ConfigError(message)
+    text = str(value).strip()
+    try:
+        number = float(text)
+    except (TypeError, ValueError) as exc:
+        raise ConfigError(message) from exc
+    if number != number or number in (float("inf"), float("-inf")) or number < -limit or number > limit:
+        raise ConfigError(message)
+    rendered = f"{number:.6f}".rstrip("0").rstrip(".")
+    if rendered in {"", "-", "-0"}:
+        return "0"
     return rendered
 
 

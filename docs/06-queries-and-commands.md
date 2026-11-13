@@ -4,7 +4,7 @@
 
 ![Park check, one-time confirmation for sensitive actions, then one send and a fresh read](images/command-safety.svg)
 
-Reads use the Fleet API: the vehicle list, `vehicle_data`, and wake. Location on firmware 2023.38 and later needs the `location_data` endpoint and the `vehicle_location` scope. `status` and `check` do not request that endpoint. `where` requests it only when the vehicle list already says the car is online. Coordinates are not copied into the AI agent's memory.
+Reads use the Fleet API: the vehicle list, `vehicle_data`, and wake. Location on firmware 2023.38 and later needs the `location_data` endpoint and the `vehicle_location` scope. `status` and `check` do not request that endpoint. `where` and `where --precise` request it only when the vehicle list already says the car is online. Precise coordinates are used only when you ask for them (`where --precise`, or a departure place taken from the car) and are not written to the local history.
 
 `agentdrive status` reads charge, climate, and vehicle state, including tyre pressures and TPMS warnings. If the vehicle list says the car is asleep, status sends one wake and then polls for up to 45 seconds. The VIN is masked. Tokens are not printed. When the account has more than one vehicle, set `AGENTDRIVE_VIN` to choose one. Otherwise the first vehicle on the account is used.
 
@@ -14,7 +14,15 @@ Reads use the Fleet API: the vehicle list, `vehicle_data`, and wake. Location on
 
 Before that point leaves the process, latitude and longitude are rounded to two decimal places, about 1 km. The command sends that rounded point to OpenStreetMap Nominatim for one reverse lookup at zoom 14, with the `AgentDrive/<version>` User-Agent. It does not retry, and it does not send the precise point. Nominatim's usage policy allows this kind of light use and asks callers not to bulk-geocode. Place names are OpenStreetMap data.
 
-The command prints a suburb or locality, a state or region, and a country. The text labels are `suburb`, `region`, and `country`. `suburb` is the suburb when Nominatim has one, and otherwise a neighbourhood, locality, village, town, or city. `--json` prints those three fields. Stdout, JSON, and errors do not contain coordinates. If the lookup fails, the command prints `area unavailable` and exits 1.
+The default command prints a suburb or locality, a state or region, and a country. The text labels are `suburb`, `region`, and `country`. `suburb` is the suburb when Nominatim has one, and otherwise a neighbourhood, locality, village, town, or city. `--json` prints those three fields. That default text, JSON, and the errors do not contain coordinates. If the lookup fails, the command prints `area unavailable` and exits 1.
+
+`agentdrive where --precise` prints the precise latitude and longitude and an OpenStreetMap link when the car is already online. It uses the same non-waking read. It does not call Nominatim. If the car is asleep or offline, it skips and does not wake the car. `--json` prints `latitude`, `longitude`, and `map`.
+
+```bash
+agentdrive where
+agentdrive where --precise
+agentdrive where --precise --json
+```
 
 A location read needs the official `vehicle_location` scope. The owner sign-in scope list is `openid`, `offline_access`, `user_data`, `vehicle_device_data`, `vehicle_location`, and `vehicle_cmds`. If the token lacks `vehicle_location`, or the firmware refuses the read until that scope is granted, the command tells you to re-authorize and include `vehicle_location`, and it exits 1. Sign in again so the new token carries that scope. `status` and `check` stay free of location.
 
@@ -37,6 +45,7 @@ Commands:
 | Command | What it sends | Confirmation |
 | --- | --- | --- |
 | `where` | no signed command; one `location_data` read when the car is already online | no |
+| `where --precise` | no signed command; the same non-waking `location_data` read, then latitude, longitude, and a map link | no |
 | `wake` | signed `wake` | no, and it does not use the park check |
 | `flash` | signed `flash-lights` | no |
 | `honk` | signed `honk` | no |
@@ -50,8 +59,12 @@ Commands:
 | `steering-heat on` or `off` | signed `steering-wheel-heater` | no |
 | `defrost-on`, `defrost-off` | signed `preconditioning-max` | no |
 | `precondition` | signed `climate-on` | no |
+| `departure show` | read `preconditioning_schedule_data` | no, and it does not wake |
+| `departure set <days> <time> [latitude longitude]` | signed `precondition-schedule-add` | yes, one time |
+| `departure remove <id>` | signed `precondition-schedule-remove` | yes, one time |
 | `charge-start`, `charge-stop` | signed charging command | yes, one time |
 | `charge-limit <percent>` | signed `charging-set-limit` | yes, one time, and only 50 to 100 |
+| `charge-amps <amps>` | signed `charging-set-amps` | yes, one time, and only 1 to 80 |
 | `charge-schedule show` | read `charge_schedule_data` | no, and it does not wake |
 | `charge-schedule set <days> <time> <latitude> <longitude>` | signed `charging-schedule-add` | yes, one time |
 | `charge-schedule remove <id>` | signed `charging-schedule-remove` | yes, one time |
@@ -65,7 +78,7 @@ Commands:
 | `news` | no signed command; reads the official Tesla site for the owner's country | no, and it does not wake the car |
 | `service`, `service log rotation`, `service log replacement`, `service log maintenance` | no signed command; uses the saved odometer | no, and it does not wake the car |
 
-Unlock, turning sentry off, every charging change, the rear trunk, the front trunk, and remote start go through the existing confirmation layer. A schedule cannot confirm them and cannot run sentry off, the trunk, the front trunk, or remote start. The health check stays `agentdrive check`. The morning job stays `agentdrive history due`. State-changing commands are sent only in Park at speed 0, then read back once.
+Unlock, turning sentry off, every charging change, setting or removing a departure schedule, the rear trunk, the front trunk, and remote start go through the existing confirmation layer. A schedule cannot confirm them and cannot run sentry off, the trunk, the front trunk, remote start, or a departure schedule change. The health check stays `agentdrive check`. The morning job stays `agentdrive history due`. State-changing commands are sent only in Park at speed 0, then read back once.
 
 ## Sentry and cabin climate
 
@@ -89,7 +102,7 @@ agentdrive precondition
 
 `defrost-on` and `defrost-off` send `preconditioning-max`. That is max defrost for the front and rear together. There is no separate front-only or rear-only command, and the manual override is not sent. Upstream `tesla-control` does not include that subcommand, so the installer adds it to the local build. `agentdrive update` rebuilds that binary.
 
-`precondition` sends `climate-on`, which starts cabin preconditioning now. It does not add a precondition schedule or a scheduled departure. `climate-off` stops the cabin climate.
+`precondition` sends `climate-on`, which starts cabin preconditioning now. It does not add a precondition schedule or a scheduled departure. A later departure time is `agentdrive departure`. `climate-off` stops the cabin climate.
 
 ## Rear trunk, front trunk, and remote start
 
@@ -107,6 +120,56 @@ agentdrive remote-start --confirm "I confirm enable remote start"
 `remote-start` enables keyless driving for a short time, so the car can be driven without the phone key. It does not drive the car, it does not start an engine, and it does not ask for an account password. The signed command is `drive`. The follow-up read checks that the car is still in Park at speed 0.
 
 These four commands may wake a sleeping car, the same way lock, climate, and charging commands do. `agentdrive check`, `agentdrive report`, `agentdrive where`, and `agentdrive history` still never wake a sleeping car.
+
+## Charging current
+
+`charge-amps` sets the charging current. It is a charging change.
+
+```bash
+agentdrive charge-amps 16 --confirm "I confirm charging set amps"
+```
+
+The confirmation sentence has to include `confirm` and `charging set amps`. A scheduled job cannot supply that sentence and cannot run `charge-amps`. The car must be in Park at speed 0. If the vehicle list says the car is not online, this command wakes it, the same way the other parked commands do. The signed command is `charging-set-amps`, which is `set_charging_amps`. Upstream `tesla-control` already has that subcommand. The installer does not patch it.
+
+The amps value is a whole number from 1 to 80. 80 is the highest AC current a Tesla has used. `tesla-control` parses the number and does not apply a range of its own. The car may use less, down to what that charger and the car allow. The follow-up read uses `charge_current_request` when the charge state includes it, and otherwise `charge_amps`. If that value equals `charge_current_request_max` and the max is lower than the request, the command is kept and the output says the car clamped it. The command is not sent again.
+
+## Departure preconditioning
+
+`departure` reads and changes a time when the cabin should be ready. It is not `precondition`, and it is not the in-car charging timetable.
+
+```bash
+agentdrive departure show
+agentdrive departure show --json
+agentdrive departure set weekdays 07:30 --confirm "I confirm departure schedule set"
+agentdrive departure set weekdays 07:30 1 2 --confirm "I confirm departure schedule set"
+agentdrive departure set all 08:00 1 2 --once --confirm "I confirm departure schedule set"
+agentdrive departure set Mon,Wed 07:30 1 2 --id 1700000000 --confirm "I confirm departure schedule set"
+agentdrive departure remove 1700000000 --confirm "I confirm departure schedule remove"
+```
+
+`show` calls `vehicle_data` with the endpoint `preconditioning_schedule_data`. If the vehicle list says the car is asleep, offline, or otherwise not online, the command skips, prints that it skipped, and exits 0. It does not send a wake. `--json` prints `state`, `skipped`, and `schedules`.
+
+`set` and `remove` need a confirmation sentence that includes `confirm` and the action name (`departure schedule set` or `departure schedule remove`). A scheduled job cannot supply that sentence and cannot run those two commands. If the vehicle list says the car is not online, these two commands wake it. The car must then be in Park at speed 0. The command is sent once, then the schedules are read again.
+
+| Argument | Value |
+| --- | --- |
+| `days` | `all`, `weekdays`, or a comma-separated list of `Sun`, `Mon`, `Tues`, `Wed`, `Thurs`, `Fri`, `Sat`. Full day names are accepted. |
+| `time` | 24-hour local time, `HH:MM`. This is when the cabin should be ready, as minutes after midnight. It is not a start-and-end window. |
+| `latitude` `longitude` | Optional. Decimal degrees. Latitude is from -90 to 90 and longitude is from -180 to 180. Pass both, or omit both. Omit both and the command reads the car's current location with `location_data` after the same wake other parked changes use. If that read says the car is asleep, it is not woken again. The command then says the car must be online, or you can pass coordinates. The schedule applies at that place. |
+| `--once` | The row runs once. Omit it and the row repeats every week. |
+| `--enabled` | `true` (the default) or `false`. |
+| `--id` | Change the row with this id. Omit it to add a row. |
+| `ID` | The id printed by `show`. `remove` deletes that row. |
+
+`show` prints each row's id, enabled flag, days, ready-by time, weekly or once, place, and name when the response includes one. The read asks only for `preconditioning_schedule_data`. It does not ask for `location_data`.
+
+`set` signs `precondition-schedule-add`, which is `add_precondition_schedule`. `remove` signs `precondition-schedule-remove` with type `id`, which is `remove_precondition_schedule`. The signed schedule fields are the id, days, precondition time, one-time flag, enabled flag, and the place. There is no battery switch and no off-peak charging time on this message.
+
+Tesla's command reference says `set_scheduled_departure` is not recommended beginning with firmware 2024.26, and that `add_precondition_schedule` should be used instead. The older command carried a departure time, an off-peak end time, and preconditioning and off-peak policies. `tesla-control` does not register that older command. AgentDrive does not send it, and it does not send off-peak charging. `home`, `work`, and `other` batch removal exist on the signed tool and are not used here. `remove` deletes one id.
+
+In `precondition-schedule-add`, the optional arguments are positional: repeat, id, then enabled. Omit the id and the tool stores the current unix time and prints that id. `--id` copies that id into the signed message, which is how an existing row is changed. `--enabled false` has to pass an id because enabled sits after it. If you omit `--id` on a disabled row, AgentDrive fills the current unix time. `weekly` is only a placeholder so those later arguments can be reached. Any repeat value other than `once` leaves the row weekly.
+
+One `set` is one ready-by time. Different times are separate schedules. The sample coordinates and the sample id above are placeholders. Immediate cabin preconditioning stays `agentdrive precondition`.
 
 ## In-car charging timetable
 
@@ -138,7 +201,7 @@ agentdrive charge-schedule remove 1700000000 --confirm "I confirm charging sched
 
 `set` signs `charging-schedule-add`, which is `add_charge_schedule`. `remove` signs `charging-schedule-remove` with type `id`, which is `remove_charge_schedule`. Tesla's command reference says `set_scheduled_charging` is not recommended beginning with firmware version 2024.26, and that `add_charge_schedule` should be used instead. The older command takes one `time` in minutes after midnight. This command family sends `add_charge_schedule`, which carries the days, a start, an end, or both, the charging-site coordinates, `one_time`, and `enabled`.
 
-`set` adds a row. In the current `tesla-control` `charging-schedule-add` command, the optional id argument is not copied into the signed message. The tool stores the current unix time as the id. There is no update-by-id flag here. `--enabled false` adds a disabled row. It leaves rows that are already on the car as they are. `remove` is how you drop an id. One `set` is one window. Different hours on different days are separate schedules. Preconditioning and scheduled departure are separate commands and are not part of `charge-schedule`. Immediate cabin preconditioning is `agentdrive precondition`.
+`set` adds a row. In the current `tesla-control` `charging-schedule-add` command, the optional id argument is not copied into the signed message. The tool stores the current unix time as the id. There is no update-by-id flag here. `--enabled false` adds a disabled row. It leaves rows that are already on the car as they are. `remove` is how you drop an id. One `set` is one window. Different hours on different days are separate schedules. Departure preconditioning is `agentdrive departure`. Immediate cabin preconditioning is `agentdrive precondition`. Neither is part of `charge-schedule`.
 
 The sample coordinates and the sample id above are placeholders.
 
@@ -155,6 +218,8 @@ agentdrive report-schedule disable
 agentdrive report-schedule enable
 agentdrive where
 agentdrive charge-schedule show
+agentdrive charge-amps 16 --confirm "I confirm charging set amps"
+agentdrive departure show
 agentdrive update
 ```
 
@@ -162,7 +227,7 @@ agentdrive update
 
 ## Expected result
 
-A status question returns a short readout with tyre pressures, no coordinates, and a masked VIN. `agentdrive where` returns a suburb, region, and country, or says that it skipped when the car is asleep. A parked lights flash runs once and is followed by another read. A sleeping car makes `agentdrive check`, `agentdrive report`, `agentdrive where`, and `agentdrive charge-schedule show` exit 0 without a wake. The AI agent still sends the report, including that skip line.
+A status question returns a short readout with tyre pressures and a masked VIN. `status` and `check` do not request location. `agentdrive where` returns a suburb, region, and country, or says that it skipped when the car is asleep. `agentdrive where --precise` prints latitude, longitude, and a map link when the car is already online, and it still skips without a wake when the car is asleep. A parked lights flash runs once and is followed by another read. A sleeping car makes `agentdrive check`, `agentdrive report`, `agentdrive where`, `agentdrive where --precise`, `agentdrive charge-schedule show`, and `agentdrive departure show` exit 0 without a wake. The AI agent still sends the report, including that skip line.
 
 Illustrative sample. These figures are sample data, not a vehicle reading:
 

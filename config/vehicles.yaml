@@ -10,9 +10,10 @@ protocol:
     On firmware that hides coordinates unless location_data is requested,
     a plain vehicle_data call returns no position. Coordinates, when
     returned, appear on the drive state. status and check do not request
-    location_data. The where command requests that endpoint only when the
-    vehicle is already online, rounds the point before it leaves the
-    process, and does not copy coordinates into assistant memory or output.
+    location_data. where and where --precise request it only when the
+    vehicle is already online. The default where command prints a coarse
+    area. Precise coordinates are used only for where --precise and for a
+    departure place taken from the car. They are not written to history.
 
 models:
   - id: model_s
@@ -37,6 +38,7 @@ capabilities:
     - vehicle_config
     - location_data
     - charge_schedule_data
+    - preconditioning_schedule_data
   phase_1_commands:
     - flash_lights
     - climate_on
@@ -64,6 +66,8 @@ capabilities:
     - charging_set_amps
     - charging_schedule_set
     - charging_schedule_remove
+    - departure_schedule_set
+    - departure_schedule_remove
   charging_reads:
     - nearby_charging_sites
     - charging_history

@@ -30,7 +30,7 @@ You say what you want. The AI agent runs AgentDrive on your computer. Reads use 
 
 Say it in a sentence. The AI agent does the rest.
 
-**Run the parked car from the chat.** Lock or unlock it, turn the climate on or off, set the temperature, heat a seat, heat the steering wheel, turn defrost on or off, or precondition the cabin. Turn sentry mode on or off. Open the rear trunk and close it when the car can, open the front trunk (the frunk), and enable remote start so the car can be driven without the phone key. Start or stop charging, and set a charge limit. Flash the lights or honk. Unlock, turning sentry off, charging, the trunk, the front trunk, and remote start each wait for a confirmation. You can also set the car's own charging timetable, or ask which area the car is parked in.
+**Run the parked car from the chat.** Lock or unlock it, turn the climate on or off, set the temperature, heat a seat, heat the steering wheel, turn defrost on or off, or precondition the cabin. Turn sentry mode on or off. Open the rear trunk and close it when the car can, open the front trunk (the frunk), and enable remote start so the car can be driven without the phone key. Start or stop charging, set a charge limit, set the charging current, and schedule cabin warm-up before you leave. Flash the lights or honk. Unlock, turning sentry off, charging, the trunk, the front trunk, and remote start each wait for a confirmation. You can also set the car's own charging timetable, or ask which area the car is parked in.
 
 **Get a health alert when something new needs you.** Tyre pressure, a low battery, a charge problem, or the car left unlocked or open. You hear about it when it is new. The same alert then stays quiet until it clears and comes back.
 
@@ -75,7 +75,7 @@ Only ask me for the approvals those instructions say the human must do.
 
 ## Disclaimer
 
-Experimental and testing purposes only. AgentDrive is unofficial and is not a Tesla product. Use it only on a vehicle you own, or a vehicle you are explicitly allowed to control. To the maximum extent permitted by law the software is provided as is, and the author's liability is excluded. Nothing here excludes a right under the Australian Consumer Law that cannot be excluded. The full text is in [DISCLAIMER.md](DISCLAIMER.md). Read [SECURITY.md](SECURITY.md) before you install.
+Experimental and testing purposes only. AgentDrive is unofficial and is not a Tesla product. Use it only on a vehicle you own, or a vehicle you are explicitly allowed to control. To the maximum extent permitted by law the software is provided as is, and the author's liability is excluded. Nothing here excludes a right under the Australian Consumer Law that cannot be excluded. The full text is in [DISCLAIMER.md](DISCLAIMER.md). Read [SECURITY.md](SECURITY.md) before you install. Precise coordinates are used only when you ask for them, and they are not saved in the local history.
 
 ## Supported agents
 

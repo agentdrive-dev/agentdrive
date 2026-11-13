@@ -95,6 +95,8 @@ def test_homepage_how_to_start_leads_with_the_paste_prompt():
     assert "lock" in can_do
     assert "climate" in can_do
     assert "charging" in can_do
+    assert "charging current" in can_do
+    assert "cabin warm-up" in can_do
     assert "honk" in can_do
     assert "health alert" in can_do
     assert "morning briefing" in can_do
@@ -165,6 +167,14 @@ def test_homepage_does_not_list_unfinished_work():
     assert "charge-schedule show" in commands
     assert "charge-schedule set" in commands
     assert "charge-schedule remove" in commands
+    assert "| `charge-amps <amps>`" in commands
+    assert "| `departure show`" in commands
+    assert "| `departure set" in commands
+    assert "| `departure remove" in commands
+    assert "I confirm charging set amps" in commands
+    assert "I confirm departure schedule set" in commands
+    assert "I confirm departure schedule remove" in commands
+    assert "set_scheduled_departure" in commands
     assert "agentdrive report" in commands
     assert "report-schedule" in commands
     assert "history due" in commands

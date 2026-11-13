@@ -5,6 +5,7 @@ from __future__ import annotations
 from core.errors import ConfigError, ScheduleBlocked, VerificationFailed
 from core.fleet.commands import TeslaControl
 from core.fleet.charge_schedule import charge_schedule_satisfied
+from core.fleet.departure import departure_satisfied
 from core.fleet.snapshot import SEAT_HEATER_LEVELS, Observation, defrost_state
 from core.safety.catalog import CommandSpec, load_specs
 from core.safety.confirm import Confirmation, ConfirmationBroker, new_challenge
@@ -98,12 +99,37 @@ def _verify(kind: str, observed: Observation, extra_args: list[str]) -> None:
     if kind == "charge_limit" and extra_args and observed.charge_limit_soc is not None:
         if str(observed.charge_limit_soc) == str(extra_args[0]):
             return
-    if kind == "charge_amps" and extra_args and observed.charge_amps is not None:
-        if str(observed.charge_amps) == str(extra_args[0]):
-            return
+    if kind == "charge_amps" and _charge_amps_match(observed, extra_args):
+        return
     if kind in {"charge_schedule_set", "charge_schedule_remove"} and charge_schedule_satisfied(kind, observed, extra_args):
         return
+    if kind in {"departure_schedule_set", "departure_schedule_remove"} and departure_satisfied(kind, observed, extra_args):
+        return
     raise VerificationFailed("The vehicle state after the command did not match the request. The command was not sent again.")
+
+
+def _charge_amps_match(observed: Observation, extra_args: list[str]) -> bool:
+    """True when the car kept the requested current, or clamped down to its max.
+
+    The setting is ``charge_current_request``. ``charge_amps`` is the live
+    draw and is only the fallback when the request field is absent. A lower
+    positive value counts only when it equals ``charge_current_request_max``.
+    """
+    if not extra_args:
+        return False
+    try:
+        asked = int(str(extra_args[0]))
+    except (TypeError, ValueError):
+        return False
+    setting = observed.charge_current_request
+    if setting is None:
+        setting = observed.charge_amps
+    if setting is None:
+        return False
+    if setting == asked:
+        return True
+    cap = observed.charge_current_request_max
+    return cap is not None and setting == cap and 0 < cap < asked
 
 
 def _seat_matches(observed: Observation, extra_args: list[str]) -> bool:
