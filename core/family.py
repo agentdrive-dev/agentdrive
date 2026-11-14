@@ -48,6 +48,13 @@ DIRECT_ACTIONS = {
     "tips",
     "wake",
     "where",
+    "charging-history",
+    "charging-invoice",
+    "software",
+    "seat-cool",
+    "seat-climate",
+    "climate-keeper-off",
+    "bioweapon-off",
 }
 
 # Sensitive actions. These are requests even if the owner lists them.
@@ -69,6 +76,14 @@ REQUEST_ACTIONS = {
     "trunk-close",
     "trunk-open",
     "unlock",
+    "climate-keeper-keep",
+    "climate-keeper-dog",
+    "climate-keeper-camp",
+    "charge-port-open",
+    "charge-port-close",
+    "software-schedule",
+    "software-cancel",
+    "bioweapon-on",
 }
 
 

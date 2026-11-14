@@ -1,9 +1,10 @@
 """Vehicle reads and signed commands used by the command line.
 
 Status wakes a sleeping vehicle and polls for up to 45 seconds. The health
-check, the daily report, where, charge-schedule show, and departure show
-never wake. Unlock and other sensitive commands go through the safety
-gateway, which asks for a one-time confirmation.
+check, the daily report, where, charge-schedule show, departure show,
+official charging history, and a software-status read never wake. Unlock
+and other sensitive commands go through the safety gateway, which asks
+for a one-time confirmation.
 
 Check and report also save local history when the car is already online.
 That write does not wake the car, and a history problem does not change the
@@ -13,6 +14,8 @@ check result or the report text.
 from __future__ import annotations
 
 import json
+import os
+import re
 import sys
 import time
 from dataclasses import dataclass
@@ -20,7 +23,7 @@ from pathlib import Path
 
 from adapters.template import TemplateAdapter
 from core.config import load_regions
-from core.errors import ConfigError, ConfirmationRequired, TokenError
+from core.errors import CommandFailed, ConfigError, ConfirmationRequired, TokenError
 from core.fleet.area import WhereReport, area_from_vehicle_payload, precise_from_vehicle_payload, precise_point
 from core.fleet.charge_schedule import (
     ScheduleReport,
@@ -35,7 +38,9 @@ from core.fleet.departure import (
     matching_ids as matching_departure_ids,
     schedules_from_vehicle_data as departure_schedules_from_vehicle_data,
 )
+from core.fleet.charging import format_history, format_invoice_saved, format_invoice_skipped, parse_invoice_id
 from core.fleet.commands import TeslaControl
+from core.fleet.failures import clarify_command_failure
 from core.fleet.credentials import load_client_credentials
 from core.fleet.check_state import apply_rising_edge
 from core.fleet.health import (
@@ -48,7 +53,18 @@ from core.fleet.health import (
 from core.fleet.http import HttpError, UrllibClient
 from core.fleet.queries import FleetReader, QueryError, VehicleAsleep, location_scope_denied
 from core.fleet.report import VehicleReport, skipped_vehicle_report, skip_text, vehicle_report
-from core.fleet.snapshot import SEAT_API_FIELDS, SEAT_HEATER_LEVELS, Observation, from_vehicle_data, seat_heater_names
+from core.fleet.snapshot import (
+    SEAT_API_FIELDS,
+    SEAT_COOLER_LEVELS,
+    SEAT_COOLER_NAMES,
+    SEAT_HEATER_LEVELS,
+    Observation,
+    cable_plugged,
+    driver_seat_text,
+    from_vehicle_data,
+    seat_heater_names,
+)
+from core.fleet.software import format_software, format_software_json, notes_from
 from core.fleet.tokens import AtomicTokenStore, FleetTokenRefresher, TokenManager, audience_for
 from core.garage import resolve_vehicle
 from core.paths import resolve_key, resolve_token_file
@@ -88,6 +104,18 @@ PUBLIC_COMMANDS = {
     "trunk-close": "trunk_close",
     "frunk-open": "frunk_open",
     "remote-start": "remote_start",
+    "climate-keeper-off": "climate_keeper_off",
+    "climate-keeper-keep": "climate_keeper_keep",
+    "climate-keeper-dog": "climate_keeper_dog",
+    "climate-keeper-camp": "climate_keeper_camp",
+    "charge-port-open": "charge_port_open",
+    "charge-port-close": "charge_port_close",
+    "seat-cool": "seat_cooler",
+    "seat-climate": "auto_seat_climate",
+    "bioweapon-on": "bioweapon_on",
+    "bioweapon-off": "bioweapon_off",
+    "software-schedule": "software_schedule",
+    "software-cancel": "software_cancel",
 }
 
 
@@ -114,6 +142,49 @@ def parse_seat_heat(seat: str, level: str) -> tuple[str, str]:
     if level_name not in SEAT_HEATER_LEVELS:
         raise ConfigError("seat heater level must be off, low, medium, or high")
     return seat_name, level_name
+
+
+def parse_seat_cool(seat: str, level: str) -> tuple[str, str]:
+    """Front seats only, at the levels the signed seat-cooler command accepts."""
+    seat_name = " ".join(str(seat).strip().lower().split())
+    level_name = str(level).strip().lower()
+    allowed = ", ".join(SEAT_COOLER_NAMES)
+    if seat_name not in SEAT_COOLER_NAMES:
+        raise ConfigError(f"seat cooling supports {allowed}")
+    if level_name not in SEAT_COOLER_LEVELS:
+        raise ConfigError("seat cooling level must be off, low, medium, or high")
+    return seat_name, level_name
+
+
+def parse_seat_climate(seat: str, state: str) -> tuple[str, str]:
+    """Map a front seat to the signed auto-seat-and-climate position token."""
+    seat_name = " ".join(str(seat).strip().lower().split())
+    state_name = str(state).strip().lower()
+    tokens = {"front-left": "L", "front-right": "R", "both": "LR"}
+    if seat_name not in tokens:
+        raise ConfigError("automatic seat climate supports front-left, front-right, or both")
+    if state_name not in {"on", "off"}:
+        raise ConfigError("automatic seat climate must be on or off")
+    return tokens[seat_name], state_name
+
+
+_DELAY = re.compile(r"^(?:(\d+(?:\.\d+)?)h)?(?:(\d+(?:\.\d+)?)m)?(?:(\d+(?:\.\d+)?)s)?$")
+_DELAY_LIMIT = 7 * 24 * 3600
+
+
+def parse_update_delay(value: str) -> str:
+    """A tesla-control duration: 2h, 10m, 30s, 1h30m, a whole number of seconds, or now."""
+    text = " ".join(str(value).strip().lower().split())
+    if text in {"now", "0"}:
+        return "0s"
+    if text.isdigit():
+        seconds = int(text)
+        if seconds > _DELAY_LIMIT:
+            raise ConfigError("delay must be at most 7 days")
+        return f"{seconds}s"
+    if not _DELAY.fullmatch(text) or not any(char.isdigit() for char in text):
+        raise ConfigError("delay must be a duration such as 2h, 10m, 30s, or a whole number of seconds")
+    return text
 
 
 def parse_on_off(value: str, label: str) -> str:
@@ -273,7 +344,7 @@ class App:
         text = format_status(chosen, observation, key)
         return redact(text, [key, preferred or ""])
 
-    def check(self, *, preferred: str | None, tyre_bar: float, low_battery_percent: int) -> CheckReport:
+    def check(self, *, preferred: str | None, tyre_bar: float, low_battery_percent: int, now=None) -> CheckReport:
         selection = self._bind(preferred)
         chosen = selection.row
         state = vehicle_state_name(chosen) or "unknown"
@@ -285,7 +356,7 @@ class App:
         # History records the full online reading. Notification dedupe is separate,
         # and a skipped check never reaches this write.
         self._remember(payload, observation, tyre_bar=tyre_bar, low_battery_percent=low_battery_percent, store=selection.store)
-        return apply_rising_edge(selection.store, report)
+        return apply_rising_edge(selection.store, report, now=now)
 
     def peek(self, *, preferred: str | None) -> ParkedPeek:
         """Read battery, climate, and schedules when the car is already online.
@@ -441,29 +512,102 @@ class App:
             self.control.run(vin=key, access_token=token, args=["wake"])
             return _tagged("OK: wake", selection.label)
         _key, observation, label = self._read_online(preferred, sleep=sleep)
+        self._reject_unsupported(name, _key, observation)
         token = self.tokens.access_token()
 
         def observe() -> Observation:
             payload = self.reader.vehicle_data(_key, DATA_ENDPOINTS)
             return from_vehicle_data(payload)
 
-        observed = self.gateway.execute(
-            spec,
-            shift_state=observation.shift_state,
-            speed=observation.speed,
-            adapter=_cli_adapter(statement),
-            via_schedule=False,
-            vin=_key,
-            access_token=token,
-            observe=observe,
-            extra_args=extra_args,
-            car=label,
-        )
+        try:
+            observed = self.gateway.execute(
+                spec,
+                shift_state=observation.shift_state,
+                speed=observation.speed,
+                adapter=_cli_adapter(statement),
+                via_schedule=False,
+                vin=_key,
+                access_token=token,
+                observe=observe,
+                extra_args=extra_args,
+                car=label,
+            )
+        except CommandFailed as exc:
+            clarified = clarify_command_failure(name, str(exc))
+            if clarified:
+                raise CommandFailed(clarified) from exc
+            raise
         if name == "charge-amps" and extra_args:
             return _tagged(charge_amps_result(extra_args[0], observed), label)
-        if extra_args:
-            return _tagged(f"OK: {name} {' '.join(extra_args)}", label)
-        return _tagged(f"OK: {name}", label)
+        return _tagged(f"OK: {_result_name(name, extra_args)}", label)
+
+    def _reject_unsupported(self, name: str, key: str, observation: Observation) -> None:
+        """Stop before a signed command when the reading already explains the failure."""
+        if name == "seat-cool":
+            supported = observation.seat_cooling
+            if supported is None:
+                payload = self.reader.vehicle_data(key, ["vehicle_config"])
+                supported = from_vehicle_data(payload).seat_cooling
+            if supported is False:
+                raise ConfigError("This car does not have seat cooling.")
+            if observation.climate_on is not True:
+                raise ConfigError("Climate is not on, so seat cooling was not changed.")
+        if name == "seat-climate" and observation.climate_on is not True:
+            raise ConfigError("Climate is not on, so automatic seat climate was not changed.")
+        if name == "charge-port-close" and cable_plugged(observation):
+            raise ConfigError("The charge port did not close because a cable is plugged in.")
+
+    def charging_history(self, *, as_json: bool = False) -> str:
+        """Official account charging history. This does not list vehicles and does not wake a car."""
+        return format_history(self.reader.charging_history(), as_json=as_json)
+
+    def charging_invoice(self, invoice_id: str, *, save: bool) -> str:
+        """Save the PDF under the config home only when save is true."""
+        identified = parse_invoice_id(invoice_id)
+        if not save:
+            return format_invoice_skipped(identified)
+        data = self.reader.charging_invoice_pdf(identified)
+        directory = self.home / "invoices"
+        directory.mkdir(parents=True, exist_ok=True)
+        if os.name != "nt":
+            os.chmod(directory, 0o700)
+        path = directory / f"{identified}.pdf"
+        fd = os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        try:
+            os.write(fd, data)
+        finally:
+            os.close(fd)
+        if os.name != "nt":
+            os.chmod(path, 0o600)
+        return format_invoice_saved(str(path))
+
+    def software(self, *, preferred: str | None, as_json: bool = False) -> str:
+        """Status and release notes. A sleeping car is not woken."""
+        try:
+            selection = self._bind(preferred)
+        except VehicleAsleep:
+            return _software_text("asleep", None, [], skipped=True, as_json=as_json)
+        chosen = selection.row
+        state = vehicle_state_name(chosen) or "unknown"
+        if state != "online":
+            return _software_text(state, None, [], skipped=True, as_json=as_json)
+        key = vehicle_key(chosen)
+        try:
+            payload = self.reader.vehicle_data(key, DATA_ENDPOINTS)
+        except VehicleAsleep:
+            return _software_text("asleep", None, [], skipped=True, as_json=as_json)
+        observation = from_vehicle_data(payload)
+        notes: list[dict] = []
+        try:
+            notes = notes_from(
+                self.reader.release_notes(key, staged=observation.software_update_status is not None)
+            )
+        except VehicleAsleep:
+            return _software_text("asleep", None, [], skipped=True, as_json=as_json)
+        except (TimeoutError, HttpError, QueryError):
+            notes = []
+        self._remember(payload, observation, store=selection.store)
+        return _software_text("online", observation, notes, skipped=False, as_json=as_json)
 
     def _bind(self, preferred: str | None):
         return resolve_vehicle(
@@ -670,6 +814,12 @@ def _tagged(text: str, label: str) -> str:
 def _extra(name: str, argument: str | None) -> list[str] | None:
     if name == "seat-heat":
         raise ConfigError("seat and level are required")
+    if name == "seat-cool":
+        raise ConfigError("seat and level are required")
+    if name == "seat-climate":
+        raise ConfigError("seat and state are required")
+    if name == "software-schedule":
+        raise ConfigError("delay must be a duration such as 2h, 10m, 30s, or a whole number of seconds")
     if name == "steering-heat":
         raise ConfigError("steering heat must be on or off")
     if name == "set-temp":
@@ -762,13 +912,39 @@ def _redact_report(report: VehicleReport, secrets: list[str]) -> VehicleReport:
     return VehicleReport(skipped=report.skipped, state=report.state, text=redact(report.text, secrets), fields=fields)
 
 
+def _result_name(name: str, extra_args: list[str] | None) -> str:
+    if name.startswith("climate-keeper-"):
+        return "climate-keeper " + name.removeprefix("climate-keeper-")
+    if name.startswith("charge-port-"):
+        return "charge-port " + name.removeprefix("charge-port-")
+    if name.startswith("bioweapon-"):
+        return "bioweapon " + name.removeprefix("bioweapon-")
+    if name == "software-schedule" and extra_args:
+        return "software schedule " + extra_args[0]
+    if name == "software-cancel":
+        return "software cancel"
+    if name == "seat-climate" and extra_args and len(extra_args) >= 2:
+        seats = {"L": "front-left", "R": "front-right", "LR": "both"}
+        return f"seat-climate {seats.get(extra_args[0], extra_args[0])} {extra_args[1]}"
+    if extra_args:
+        return name + " " + " ".join(extra_args)
+    return name
+
+
+def _software_text(state, observation, notes, *, skipped: bool, as_json: bool) -> str:
+    if as_json:
+        return format_software_json(state, observation, notes, skipped=skipped)
+    return format_software(state, observation, notes, skipped=skipped)
+
+
 def format_check(report: CheckReport) -> str:
     if report.skipped:
         return skip_text(report.state)
+    lines = ["state: online", f"Driver seat: {driver_seat_text(report.driver_present)}"]
     if not report.alerts:
-        return "state: online\nno alerts"
-    lines = ["state: online"]
-    lines.extend(f"alert: {item.message}" for item in report.alerts)
+        lines.append("no alerts")
+    else:
+        lines.extend(f"alert: {item.message}" for item in report.alerts)
     return "\n".join(lines)
 
 

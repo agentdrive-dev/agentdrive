@@ -16,7 +16,8 @@ def default_scopes(scopes: dict | None = None, *, include_charging: bool = False
         charging = (document.get("optional") or {}).get("charging")
         if not charging:
             raise ConfigError("Charging scope is missing from scopes.yaml")
-        chosen.append(str(charging))
+        if str(charging) not in chosen:
+            chosen.append(str(charging))
     return chosen
 
 

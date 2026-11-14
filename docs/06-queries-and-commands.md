@@ -12,7 +12,7 @@ Reads use the Fleet API: the vehicle list, `vehicle_data`, and wake. Location on
 
 Health checks, alert memory, the morning briefing, and the encrypted history are kept per car. The first car you name keeps the history and alert file that were already in the config home. Another car gets its own files under the config home. An alert that is already active on one car is still new on another car. `agentdrive history`, `agentdrive tips`, and `agentdrive service` read the selected car and do not contact it. With several cars and no default, pass `--car`. The morning job runs `agentdrive history due` once per car when you have several. The health check runs `agentdrive check --json --car <nickname>` once per car. With one car, both commands stay as they are.
 
-`agentdrive check` is the read-only health check for a schedule. It reads the vehicle list first and does not wake a sleeping car. If the car is not online, the command skips, prints that it skipped, and exits 0. That skip does not change which alerts are remembered. If the car is online it looks for a TPMS warning, a tyre below the configured bar threshold, a low battery that is not charging, sentry off while that same low battery is not charging, the car unlocked or open while parked, or a charge error. It exits 1 only when an alert is new. The printed alerts are those new ones. The same alert exits 0, and is not printed again, until it clears and later returns. A different new alert still exits 1 while an older one continues. `--json` prints a short object for the AI agent. On install, schedule `agentdrive check --json` every 30 minutes and notify only when the exit code is 1. AgentDrive does not run that job and does not install cron. The morning usage briefing stays the separate daily job at the report-schedule time. Thresholds come from `--tyre-threshold`, `--battery-threshold`, or the `tyre_pressure_bar` and `low_battery_percent` habits in the profile. The default tyre line is 2.5 bar and the default battery line is 30 percent. Sentry off uses that same battery line. The check does not request location. Remembered alert codes are stored in `$AGENTDRIVE_HOME/check-alerts.json` (or `~/.config/agentdrive/check-alerts.json`). That file is alert codes only. Do not copy it into the git repo.
+`agentdrive check` is the read-only health check for a schedule. It reads the vehicle list first and does not wake a sleeping car. If the car is not online, the command skips, prints that it skipped, and exits 0. That skip does not change which alerts are remembered. If the car is online it looks for a TPMS warning, a tyre below the configured bar threshold, a low battery that is not charging, sentry off while that same low battery is not charging, the car unlocked or open while parked, a charge error, or an energy-heavy mode left on while parked. When the car is online, check and report also say whether someone appears to be in the driver seat, or that no one was detected in the driver seat. That reading is `vehicle_state.is_user_present`. It covers only the driver seat. It is not a guarantee that nobody is inside. There is no rear-seat, passenger, child, or pet detection. If someone appears to be in the driver seat, the parked-and-unlocked alert is not sent. Energy-mode alerts are climate left on, climate keeper set to keep, dog, or camp, and bioweapon defense mode. They are sent only when the car is parked and no one is in the driver seat. Each of those repeats at most once an hour while that mode stays on, which is the exception to the usual once-until-cleared rule, and it stops when the mode turns off. Other alerts still stay quiet until they clear. It exits 1 only when an alert is new, or when an energy-mode alert is due again. The printed alerts are those. The same ordinary alert exits 0, and is not printed again, until it clears and later returns. A different new alert still exits 1 while an older one continues. `--json` prints a short object for the AI agent. On install, schedule `agentdrive check --json` every 30 minutes and notify only when the exit code is 1. AgentDrive does not run that job and does not install cron. The morning usage briefing stays the separate daily job at the report-schedule time. Thresholds come from `--tyre-threshold`, `--battery-threshold`, or the `tyre_pressure_bar` and `low_battery_percent` habits in the profile. The default tyre line is 2.5 bar and the default battery line is 30 percent. Sentry off uses that same battery line. The check does not request location. Remembered alert codes are stored in `$AGENTDRIVE_HOME/check-alerts.json` (or `~/.config/agentdrive/check-alerts.json`). That file is alert codes and, for an energy-mode alert, the last time it was announced. It has no VIN, no location, and no alert text. Do not copy it into the git repo.
 
 `agentdrive where` is a read-only coarse area. It reads the vehicle list first. If the car is asleep or offline, it skips with the same kind of message as `check`, does not wake the car, and exits 0. If the car is already online, it calls `vehicle_data` with `endpoints=location_data` only.
 
@@ -28,9 +28,9 @@ agentdrive where --precise
 agentdrive where --precise --json
 ```
 
-A location read needs the official `vehicle_location` scope. The owner sign-in scope list is `openid`, `offline_access`, `user_data`, `vehicle_device_data`, `vehicle_location`, and `vehicle_cmds`. If the token lacks `vehicle_location`, or the firmware refuses the read until that scope is granted, the command tells you to re-authorize and include `vehicle_location`, and it exits 1. Sign in again so the new token carries that scope. `status` and `check` stay free of location.
+A location read needs the official `vehicle_location` scope. The owner sign-in scope list is `openid`, `offline_access`, `user_data`, `vehicle_device_data`, `vehicle_location`, `vehicle_cmds`, and `vehicle_charging_cmds`. `vehicle_charging_cmds` is what official charging history and invoices use. If the token lacks `vehicle_location`, or the firmware refuses the read until that scope is granted, the command tells you to re-authorize and include `vehicle_location`, and it exits 1. Sign in again so the new token carries that scope. `status` and `check` stay free of location.
 
-`agentdrive report` is the daily briefing. It uses that same parked snapshot (`charge_state`, `climate_state`, `vehicle_state`, and `drive_state`). It does not request `location_data` and it does not print coordinates. It does not call wake. If the vehicle list says the car is asleep, offline, or otherwise not online, it prints the same skip line as `check` and exits 0. A timeout or HTTP 408 is the same skip. When the car is online the briefing includes battery, charge connection, lock, gear, doors, windows, trunk, sentry, climate, tyres, and TPMS. `--json` prints the same briefing as an object. The AI agent sends that output every time. Exit 0 here is not a reason to stay quiet.
+`agentdrive report` is the daily briefing. It uses that same parked snapshot (`charge_state`, `climate_state`, `vehicle_state`, and `drive_state`). It does not request `location_data` and it does not print coordinates. It does not call wake. If the vehicle list says the car is asleep, offline, or otherwise not online, it prints the same skip line as `check` and exits 0. A timeout or HTTP 408 is the same skip. When the car is online the briefing includes battery, charge connection, lock, whether someone appears to be in the driver seat, gear, doors, windows, trunk, sentry, climate, tyres, and TPMS. The driver-seat line covers only the driver seat. It is not a guarantee that nobody is inside. There is no rear-seat, passenger, child, or pet detection. `--json` prints the same briefing as an object. The AI agent sends that output every time. Exit 0 here is not a reason to stay quiet.
 
 `agentdrive report-schedule` shows the daily time. The default is 07:30 local time and enabled, even when `runtime.yaml` has no `report_schedule` key. `agentdrive report-schedule set HH:MM` stores a 24-hour time. `disable` and `enable` store the on/off state. The file is `$AGENTDRIVE_HOME/runtime.yaml` (or `~/.config/agentdrive/runtime.yaml`). Writing it does not change the AI agent's job. After a change, the AI agent updates the job. The command also prints a crontab example, such as `30 7 * * * agentdrive history due`. AgentDrive does not install that line and does not install a systemd timer.
 
@@ -84,6 +84,18 @@ Commands:
 | `trunk-close` | signed `trunk-close` | yes, one time. The sentence names close rear trunk |
 | `frunk-open` | signed `frunk-open` | yes, one time. The sentence names open frunk |
 | `remote-start` | signed `drive` | yes, one time. The sentence names enable remote start |
+| `climate-keeper off` | signed `climate-keeper off` | no |
+| `climate-keeper keep`, `dog`, `camp` | signed `climate-keeper` | yes, one time, because it uses energy. The sentence names climate keeper keep, climate keeper dog, or climate keeper camp |
+| `charge-port open`, `charge-port close` | signed `charge-port-open` or `charge-port-close` | yes, one time. The sentence names open charge port or close charge port |
+| `seat-cool <seat> <level>` | signed `seat-cooler` | no |
+| `seat-climate <seat> on` or `off` | signed `auto-seat-and-climate` | no |
+| `bioweapon off` | signed `bioweapon-mode off` | no |
+| `bioweapon on` | signed `bioweapon-mode on` | yes, one time. The sentence names turn bioweapon defense on |
+| `software` | no signed command; vehicle state and `release_notes` when the car is already online | no, and it does not wake |
+| `software schedule <delay>` | signed `software-update-start` | yes, one time. The sentence names schedule software update |
+| `software cancel` | signed `software-update-cancel` | yes, one time. The sentence names cancel software update |
+| `charging-history` | `GET /api/1/dx/charging/history` | no, and it does not wake the car. Home charging is not included |
+| `charging-invoice <id> --save` | `GET /api/1/dx/charging/invoice/{id}` | no, and it does not wake the car. The PDF is written only when you ask |
 | `history trips`, `history charges`, `history snapshots` | no signed command; saved history only | no, and it does not contact the car |
 | `history due`, `history daily`, `history weekly`, `history monthly`, `history yearly` | no signed command; saved history only. Week, month, and year also write a local chart | no |
 | `advice trip <km>`, `advice charge` | no signed command; saved history, plus a non-waking read when the car is already online | no, and it does not wake the car or change a setting |
@@ -92,7 +104,7 @@ Commands:
 | `news` | no signed command; reads the official Tesla site for the owner's country | no, and it does not wake the car |
 | `service`, `service log rotation`, `service log replacement`, `service log maintenance` | no signed command; uses the saved odometer | no, and it does not wake the car |
 
-Unlock, turning sentry off, every charging change, setting or removing a departure schedule, the rear trunk, the front trunk, and remote start go through the existing confirmation layer. A schedule cannot confirm them and cannot run sentry off, the trunk, the front trunk, remote start, or a departure schedule change. When a nickname is in use for that command, the confirmation also names the car. `I confirm unlock on daily` approves unlock for the car named daily. `I confirm unlock` does not. With one car and no `--car`, the sentence stays `I confirm unlock`. The prompt is `Confirm unlock on daily. Type a sentence that names the action and the car and includes confirm:`. The result line names the car too: `OK: unlock on daily`. The health check stays `agentdrive check`. The morning job stays `agentdrive history due`. State-changing commands are sent only in Park at speed 0, then read back once.
+Unlock, turning sentry off, every charging change, setting or removing a departure schedule, the rear trunk, the front trunk, remote start, climate keeper keep, dog, and camp, opening or closing the charge port, turning bioweapon defense on, and scheduling or cancelling a software update go through the existing confirmation layer. A schedule cannot confirm them and cannot run sentry off, the trunk, the front trunk, remote start, a departure schedule change, climate keeper keep, dog, or camp, the charge port, bioweapon defense on, or a software update. When a nickname is in use for that command, the confirmation also names the car. `I confirm unlock on daily` approves unlock for the car named daily. `I confirm unlock` does not. With one car and no `--car`, the sentence stays `I confirm unlock`. The prompt is `Confirm unlock on daily. Type a sentence that names the action and the car and includes confirm:`. The result line names the car too: `OK: unlock on daily`. The health check stays `agentdrive check`. The morning job stays `agentdrive history due`. State-changing commands are sent only in Park at speed 0, then read back once.
 
 ## Several cars
 
@@ -109,7 +121,7 @@ agentdrive unlock --car weekend --confirm "I confirm unlock on weekend"
 
 ## Family members
 
-You can register a handle for someone in the household and choose what they may ask for. Low-risk reads and parked actions that you allow run directly. Unlock, charging changes, turning sentry off, the trunk, the front trunk, remote start, and departure changes do not. Those become a pending request. The command prints text for the assistant to relay to you. AgentDrive does not send that message itself.
+You can register a handle for someone in the household and choose what they may ask for. Low-risk reads and parked actions that you allow run directly. Unlock, charging changes, turning sentry off, the trunk, the front trunk, remote start, departure changes, climate keeper keep, dog, and camp, bioweapon defense on, the charge port, and a software update do not. Those become a pending request. The command prints text for the assistant to relay to you. AgentDrive does not send that message itself.
 
 ```bash
 agentdrive family add rider
@@ -142,6 +154,57 @@ Created 2026-11-14T01:00:00Z. Expires 2026-11-14T01:10:00Z (10 minutes).
 This action was not run.
 Tell the owner: rider asked to unlock on daily. Approve with `agentdrive request approve ab12cd34` or deny with `agentdrive request deny ab12cd34`.
 ```
+
+## Climate keeper, charge port, seats, bioweapon defense, and software
+
+```bash
+agentdrive climate-keeper off
+agentdrive climate-keeper keep --confirm "I confirm climate keeper keep"
+agentdrive climate-keeper dog --confirm "I confirm climate keeper dog"
+agentdrive climate-keeper camp --confirm "I confirm climate keeper camp"
+agentdrive charge-port open --confirm "I confirm open charge port"
+agentdrive charge-port close --confirm "I confirm close charge port"
+agentdrive seat-cool front-left low
+agentdrive seat-climate front-left on
+agentdrive seat-climate both off
+agentdrive bioweapon off
+agentdrive bioweapon on --confirm "I confirm turn bioweapon defense on"
+agentdrive software
+agentdrive software schedule 2h --confirm "I confirm schedule software update"
+agentdrive software cancel --confirm "I confirm cancel software update"
+```
+
+`climate-keeper` signs `set_climate_keeper_mode`. `off` does not need a confirmation. `keep`, `dog`, and `camp` do, because they use energy. A scheduled job cannot supply that sentence. Upstream `tesla-control` does not include this subcommand, so the installer adds `climate-keeper` to the local build. The manual override is not sent.
+
+`charge-port open` and `charge-port close` sign `charge_port_door_open` and `charge_port_door_close`. Both need a confirmation. If the port does not close because a cable is plugged in, the command says so and is not sent again.
+
+`seat-cool` signs `remote_seat_cooler_request` for `front-left` or `front-right`, at `off`, `low`, `medium`, or `high`. `seat-climate` signs `remote_auto_seat_climate_request` for `front-left`, `front-right`, or `both`. If the car has no seat cooling, or the climate is not on, the command says so and does not keep trying. Upstream `tesla-control` does not include seat cooling, so the installer adds `seat-cooler`. Automatic seat climate is the upstream `auto-seat-and-climate` command.
+
+`bioweapon off` does not need a confirmation. `bioweapon on` does, because it uses energy. The sentence is `I confirm turn bioweapon defense on`. If the car does not support bioweapon defense mode, the command says so. The installer adds `bioweapon-mode` because upstream `tesla-control` does not register it. The signed call sets the manual override so the car keeps the choice you asked for.
+
+`software` reads the installed version, the update status, and official release notes from `release_notes`. If the vehicle list says the car is asleep, it says so and does not wake the car. `software schedule` signs `schedule_software_update`. The delay is `2h`, `10m`, `30s`, a whole number of seconds, or `now`. `software cancel` signs `cancel_software_update`. Both need a confirmation. A scheduled job cannot run them. Upstream `tesla-control` already has `software-update-start` and `software-update-cancel`.
+
+With several cars, pass `--car <nickname>`. A confirmation then names that car, for example `I confirm climate keeper dog on daily`.
+
+## Official charging history
+
+```bash
+agentdrive charging-history
+agentdrive charging-history --json
+agentdrive charging-invoice abc-123-efg
+agentdrive charging-invoice abc-123-efg --save
+```
+
+`charging-history` calls `GET /api/1/dx/charging/history` on the account. It does not wake a car and it does not ask the car for data. Each line shows the date, the site name, the energy, and the cost as Tesla returns them. Home charging is not included. Coordinates and the VIN are not printed and are not stored. `--json` prints those same fields.
+
+`charging-invoice` uses the invoice id from that history. Without `--save` it does not download the PDF. With `--save` it calls `GET /api/1/dx/charging/invoice/{id}` and writes the PDF under `$AGENTDRIVE_HOME/invoices` (or `~/.config/agentdrive/invoices`). The output still says home charging is not included. If the token cannot read charging history, sign in again and include `vehicle_charging_cmds`.
+
+```text
+Official Tesla charging history. Home charging is not included.
+2026-07-27T11:43:45-07:00 | Sample Supercharger | 40 kwh | USD 18.4 | invoice abc-123-efg
+```
+
+That block is sample data, not a vehicle reading.
 
 ## Sentry and cabin climate
 

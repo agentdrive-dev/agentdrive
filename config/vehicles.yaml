@@ -53,6 +53,10 @@ capabilities:
     - defrost_on
     - defrost_off
     - cabin_precondition
+    - climate_keeper_off
+    - seat_cooler
+    - auto_seat_climate
+    - bioweapon_off
   sensitive_commands:
     - unlock
     - remote_start
@@ -68,6 +72,14 @@ capabilities:
     - charging_schedule_remove
     - departure_schedule_set
     - departure_schedule_remove
+    - climate_keeper_keep
+    - climate_keeper_dog
+    - climate_keeper_camp
+    - charge_port_open
+    - charge_port_close
+    - software_schedule
+    - software_cancel
+    - bioweapon_on
   charging_reads:
     - nearby_charging_sites
     - charging_history

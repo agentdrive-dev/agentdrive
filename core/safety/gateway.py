@@ -6,7 +6,7 @@ from core.errors import ConfigError, ScheduleBlocked, VerificationFailed
 from core.fleet.commands import TeslaControl
 from core.fleet.charge_schedule import charge_schedule_satisfied
 from core.fleet.departure import departure_satisfied
-from core.fleet.snapshot import SEAT_HEATER_LEVELS, Observation, defrost_state
+from core.fleet.snapshot import SEAT_COOLER_LEVELS, SEAT_HEATER_LEVELS, Observation, defrost_state
 from core.safety.catalog import CommandSpec, load_specs
 from core.safety.confirm import Confirmation, ConfirmationBroker, new_challenge
 from core.safety.parked import require_parked
@@ -108,6 +108,24 @@ def _verify(kind: str, observed: Observation, extra_args: list[str]) -> None:
         return
     if kind in {"departure_schedule_set", "departure_schedule_remove"} and departure_satisfied(kind, observed, extra_args):
         return
+    if kind.startswith("climate_keeper_") and observed.climate_keeper == kind.removeprefix("climate_keeper_"):
+        return
+    if kind == "charge_port_open" and observed.charge_port_open is True:
+        return
+    if kind == "charge_port_closed" and observed.charge_port_open is False:
+        return
+    if kind == "seat_cooler" and _seat_cool_matches(observed, extra_args):
+        return
+    if kind == "auto_seat_climate" and _auto_seat_matches(observed, extra_args):
+        return
+    if kind == "bioweapon_on" and observed.bioweapon_on is True:
+        return
+    if kind == "bioweapon_off" and observed.bioweapon_on is False:
+        return
+    if kind == "software_scheduled" and (observed.software_update_status or "").lower() == "scheduled":
+        return
+    if kind == "software_cancelled" and (observed.software_update_status or "").lower() != "scheduled":
+        return
     raise VerificationFailed("The vehicle state after the command did not match the request. The command was not sent again.")
 
 
@@ -143,6 +161,31 @@ def _seat_matches(observed: Observation, extra_args: list[str]) -> bool:
         return False
     heaters = observed.seat_heat or {}
     return heaters.get(extra_args[0]) == expected
+
+
+def _seat_cool_matches(observed: Observation, extra_args: list[str]) -> bool:
+    if len(extra_args) < 2:
+        return False
+    expected = SEAT_COOLER_LEVELS.get(extra_args[1])
+    if expected is None:
+        return False
+    coolers = observed.seat_cool or {}
+    return coolers.get(extra_args[0]) == expected
+
+
+def _auto_seat_matches(observed: Observation, extra_args: list[str]) -> bool:
+    if len(extra_args) < 2 or extra_args[1] not in {"on", "off"}:
+        return False
+    token = extra_args[0]
+    if not token or any(char not in {"L", "R"} for char in token):
+        return False
+    expected = extra_args[1] == "on"
+    seats = []
+    if "L" in token:
+        seats.append(observed.auto_seat_left)
+    if "R" in token:
+        seats.append(observed.auto_seat_right)
+    return bool(seats) and all(item is expected for item in seats)
 
 
 def _steering_matches(observed: Observation, extra_args: list[str]) -> bool:

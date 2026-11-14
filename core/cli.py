@@ -54,8 +54,11 @@ from core.ops import (
     parse_amps,
     parse_limit,
     parse_on_off,
+    parse_seat_climate,
+    parse_seat_cool,
     parse_seat_heat,
     parse_temp,
+    parse_update_delay,
     preferred_vin,
     resolve_thresholds,
 )
@@ -134,6 +137,56 @@ def build_parser() -> argparse.ArgumentParser:
     seat_heat.add_argument("level")
     steering_heat = sub.add_parser("steering-heat", parents=[confirmed])
     steering_heat.add_argument("state")
+    climate_keeper = sub.add_parser(
+        "climate-keeper",
+        parents=[confirmed],
+        help="Set climate keeper to off, keep, dog, or camp. keep, dog, and camp need a confirmation.",
+    )
+    climate_keeper.add_argument("mode", choices=("off", "keep", "dog", "camp"))
+    charge_port = sub.add_parser(
+        "charge-port",
+        parents=[confirmed],
+        help="Open or close the charge port. Needs a confirmation.",
+    )
+    charge_port.add_argument("action", choices=("open", "close"))
+    seat_cool = sub.add_parser("seat-cool", parents=[confirmed], help="Set front seat cooling. Climate must be on.")
+    seat_cool.add_argument("seat")
+    seat_cool.add_argument("level")
+    seat_climate = sub.add_parser(
+        "seat-climate",
+        parents=[confirmed],
+        help="Turn automatic seat climate on or off for a front seat.",
+    )
+    seat_climate.add_argument("seat")
+    seat_climate.add_argument("state")
+    bioweapon = sub.add_parser(
+        "bioweapon",
+        parents=[confirmed],
+        help="Turn bioweapon defense mode on or off. On needs a confirmation.",
+    )
+    bioweapon.add_argument("state", choices=("on", "off"))
+    charging_history = sub.add_parser(
+        "charging-history",
+        help="Official Tesla charging history for this account. Does not wake the car. Home charging is not included.",
+    )
+    charging_history.add_argument("--json", action="store_true")
+    charging_invoice = sub.add_parser(
+        "charging-invoice",
+        help="Save an official charging invoice PDF when asked. Does not wake the car.",
+    )
+    charging_invoice.add_argument("invoice_id")
+    charging_invoice.add_argument("--save", action="store_true", help="Write the PDF under the config home.")
+    software = sub.add_parser("software", help="Software status and release notes, or schedule or cancel an update.")
+    software_sub = software.add_subparsers(dest="software_action")
+    software_show = software_sub.add_parser("show", help="Show version, update status, and release notes. Does not wake the car.")
+    software_show.add_argument("--json", action="store_true")
+    software_schedule = software_sub.add_parser(
+        "schedule",
+        parents=[confirmed],
+        help="Schedule an over-the-air update. Needs a confirmation.",
+    )
+    software_schedule.add_argument("delay", help="Delay such as 2h, 10m, 30s, a number of seconds, or now")
+    software_sub.add_parser("cancel", parents=[confirmed], help="Cancel a scheduled update. Needs a confirmation.")
     charge_limit = sub.add_parser("charge-limit", parents=[confirmed])
     charge_limit.add_argument("percent")
     charge_amps = sub.add_parser(
@@ -345,6 +398,21 @@ def main(argv: list[str] | None = None) -> int:
             return _charge_schedule(args, home)
         if args.command == "departure":
             return _departure(args, home)
+        if args.command == "climate-keeper":
+            args.command = f"climate-keeper-{args.mode}"
+            return _vehicle(args, home)
+        if args.command == "charge-port":
+            args.command = f"charge-port-{args.action}"
+            return _vehicle(args, home)
+        if args.command == "bioweapon":
+            args.command = f"bioweapon-{args.state}"
+            return _vehicle(args, home)
+        if args.command == "charging-history":
+            return _charging_history(args, home)
+        if args.command == "charging-invoice":
+            return _charging_invoice(args, home)
+        if args.command == "software":
+            return _software(args, home)
         if args.command in {"refresh", "status", *PUBLIC_COMMANDS}:
             return _vehicle(args, home)
     except AmbiguousAdapter as exc:
@@ -709,6 +777,10 @@ def _vehicle(args, home: Path) -> int:
         parse_amps(argument)
     elif args.command == "seat-heat":
         extra = list(parse_seat_heat(args.seat, args.level))
+    elif args.command == "seat-cool":
+        extra = list(parse_seat_cool(args.seat, args.level))
+    elif args.command == "seat-climate":
+        extra = list(parse_seat_climate(args.seat, args.state))
     elif args.command == "steering-heat":
         extra = [parse_on_off(args.state, "steering heat")]
     app = _open_app(home, args)
@@ -846,6 +918,45 @@ def _guard_read_if_actor(args, home: Path, action: str) -> None:
     """Family members need a direct grant. The owner does not."""
     if getattr(args, "actor", ""):
         _guard_read(args, home, action)
+
+
+def _charging_history(args, home: Path) -> int:
+    _guard_read(args, home, "charging-history")
+    print(scrub(_open_app(home, args).charging_history(as_json=bool(args.json))))
+    return 0
+
+
+def _charging_invoice(args, home: Path) -> int:
+    _guard_read(args, home, "charging-invoice")
+    print(scrub(_open_app(home, args).charging_invoice(args.invoice_id, save=bool(args.save))))
+    return 0
+
+
+def _software(args, home: Path) -> int:
+    action = args.software_action or "show"
+    if action == "show":
+        _guard_read(args, home, "software")
+        print(scrub(_open_app(home, args).software(preferred=preferred_vin(), as_json=bool(getattr(args, "json", False)))))
+        return 0
+    command = "software-schedule" if action == "schedule" else "software-cancel"
+    extra = [parse_update_delay(args.delay)] if action == "schedule" else None
+    app = _open_app(home, args)
+    held = _family_hold(args, home, app, command, extra=extra)
+    if held is not None:
+        print(scrub(held))
+        return 0
+    print(
+        scrub(
+            app.command(
+                command,
+                preferred=preferred_vin(),
+                argument=None,
+                statement=getattr(args, "confirm", None),
+                extra=extra,
+            )
+        )
+    )
+    return 0
 
 
 def _family(args, home: Path) -> int:

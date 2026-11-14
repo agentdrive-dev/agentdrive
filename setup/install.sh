@@ -53,11 +53,12 @@ install_vehicle_command() {
     rm -rf "$src"
     git clone --depth 1 https://github.com/teslamotors/vehicle-command.git "$src"
   else
-    # Drop the previous local max-defrost insertion so pull can fast-forward.
+    # Drop previous local command insertions so pull can fast-forward.
     git -C "$src" checkout -- cmd/tesla-control/commands.go
     git -C "$src" pull --ff-only
   fi
   python3 "${ROOT}/setup/patch_tesla_control_defrost.py" "${src}/cmd/tesla-control/commands.go"
+  python3 "${ROOT}/setup/patch_tesla_control_phase8.py" "${src}/cmd/tesla-control/commands.go"
   (
     cd "$src"
     go build -o "${bindir}/tesla-control" ./cmd/tesla-control

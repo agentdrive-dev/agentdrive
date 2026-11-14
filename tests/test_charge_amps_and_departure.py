@@ -688,11 +688,12 @@ def test_cli_rejects_bad_arguments_before_the_app_and_accepts_the_phrases(tmp_pa
 def test_installer_does_not_add_a_tesla_control_patch_for_these_commands():
     text = (ROOT / "setup" / "install.sh").read_text(encoding="utf-8")
     assert "setup/patch_tesla_control_defrost.py" in text
+    assert "setup/patch_tesla_control_phase8.py" in text
     assert "charging-set-amps" not in text
     assert "precondition-schedule" not in text
     assert "set_scheduled_departure" not in text
     names = {path.name for path in (ROOT / "setup").glob("patch_tesla_control*.py")}
-    assert names == {"patch_tesla_control_defrost.py"}
+    assert names == {"patch_tesla_control_defrost.py", "patch_tesla_control_phase8.py"}
 
 
 def test_readme_mentions_both_and_does_not_add_a_wake_caveat():

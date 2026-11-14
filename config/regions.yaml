@@ -30,6 +30,7 @@ personal_endpoints:
   nearby_charging_sites: /api/1/vehicles/{vehicle_id}/nearby_charging_sites
   charging_history: /api/1/dx/charging/history
   charging_invoice: /api/1/dx/charging/invoice/{invoice_id}
+  release_notes: /api/1/vehicles/{vehicle_id}/release_notes
 
 # Business-only routes. The client refuses these even if a caller asks.
 blocked_endpoints:
