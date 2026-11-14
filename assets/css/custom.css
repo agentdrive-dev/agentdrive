@@ -1,0 +1,183 @@
+/* Homepage polish that sits on the Primer theme. */
+
+.markdown-body img {
+  height: auto;
+}
+
+/* Shield badges share one paragraph and otherwise touch when they wrap. */
+.markdown-body > p > a > img {
+  margin: 2px 6px 2px 0;
+  vertical-align: middle;
+}
+
+.markdown-body pre,
+.markdown-body table {
+  max-width: 100%;
+}
+
+/* Illustrated user-guide cards. */
+
+.guide-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0 0 8px;
+}
+
+.guide-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #e1e4e8;
+  border-radius: 6px;
+}
+
+.guide-cover {
+  display: block;
+  line-height: 0;
+  background: #faf7f0;
+}
+
+.guide-cover:hover {
+  text-decoration: none;
+}
+
+.markdown-body .guide-card img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  margin: 0;
+  box-sizing: border-box;
+  background-color: #faf7f0;
+}
+
+.guide-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.markdown-body .guide-card h3 {
+  margin: 0;
+  padding: 0;
+  font-size: 1.25em;
+  line-height: 1.25;
+  border: 0;
+}
+
+.markdown-body .guide-card h3 .anchorjs-link {
+  display: none;
+}
+
+.markdown-body .guide-card p {
+  margin: 0;
+}
+
+.guide-desc {
+  flex: 1 1 auto;
+  color: #24292e;
+}
+
+.guide-meta {
+  color: #586069;
+  font-size: 14px;
+}
+
+.guide-meta span + span::before {
+  margin: 0 0.45em;
+  color: #959da5;
+  content: "·";
+}
+
+.guide-label {
+  color: #586069;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.guide-previews {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.guide-previews a {
+  display: block;
+  overflow: hidden;
+  line-height: 0;
+  border: 1px solid #e1e4e8;
+  border-radius: 4px;
+}
+
+.guide-previews a:hover {
+  border-color: #327c69;
+  text-decoration: none;
+}
+
+.guide-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.guide-btn {
+  display: inline-flex;
+  flex: 1 1 8.5rem;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  text-align: center;
+  text-decoration: none;
+  border-radius: 6px;
+}
+
+.guide-btn:hover {
+  text-decoration: none;
+}
+
+.guide-btn-primary {
+  color: #fff;
+  background: #327c69;
+  border: 1px solid #2a6b5a;
+}
+
+.guide-btn-primary:hover {
+  color: #fff;
+  background: #2a6b5a;
+  border-color: #245c4e;
+}
+
+.guide-btn-secondary {
+  color: #24292e;
+  background: #fafbfc;
+  border: 1px solid rgba(27, 31, 35, 0.15);
+}
+
+.guide-btn-secondary:hover {
+  background: #f3f4f6;
+  border-color: rgba(27, 31, 35, 0.25);
+}
+
+.guide-cover:focus-visible,
+.guide-btn:focus-visible,
+.guide-previews a:focus-visible {
+  outline: 2px solid #0366d6;
+  outline-offset: 2px;
+}
+
+@media (max-width: 720px) {
+  .guide-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
