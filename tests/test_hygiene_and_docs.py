@@ -20,9 +20,11 @@ def _files():
     for path in ROOT.rglob("*"):
         if not path.is_file():
             continue
-        if any(part in SKIP for part in path.parts):
+        if any(part in SKIP or part.endswith(".egg-info") for part in path.parts):
             continue
-        if path.suffix in {".svg", ".png", ".pyc"}:
+        # Binary assets are not text. The illustrated manuals are PDFs;
+        # the Chinese edition is an approved exception to the English-only rule.
+        if path.suffix.lower() in {".svg", ".png", ".pyc", ".pdf", ".webp", ".jpg", ".jpeg", ".gif", ".ico"}:
             continue
         if path.name == "test_hygiene_and_docs.py":
             continue
@@ -100,6 +102,15 @@ def test_homepage_how_to_start_leads_with_the_paste_prompt():
     assert "honk" in can_do
     assert "health alert" in can_do
     assert "morning briefing" in can_do
+    guide_at = readme.index("## User guide")
+    assert readme.index("## A morning report") < guide_at < how_at
+    assert "docs/manuals/agentdrive-user-guide-en.pdf" in readme
+    assert "docs/manuals/agentdrive-user-guide-zh.pdf" in readme
+    assert "docs/images/user-guide/cover-en.webp" in readme
+    assert "docs/images/user-guide/cover-zh.webp" in readme
+    assert readme.count(ALLOWED_HOMEPAGE_CJK) == 1
+    assert (ROOT / "docs" / "manuals" / "agentdrive-user-guide-en.pdf").is_file()
+    assert (ROOT / "docs" / "manuals" / "agentdrive-user-guide-zh.pdf").is_file()
 
 
 def test_install_page_holds_the_full_prompt_and_agent_steps():
@@ -213,6 +224,9 @@ def test_guides_and_checklist_links():
 
 
 ALLOWED_EMAIL = "agentdrivedev@gmail.com"
+# Short download label on the Chinese edition card. The manual files themselves
+# are the other half of this approved exception.
+ALLOWED_HOMEPAGE_CJK = "中文版说明书"
 
 
 def test_pages_site_title_is_metadata_and_not_a_visible_header():
@@ -251,7 +265,8 @@ def test_repo_has_no_personal_data_or_secrets():
         for word in banned:
             assert word not in lowered, relative
         assert "BEGIN " + "PRIVATE KEY" not in text, relative
-        assert cjk.search(text) is None, relative
+        language_text = text.replace(ALLOWED_HOMEPAGE_CJK, "") if path.name == "README.md" else text
+        assert cjk.search(language_text) is None, relative
         for match in email.findall(text):
             assert match == ALLOWED_EMAIL, f"{relative} contains an address: {match}"
         if "itbird" in lowered:
