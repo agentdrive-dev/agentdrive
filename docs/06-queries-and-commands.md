@@ -61,6 +61,8 @@ Commands:
 | `wake` | signed `wake` | no, and it does not use the park check |
 | `flash` | signed `flash-lights` | no |
 | `honk` | signed `honk` | no |
+| `boombox fart` | signed `boombox 0` | yes, one time. The sentence names boombox fart. Plays one sound and stops |
+| `boombox ping` | signed `boombox 2000` | yes, one time. The sentence names boombox ping. Plays one sound and stops |
 | `lock` | signed `lock` | no |
 | `unlock` | signed `unlock` | yes, one time |
 | `climate-on`, `climate-off` | signed climate command | no |
@@ -104,7 +106,7 @@ Commands:
 | `news` | no signed command; reads the official Tesla site for the owner's country | no, and it does not wake the car |
 | `service`, `service log rotation`, `service log replacement`, `service log maintenance` | no signed command; uses the saved odometer | no, and it does not wake the car |
 
-Unlock, turning sentry off, every charging change, setting or removing a departure schedule, the rear trunk, the front trunk, remote start, climate keeper keep, dog, and camp, opening or closing the charge port, turning bioweapon defense on, and scheduling or cancelling a software update go through the existing confirmation layer. A schedule cannot confirm them and cannot run sentry off, the trunk, the front trunk, remote start, a departure schedule change, climate keeper keep, dog, or camp, the charge port, bioweapon defense on, or a software update. When a nickname is in use for that command, the confirmation also names the car. `I confirm unlock on daily` approves unlock for the car named daily. `I confirm unlock` does not. With one car and no `--car`, the sentence stays `I confirm unlock`. The prompt is `Confirm unlock on daily. Type a sentence that names the action and the car and includes confirm:`. The result line names the car too: `OK: unlock on daily`. The health check stays `agentdrive check`. The morning job stays `agentdrive history due`. State-changing commands are sent only in Park at speed 0, then read back once.
+Unlock, turning sentry off, every charging change, setting or removing a departure schedule, the rear trunk, the front trunk, remote start, climate keeper keep, dog, and camp, opening or closing the charge port, turning bioweapon defense on, scheduling or cancelling a software update, and the external speaker go through the existing confirmation layer. A schedule cannot confirm them and cannot run sentry off, the trunk, the front trunk, remote start, a departure schedule change, climate keeper keep, dog, or camp, the charge port, bioweapon defense on, a software update, or the external speaker. When a nickname is in use for that command, the confirmation also names the car. `I confirm unlock on daily` approves unlock for the car named daily. `I confirm unlock` does not. With one car and no `--car`, the sentence stays `I confirm unlock`. The prompt is `Confirm unlock on daily. Type a sentence that names the action and the car and includes confirm:`. The result line names the car too: `OK: unlock on daily`. The health check stays `agentdrive check`. The morning job stays `agentdrive history due`. State-changing commands are sent only in Park at speed 0, then read back once.
 
 ## Several cars
 
@@ -121,7 +123,7 @@ agentdrive unlock --car weekend --confirm "I confirm unlock on weekend"
 
 ## Family members
 
-You can register a handle for someone in the household and choose what they may ask for. Low-risk reads and parked actions that you allow run directly. Unlock, charging changes, turning sentry off, the trunk, the front trunk, remote start, departure changes, climate keeper keep, dog, and camp, bioweapon defense on, the charge port, and a software update do not. Those become a pending request. The command prints text for the assistant to relay to you. AgentDrive does not send that message itself.
+You can register a handle for someone in the household and choose what they may ask for. Low-risk reads and parked actions that you allow run directly. Unlock, charging changes, turning sentry off, the trunk, the front trunk, remote start, departure changes, climate keeper keep, dog, and camp, bioweapon defense on, the charge port, a software update, and the external speaker do not. Those become a pending request. A family member cannot override boombox quiet hours. An approval still obeys quiet hours unless you approve with `--override`. The command prints text for the assistant to relay to you. AgentDrive does not send that message itself.
 
 ```bash
 agentdrive family add rider
@@ -229,6 +231,27 @@ agentdrive precondition
 `defrost-on` and `defrost-off` send `preconditioning-max`. That is max defrost for the front and rear together. There is no separate front-only or rear-only command, and the manual override is not sent. Upstream `tesla-control` does not include that subcommand, so the installer adds it to the local build. `agentdrive update` rebuilds that binary.
 
 `precondition` sends `climate-on`, which starts cabin preconditioning now. It does not add a precondition schedule or a scheduled departure. A later departure time is `agentdrive departure`. `climate-off` stops the cabin climate.
+
+## External speaker
+
+```bash
+agentdrive boombox fart --confirm "I confirm boombox fart"
+agentdrive boombox ping --car Sunny --confirm "I confirm boombox ping on Sunny"
+agentdrive boombox fart --override --confirm "I confirm boombox fart despite quiet hours"
+agentdrive boombox quiet
+agentdrive boombox quiet 00:00-06:00
+agentdrive boombox quiet off
+```
+
+`boombox fart` and `boombox ping` each play one sound on the external speaker and then stop. Fart is sound id 0, a random fart. Ping is sound id 2000, the locate ping. There is no command that keeps the sound going. The car must be in Park at speed 0. If the vehicle list says the car is not online, this uses the same wake the other parked commands use, including honk. It does not add a wake of its own.
+
+Both need a fresh confirmation that names the sound. With a nickname the sentence also names the car: `I confirm boombox fart on Sunny`. `I confirm boombox fart` is not enough for that car. A schedule cannot supply the confirmation and cannot run either sound.
+
+Quiet hours default to 00:00-06:00 local time. The end time is not included, so 06:00 is outside that window. `boombox quiet HH:MM-HH:MM` stores another window, and `boombox quiet off` turns the window off. The file is `$AGENTDRIVE_HOME/boombox.yaml`. During quiet hours the command is not sent. The message names the window and says the owner can override. `--override` plays during quiet hours only when the confirmation includes `despite quiet hours`, for example `I confirm boombox fart on Sunny despite quiet hours`. There is no rate limit.
+
+A family member cannot run boombox and cannot override quiet hours. `agentdrive family allow rider boombox` lets them request either sound. The command writes a pending request. Approving it still obeys quiet hours. `agentdrive request approve <id> --override` is how the owner plays it during quiet hours. That approval uses the same `despite quiet hours` confirmation.
+
+Upstream `tesla-control` does not include this subcommand. The published vehicle-command protocol leaves the action out, and its proxy reports `remote_boombox` as not implemented. The installer adds `boombox` to the local build. The signed message is the infotainment BoomboxAction: VehicleAction field 64, with the sound id in field 1. `agentdrive update` rebuilds that binary.
 
 ## Rear trunk, front trunk, and remote start
 

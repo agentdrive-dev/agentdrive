@@ -43,6 +43,7 @@ from core.requests import approve_request, create_request, deny_request, list_re
 from core.fleet.http import UrllibClient
 from core.fleet.report import format_report, format_report_json
 from core.advice import parse_kilometers, render_charge_advice, render_trip_advice
+from core.boombox import OVERRIDE_PHRASE, active_window, format_quiet, load_quiet, quiet_refusal, set_quiet
 from core.history.official import render_news
 from core.history.service import perform_log, render_service_status
 from core.history.usage import render_briefing, render_list, render_tips
@@ -165,6 +166,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="Turn bioweapon defense mode on or off. On needs a confirmation.",
     )
     bioweapon.add_argument("state", choices=("on", "off"))
+    boombox = sub.add_parser(
+        "boombox",
+        parents=[confirmed],
+        help="Play one external-speaker sound and stop, or set quiet hours.",
+    )
+    boombox.add_argument(
+        "--override",
+        action="store_true",
+        help="Play during quiet hours. The confirmation must include despite quiet hours.",
+    )
+    boombox.add_argument("sound", choices=("fart", "ping", "quiet"))
+    boombox.add_argument("window", nargs="?", default=None, help="With quiet: HH:MM-HH:MM, off, or omit to show the hours.")
     charging_history = sub.add_parser(
         "charging-history",
         help="Official Tesla charging history for this account. Does not wake the car. Home charging is not included.",
@@ -341,6 +354,11 @@ def build_parser() -> argparse.ArgumentParser:
     request_action.add_parser("list")
     request_approve = request_action.add_parser("approve")
     request_approve.add_argument("request_id")
+    request_approve.add_argument(
+        "--override",
+        action="store_true",
+        help="Approve a boombox request during quiet hours. Other requests cannot use this.",
+    )
     request_deny = request_action.add_parser("deny")
     request_deny.add_argument("request_id")
     return parser
@@ -407,6 +425,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "bioweapon":
             args.command = f"bioweapon-{args.state}"
             return _vehicle(args, home)
+        if args.command == "boombox":
+            return _boombox(args, home)
         if args.command == "charging-history":
             return _charging_history(args, home)
         if args.command == "charging-invoice":
@@ -763,6 +783,40 @@ def _departure(args, home: Path) -> int:
     raise ConfigError("unknown command")
 
 
+def _boombox(args, home: Path) -> int:
+    if args.sound == "quiet":
+        if getattr(args, "actor", ""):
+            raise ConfigError("Only the owner can change boombox quiet hours.")
+        if args.override:
+            raise ConfigError("Quiet hours are a setting. --override is only for playing a sound.")
+        if args.window is None:
+            print(format_quiet(load_quiet(home)))
+            return 0
+        print(format_quiet(set_quiet(home, args.window)))
+        print("Saved in the private config home. This does not change the car.")
+        return 0
+    if args.window is not None:
+        raise ConfigError("A boombox sound does not take a quiet-hours window.")
+    command = f"boombox-{args.sound}"
+    app = _open_app(home, args)
+    held = _family_hold(args, home, app, command)
+    if held is not None:
+        print(scrub(held))
+        return 0
+    print(
+        scrub(
+            app.command(
+                command,
+                preferred=preferred_vin(),
+                argument=None,
+                statement=getattr(args, "confirm", None),
+                override=bool(args.override),
+            )
+        )
+    )
+    return 0
+
+
 def _vehicle(args, home: Path) -> int:
     argument = None
     extra = None
@@ -998,8 +1052,8 @@ def _request(args, home: Path) -> int:
                     home,
                     args.request_id,
                     actor=getattr(args, "actor", "") or "",
-                    execute=lambda record: _execute_saved(home, record),
-                    ready=lambda record: _ready_saved(home, record),
+                    execute=lambda record: _execute_saved(home, record, override=bool(getattr(args, "override", False))),
+                    ready=lambda record: _ready_saved(home, record, override=bool(getattr(args, "override", False))),
                 )
             )
         )
@@ -1010,8 +1064,15 @@ def _request(args, home: Path) -> int:
     raise ConfigError("unknown command")
 
 
-def _ready_saved(home: Path, record: dict) -> None:
-    """Refuse a request whose car disappeared before it is spent."""
+def _ready_saved(home: Path, record: dict, *, override: bool = False) -> None:
+    """Refuse a request whose car disappeared, or a boombox play that quiet hours block."""
+    command = str(record.get("command") or "")
+    if override and command not in {"boombox-fart", "boombox-ping"}:
+        raise ConfigError("Only the external speaker can use --override.")
+    if command in {"boombox-fart", "boombox-ping"}:
+        window = active_window(home)
+        if window is not None and not override:
+            raise ConfigError(quiet_refusal(window))
     car_id = str(record.get("car_id") or "")
     if not car_id:
         return
@@ -1019,7 +1080,7 @@ def _ready_saved(home: Path, record: dict) -> None:
         raise ConfigError("That car is no longer in the private config.")
 
 
-def _execute_saved(home: Path, record: dict) -> str:
+def _execute_saved(home: Path, record: dict, *, override: bool = False) -> str:
     app = build_app(home)
     garage = load_garage(home)
     car = garage.by_id(str(record.get("car_id") or "")) if record.get("car_id") else None
@@ -1030,8 +1091,9 @@ def _execute_saved(home: Path, record: dict) -> str:
         app.car_name = car.nickname
     else:
         label = ""
-    statement = owner_confirmation(str(record.get("command") or ""), label)
     command = str(record.get("command") or "")
+    suffix = OVERRIDE_PHRASE if override and command in {"boombox-fart", "boombox-ping"} else ""
+    statement = owner_confirmation(command, label, override=suffix)
     detail = record.get("detail") if isinstance(record.get("detail"), dict) else {}
     if command == "charge-schedule-set":
         spec = parse_schedule_write(
@@ -1064,6 +1126,7 @@ def _execute_saved(home: Path, record: dict) -> str:
         argument=record.get("argument"),
         statement=statement,
         extra=record.get("extra"),
+        override=override,
     )
 
 

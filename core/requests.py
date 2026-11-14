@@ -120,6 +120,10 @@ def summary_for(command: str, argument: str | None, extra: list[str] | None, det
         return f"departure set {detail.get('days', '')} {detail.get('time', '')}".strip()
     if command == "departure-remove" and isinstance(detail, dict):
         return f"departure remove {detail.get('schedule_id', '')}".strip()
+    if command == "boombox-fart":
+        return "boombox fart"
+    if command == "boombox-ping":
+        return "boombox ping"
     if extra:
         return command + " " + " ".join(str(item) for item in extra)
     if argument:
