@@ -14,9 +14,32 @@ from core.fleet.check_state import HEALTH_CHECK_NOTE
 from core.config import repo_root
 from core.doctor import run_doctor
 from core.errors import AgentDriveError, AmbiguousAdapter, ConfigError
+from core.family import (
+    add_member,
+    allow_actions,
+    allow_text,
+    classify,
+    format_family,
+    load_family,
+    normalize_handle,
+    owner_confirmation,
+    remove_member,
+    revoke_action,
+)
 from core.fleet.area import format_where, format_where_json
 from core.fleet.charge_schedule import format_schedule_report, format_schedule_report_json, parse_schedule_id, parse_schedule_write
 from core.fleet.departure import format_departure_report, format_departure_report_json, parse_departure_write
+from core.garage import (
+    clear_default,
+    format_cars,
+    load_garage,
+    remember_car,
+    set_default,
+    store_for_saved,
+    vehicle_rows,
+)
+from core.redact import mask_vin
+from core.requests import approve_request, create_request, deny_request, list_requests
 from core.fleet.http import UrllibClient
 from core.fleet.report import format_report, format_report_json
 from core.history.official import render_news
@@ -52,6 +75,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     parser = argparse.ArgumentParser(prog="agentdrive")
     parser.add_argument("--home", default="", help="Config home. Defaults to $AGENTDRIVE_HOME or ~/.config/agentdrive")
+    parser.add_argument("--car", default="", help="Nickname of the car this command uses")
+    parser.add_argument("--as", dest="actor", default="", help="Family member handle. The owner leaves this unset.")
     sub = parser.add_subparsers(dest="command", required=True)
 
     present_cmd = sub.add_parser("gate-present")
@@ -208,12 +233,44 @@ def build_parser() -> argparse.ArgumentParser:
     service_status.add_argument("--json", action="store_true")
 
     sub.add_parser("update")
+
+    cars = sub.add_parser("cars", help="List cars on this account, or save a nickname. Listing does not wake a car.")
+    cars_action = cars.add_subparsers(dest="cars_action")
+    cars_action.add_parser("list", help="List cars from the vehicle list. Does not wake a car.")
+    cars_name = cars_action.add_parser("name", help="Save a nickname for the car with this VIN tail.")
+    cars_name.add_argument("tail", help="Last four characters from `agentdrive cars`.")
+    cars_name.add_argument("nickname")
+    cars_default = cars_action.add_parser("default", help="Use this nickname when a command does not pass --car.")
+    cars_default.add_argument("nickname")
+    cars_action.add_parser("clear-default", help="Clear the default car. Several cars then need --car.")
+
+    family = sub.add_parser("family", help="Register a family member and the actions they may request.")
+    family_action = family.add_subparsers(dest="family_action")
+    family_action.add_parser("list")
+    family_add = family_action.add_parser("add")
+    family_add.add_argument("handle")
+    family_remove = family_action.add_parser("remove")
+    family_remove.add_argument("handle")
+    family_allow = family_action.add_parser("allow")
+    family_allow.add_argument("handle")
+    family_allow.add_argument("action")
+    family_revoke = family_action.add_parser("revoke")
+    family_revoke.add_argument("handle")
+    family_revoke.add_argument("action")
+
+    request = sub.add_parser("request", help="List, approve, or deny a family member's pending request.")
+    request_action = request.add_subparsers(dest="request_action")
+    request_action.add_parser("list")
+    request_approve = request_action.add_parser("approve")
+    request_approve.add_argument("request_id")
+    request_deny = request_action.add_parser("deny")
+    request_deny.add_argument("request_id")
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
-    args = parser.parse_args(argv)
+    args = parser.parse_args(_normalize_global(argv))
     home = Path(args.home) if args.home else resolve_home()
     try:
         if args.command == "gate-present":
@@ -249,6 +306,12 @@ def main(argv: list[str] | None = None) -> int:
             return _news(args, home)
         if args.command == "service":
             return _service(args, home)
+        if args.command == "cars":
+            return _cars(args, home)
+        if args.command == "family":
+            return _family(args, home)
+        if args.command == "request":
+            return _request(args, home)
         if args.command == "charge-schedule":
             return _charge_schedule(args, home)
         if args.command == "departure":
@@ -338,7 +401,8 @@ def _check(args, home: Path) -> int:
         tyre_bar=args.tyre_threshold,
         low_battery_percent=args.battery_threshold,
     )
-    report = build_app(home).check(preferred=preferred_vin(), tyre_bar=tyre, low_battery_percent=battery)
+    _guard_read(args, home, "check")
+    report = _open_app(home, args).check(preferred=preferred_vin(), tyre_bar=tyre, low_battery_percent=battery)
     if args.json:
         print(scrub(format_check_json(report)))
     else:
@@ -347,7 +411,8 @@ def _check(args, home: Path) -> int:
 
 
 def _report(args, home: Path) -> int:
-    briefing = build_app(home).report(preferred=preferred_vin())
+    _guard_read(args, home, "report")
+    briefing = _open_app(home, args).report(preferred=preferred_vin())
     if args.json:
         print(scrub(format_report_json(briefing)))
     else:
@@ -371,51 +436,60 @@ def _report_schedule(args, home: Path) -> int:
 
 
 def _where(args, home: Path) -> int:
-    report = build_app(home).where(preferred=preferred_vin(), precise=bool(args.precise))
+    _guard_read(args, home, "where")
+    report = _open_app(home, args).where(preferred=preferred_vin(), precise=bool(args.precise))
     rendered = format_where_json(report) if args.json else format_where(report)
     print(scrub(rendered))
     return report.exit_code
 
 
 def _history(args, home: Path) -> int:
+    _guard_read(args, home, "history")
+    store = store_for_saved(home, args.car or None)
     action = args.history_action
     if action in {"trips", "charges", "snapshots", "alerts", "config"}:
         if args.limit < 1 or args.limit > 200:
             raise ConfigError("The history limit must be from 1 to 200.")
-        print(scrub(render_list(home, action, limit=args.limit, as_json=args.json)))
+        print(scrub(render_list(home, action, limit=args.limit, as_json=args.json, store=store)))
         return 0
-    print(scrub(render_briefing(home, action, as_json=args.json)))
+    print(scrub(render_briefing(home, action, as_json=args.json, store=store)))
     return 0
 
 
 def _tips(args, home: Path) -> int:
-    print(scrub(render_tips(home, as_json=args.json)))
+    _guard_read(args, home, "tips")
+    print(scrub(render_tips(home, as_json=args.json, store=store_for_saved(home, args.car or None))))
     return 0
 
 
 def _news(args, home: Path) -> int:
-    text = render_news(home, as_json=args.json)
+    _guard_read(args, home, "news")
+    text = render_news(home, as_json=args.json, store=store_for_saved(home, args.car or None))
     if text:
         print(scrub(text))
     return 0
 
 
 def _service(args, home: Path) -> int:
+    _guard_read(args, home, "service")
+    store = store_for_saved(home, args.car or None)
     if args.service_action == "log":
-        print(scrub(perform_log(home, args.kind, note=args.note, interval_km=args.interval_km)))
+        print(scrub(perform_log(home, args.kind, note=args.note, interval_km=args.interval_km, store=store)))
         return 0
     as_json = bool(args.json)
-    print(scrub(render_service_status(home, as_json=as_json)))
+    print(scrub(render_service_status(home, as_json=as_json, store=store)))
     return 0
 
 
 def _charge_schedule(args, home: Path) -> int:
     if args.schedule_action == "show":
-        report = build_app(home).charge_schedule_show(preferred=preferred_vin())
+        _guard_read(args, home, "charge-schedule-show")
+        report = _open_app(home, args).charge_schedule_show(preferred=preferred_vin())
         text = format_schedule_report_json(report) if args.json else format_schedule_report(report)
         print(scrub(text))
         return 0
     statement = getattr(args, "confirm", None)
+    action = f"charge-schedule-{args.schedule_action}"
     if args.schedule_action == "set":
         spec = parse_schedule_write(
             args.days,
@@ -425,9 +499,27 @@ def _charge_schedule(args, home: Path) -> int:
             once=args.once,
             enabled=args.enabled == "true",
         )
+        app = _open_app(home, args)
+        held = _family_hold(
+            args,
+            home,
+            app,
+            action,
+            detail={
+                "days": args.days,
+                "time": args.time,
+                "latitude": args.latitude,
+                "longitude": args.longitude,
+                "once": bool(args.once),
+                "enabled": args.enabled == "true",
+            },
+        )
+        if held is not None:
+            print(scrub(held))
+            return 0
         print(
             scrub(
-                build_app(home).charge_schedule_set(
+                app.charge_schedule_set(
                     spec,
                     preferred=preferred_vin(),
                     statement=statement,
@@ -437,9 +529,14 @@ def _charge_schedule(args, home: Path) -> int:
         return 0
     if args.schedule_action == "remove":
         schedule_id = parse_schedule_id(args.schedule_id)
+        app = _open_app(home, args)
+        held = _family_hold(args, home, app, action, detail={"schedule_id": schedule_id})
+        if held is not None:
+            print(scrub(held))
+            return 0
         print(
             scrub(
-                build_app(home).charge_schedule_remove(
+                app.charge_schedule_remove(
                     schedule_id,
                     preferred=preferred_vin(),
                     statement=statement,
@@ -452,11 +549,13 @@ def _charge_schedule(args, home: Path) -> int:
 
 def _departure(args, home: Path) -> int:
     if args.departure_action == "show":
-        report = build_app(home).departure_show(preferred=preferred_vin())
+        _guard_read(args, home, "departure-show")
+        report = _open_app(home, args).departure_show(preferred=preferred_vin())
         text = format_departure_report_json(report) if args.json else format_departure_report(report)
         print(scrub(text))
         return 0
     statement = getattr(args, "confirm", None)
+    action = f"departure-{args.departure_action}"
     if args.departure_action == "set":
         schedule_id = args.id
         if args.enabled == "false" and not schedule_id:
@@ -470,9 +569,28 @@ def _departure(args, home: Path) -> int:
             enabled=args.enabled == "true",
             schedule_id=schedule_id,
         )
+        app = _open_app(home, args)
+        held = _family_hold(
+            args,
+            home,
+            app,
+            action,
+            detail={
+                "days": args.days,
+                "time": args.time,
+                "latitude": args.latitude,
+                "longitude": args.longitude,
+                "once": bool(args.once),
+                "enabled": args.enabled == "true",
+                "schedule_id": schedule_id,
+            },
+        )
+        if held is not None:
+            print(scrub(held))
+            return 0
         print(
             scrub(
-                build_app(home).departure_set(
+                app.departure_set(
                     spec,
                     preferred=preferred_vin(),
                     statement=statement,
@@ -482,9 +600,14 @@ def _departure(args, home: Path) -> int:
         return 0
     if args.departure_action == "remove":
         schedule_id = parse_schedule_id(args.schedule_id)
+        app = _open_app(home, args)
+        held = _family_hold(args, home, app, action, detail={"schedule_id": schedule_id})
+        if held is not None:
+            print(scrub(held))
+            return 0
         print(
             scrub(
-                build_app(home).departure_remove(
+                app.departure_remove(
                     schedule_id,
                     preferred=preferred_vin(),
                     statement=statement,
@@ -511,12 +634,18 @@ def _vehicle(args, home: Path) -> int:
         extra = list(parse_seat_heat(args.seat, args.level))
     elif args.command == "steering-heat":
         extra = [parse_on_off(args.state, "steering heat")]
-    app = build_app(home)
+    app = _open_app(home, args)
     if args.command == "refresh":
+        _guard_read(args, home, "refresh")
         print(scrub(app.refresh()))
         return 0
     if args.command == "status":
+        _guard_read(args, home, "status")
         print(scrub(app.status(preferred=preferred_vin())))
+        return 0
+    held = _family_hold(args, home, app, args.command, argument=argument, extra=extra)
+    if held is not None:
+        print(scrub(held))
         return 0
     statement = getattr(args, "confirm", None)
     print(
@@ -531,6 +660,223 @@ def _vehicle(args, home: Path) -> int:
         )
     )
     return 0
+
+
+_GLOBAL = {"--home", "--car", "--as"}
+
+
+def _normalize_global(argv: list[str] | None) -> list[str] | None:
+    """Move --home, --car, and --as in front of the subcommand."""
+    if argv is None:
+        return None
+    pulled: list[str] = []
+    rest: list[str] = []
+    index = 0
+    while index < len(argv):
+        token = argv[index]
+        name, sep, value = token.partition("=")
+        if sep and name in _GLOBAL:
+            pulled.extend([name, value])
+            index += 1
+            continue
+        if token in _GLOBAL:
+            if index + 1 >= len(argv) or str(argv[index + 1]).startswith("-"):
+                pulled.append(token)
+                index += 1
+                continue
+            pulled.extend([token, argv[index + 1]])
+            index += 2
+            continue
+        rest.append(token)
+        index += 1
+    return pulled + rest
+
+
+def _open_app(home: Path, args):
+    app = build_app(home)
+    car = getattr(args, "car", "") or ""
+    if car:
+        app.car_name = car
+    return app
+
+
+def _owner_only(args) -> None:
+    if getattr(args, "actor", ""):
+        raise ConfigError("Only the owner can change cars, family members, or requests.")
+
+
+def _guard_read(args, home: Path, action: str) -> None:
+    actor = getattr(args, "actor", "") or ""
+    if not actor:
+        return
+    if classify(home, actor, action) != "direct":
+        raise ConfigError(f"{normalize_handle(actor)} cannot request {action}.")
+
+
+def _family_hold(args, home: Path, app, action: str, *, argument=None, extra=None, detail=None):
+    """Return relay text when a family member must wait for the owner."""
+    actor = getattr(args, "actor", "") or ""
+    if not actor:
+        return None
+    decision = classify(home, actor, action)
+    handle = normalize_handle(actor)
+    if decision == "deny":
+        raise ConfigError(f"{handle} cannot request {action}.")
+    if decision == "direct":
+        return None
+    selection = app.prepare(preferred_vin())
+    car = selection.car
+    return create_request(
+        home,
+        member=handle,
+        car=car.nickname if car else "",
+        car_id=car.id if car else "",
+        label=selection.label,
+        command=action,
+        argument=argument,
+        extra=list(extra) if extra else None,
+        detail=detail,
+    )
+
+
+def _cars(args, home: Path) -> int:
+    action = args.cars_action or "list"
+    if action == "list":
+        _guard_read_if_actor(args, home, "cars")
+        app = _open_app(home, args)
+        rows = vehicle_rows(app.reader.list_vehicles())
+        print(scrub(format_cars(rows, load_garage(home))))
+        return 0
+    _owner_only(args)
+    if action == "name":
+        app = _open_app(home, args)
+        rows = vehicle_rows(app.reader.list_vehicles())
+        car = remember_car(home, rows, args.tail, args.nickname)
+        print(f"Saved {car.nickname} as {mask_vin(car.vin)}.")
+        return 0
+    if action == "default":
+        garage = set_default(home, args.nickname)
+        print(f"Default car is {garage.default}.")
+        return 0
+    if action == "clear-default":
+        clear_default(home)
+        print("No default car is set.")
+        return 0
+    raise ConfigError("unknown command")
+
+
+def _guard_read_if_actor(args, home: Path, action: str) -> None:
+    """Family members need a direct grant. The owner does not."""
+    if getattr(args, "actor", ""):
+        _guard_read(args, home, action)
+
+
+def _family(args, home: Path) -> int:
+    _owner_only(args)
+    action = args.family_action or "list"
+    if action == "list":
+        print(format_family(load_family(home)))
+        return 0
+    if action == "add":
+        member = add_member(home, args.handle)
+        print(f"Added family member {member.handle}.")
+        return 0
+    if action == "remove":
+        remove_member(home, args.handle)
+        print(f"Removed family member {normalize_handle(args.handle)}.")
+        return 0
+    if action == "allow":
+        granted = allow_actions(home, args.handle, args.action)
+        print(allow_text(normalize_handle(args.handle), granted))
+        return 0
+    if action == "revoke":
+        names = revoke_action(home, args.handle, args.action)
+        handle = normalize_handle(args.handle)
+        print("\n".join(f"{handle} can no longer request {name}." for name in names))
+        return 0
+    raise ConfigError("unknown command")
+
+
+def _request(args, home: Path) -> int:
+    action = args.request_action or "list"
+    if action == "list":
+        _owner_only(args)
+        print(scrub(list_requests(home)))
+        return 0
+    if action == "approve":
+        print(
+            scrub(
+                approve_request(
+                    home,
+                    args.request_id,
+                    actor=getattr(args, "actor", "") or "",
+                    execute=lambda record: _execute_saved(home, record),
+                    ready=lambda record: _ready_saved(home, record),
+                )
+            )
+        )
+        return 0
+    if action == "deny":
+        print(scrub(deny_request(home, args.request_id, actor=getattr(args, "actor", "") or "")))
+        return 0
+    raise ConfigError("unknown command")
+
+
+def _ready_saved(home: Path, record: dict) -> None:
+    """Refuse a request whose car disappeared before it is spent."""
+    car_id = str(record.get("car_id") or "")
+    if not car_id:
+        return
+    if load_garage(home).by_id(car_id) is None:
+        raise ConfigError("That car is no longer in the private config.")
+
+
+def _execute_saved(home: Path, record: dict) -> str:
+    app = build_app(home)
+    garage = load_garage(home)
+    car = garage.by_id(str(record.get("car_id") or "")) if record.get("car_id") else None
+    preferred = car.vin if car is not None else None
+    label = str(record.get("label") or "")
+    if car is not None and (label or len(garage.cars) > 1):
+        label = car.nickname
+        app.car_name = car.nickname
+    else:
+        label = ""
+    statement = owner_confirmation(str(record.get("command") or ""), label)
+    command = str(record.get("command") or "")
+    detail = record.get("detail") if isinstance(record.get("detail"), dict) else {}
+    if command == "charge-schedule-set":
+        spec = parse_schedule_write(
+            str(detail.get("days") or ""),
+            str(detail.get("time") or ""),
+            str(detail.get("latitude") or ""),
+            str(detail.get("longitude") or ""),
+            once=bool(detail.get("once")),
+            enabled=bool(detail.get("enabled", True)),
+        )
+        return app.charge_schedule_set(spec, preferred=preferred, statement=statement)
+    if command == "charge-schedule-remove":
+        return app.charge_schedule_remove(str(detail.get("schedule_id") or ""), preferred=preferred, statement=statement)
+    if command == "departure-set":
+        spec = parse_departure_write(
+            str(detail.get("days") or ""),
+            str(detail.get("time") or ""),
+            detail.get("latitude"),
+            detail.get("longitude"),
+            once=bool(detail.get("once")),
+            enabled=bool(detail.get("enabled", True)),
+            schedule_id=detail.get("schedule_id"),
+        )
+        return app.departure_set(spec, preferred=preferred, statement=statement)
+    if command == "departure-remove":
+        return app.departure_remove(str(detail.get("schedule_id") or ""), preferred=preferred, statement=statement)
+    return app.command(
+        command,
+        preferred=preferred,
+        argument=record.get("argument"),
+        statement=statement,
+        extra=record.get("extra"),
+    )
 
 
 if __name__ == "__main__":

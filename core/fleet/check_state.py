@@ -1,8 +1,10 @@
 """Remember which health alerts are already active.
 
-The file lives in the private config home, next to ``runtime.yaml``. It stores
-alert codes only: no VIN, no location, and no alert text. A skipped check does
-not read or write it. AgentDrive does not run the health check itself.
+The file lives next to that car's history. With one car it stays
+``$AGENTDRIVE_HOME/check-alerts.json``. Another car uses
+``$AGENTDRIVE_HOME/cars/<id>/check-alerts.json``. It stores alert codes
+only: no VIN, no location, and no alert text. A skipped check does not
+read or write it. AgentDrive does not run the health check itself.
 """
 
 from __future__ import annotations

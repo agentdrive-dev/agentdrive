@@ -19,3 +19,9 @@ token_file: 'C:\Users\<you>\agentdrive-key\tokens.json'
 # report_schedule:
 #   enabled: true
 #   time: "07:30"
+#
+# Car nicknames and family members are not stored in this file.
+# `agentdrive cars name` writes $AGENTDRIVE_HOME/cars.yaml.
+# `agentdrive family add` writes $AGENTDRIVE_HOME/family.yaml.
+# Pending family requests are $AGENTDRIVE_HOME/requests.json.
+# Do not commit those files.

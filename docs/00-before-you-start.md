@@ -35,6 +35,8 @@ is asleep and when the same alert is still active. That alert stays quiet until
 it clears and later returns. Do not wake the car from that check, and do not
 schedule unlock, turning sentry off, the trunk, the front trunk, remote start, a charging change, or a departure schedule change. This check is separate from the one daily
 morning job above. AgentDrive does not run it itself.
+If several cars are on the account, ask me for a nickname for each, run `agentdrive cars name`, and set a default only if I choose one. Pass `--car <nickname>` when a command is for one car. With one car, keep the commands as they are. With several cars, run the health check and `agentdrive history due` once per car. A confirmation names the car, for example `I confirm unlock on daily`.
+If I add a family member, a sensitive request such as unlock or a charging change is not run. Use `--as <handle>` so AgentDrive records a pending request, then relay that text to me. I approve with `agentdrive request approve <id>` or deny with `agentdrive request deny <id>`. Do not approve it yourself. A family member cannot approve their own request.
 agentdrive report is the live snapshot when I want the car's current status, including
 the skip line when the car is asleep. If I later ask for a different time or to turn the
 briefing off, update the stored schedule and update that job.
@@ -92,6 +94,8 @@ bash setup/install.sh
 After install, the AI agent schedules `agentdrive check --json` every 30 minutes. Notify only when that command exits 1. Exit 0 means nothing new, including when the car is asleep and when the same alerts are still active. The same alert stays quiet until it clears and later returns. The check does not wake the car. Do not schedule unlock, turning sentry off, the trunk, the front trunk, remote start, a charging change, or a departure schedule change on it. AgentDrive does not run that job. It is separate from the daily morning briefing. Precise coordinates are used only when you ask for a precise location or a departure place taken from the car, and they are not saved in the local history.
 
 After install, the AI agent reads `agentdrive report-schedule`. The default is 07:30 local time and enabled. It creates one daily job at that time that runs `agentdrive history due` and sends that usage briefing. On Monday it sends the previous week, on the 1st the previous month, and on 1 January the previous year. Every other morning it sends the previous day. `agentdrive report` remains available when you want the car's current status, including the skip line when the car is asleep. A later change of time, or turning the briefing off, is `agentdrive report-schedule set HH:MM`, `disable`, or `enable`. The AI agent then updates its own job. AgentDrive does not install that job.
+
+If you have more than one car, tell the assistant a nickname for each and which one is the usual car. The confirmation for a sensitive action then names that car. When a family member asks to unlock a car or change charging, the assistant shows you the request. You approve or deny it. The request expires after 10 minutes.
 
 ## Full step-by-step guide
 

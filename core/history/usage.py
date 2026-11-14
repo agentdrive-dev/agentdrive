@@ -11,7 +11,7 @@ from datetime import date, datetime, timedelta
 from core.errors import ConfigError
 from core.history.clock import local_today, resolve_timezone, timezone_name
 from core.history.service import take_service_reminders
-from core.history.store import database_exists, history_session, isoformat_utc, list_named, range_summary
+from core.history.store import database_exists, history_root, history_session, isoformat_utc, list_named, range_summary
 from core.history.text import dumps, fmt_km, fmt_kwh, fmt_pct, yes_no
 from core.history.official import take_official
 from core.history.tips import choose_tip, is_tip_day
@@ -60,10 +60,10 @@ def covered(period: str, day: date) -> tuple[date, date]:
     raise ConfigError("Unknown history period.")
 
 
-def render_list(home, kind: str, *, limit: int, as_json: bool) -> str:
+def render_list(home, kind: str, *, limit: int, as_json: bool, store=None) -> str:
     if kind not in _LISTS:
         raise ConfigError("Unknown history list.")
-    with history_session(home, write=False) as conn:
+    with history_session(history_root(home, store), write=False) as conn:
         if conn is None:
             rows, total = [], 0
         else:
@@ -79,13 +79,13 @@ def render_list(home, kind: str, *, limit: int, as_json: bool) -> str:
     return "\n".join(lines)
 
 
-def render_tips(home, *, as_json: bool, on: date | None = None, tz=None) -> str:
+def render_tips(home, *, as_json: bool, on: date | None = None, tz=None, store=None) -> str:
     zone = tz or resolve_timezone(home)
     today = on or local_today(zone)
     if not is_tip_day(today):
         tip, reason = None, "not_today"
     else:
-        with history_session(home, write=True) as conn:
+        with history_session(history_root(home, store), write=True) as conn:
             tip, reason = choose_tip(conn, today)
     if as_json:
         payload = {"due": tip is not None, "reason": reason, "tip": None if tip is None else tip["text"]}
@@ -97,7 +97,7 @@ def render_tips(home, *, as_json: bool, on: date | None = None, tz=None) -> str:
     return f"Tip: {tip['text']}"
 
 
-def render_briefing(home, period: str, *, as_json: bool, on: date | None = None, tz=None) -> str:
+def render_briefing(home, period: str, *, as_json: bool, on: date | None = None, tz=None, store=None) -> str:
     zone = tz or resolve_timezone(home)
     today = on or local_today(zone)
     selected = due_period(today) if period == "due" else period
@@ -105,19 +105,20 @@ def render_briefing(home, period: str, *, as_json: bool, on: date | None = None,
         raise ConfigError("Unknown history period.")
     start, end = covered(selected, today)
     start_iso, end_iso = _bounds(start, end, zone)
-    if not database_exists(home) and not is_tip_day(today):
+    root = history_root(home, store)
+    if not database_exists(root) and not is_tip_day(today):
         summary = {"trips": [], "charges": [], "snapshots": 0, "alerts": []}
         tip = None
         reminders: list[dict] = []
     else:
-        with history_session(home, write=True) as conn:
+        with history_session(root, write=True) as conn:
             summary = range_summary(conn, start_iso, end_iso)
             tip, _reason = choose_tip(conn, today)
             reminders = take_service_reminders(conn, today)
     official = None
     if selected == "weekly":
         try:
-            official = take_official(home, today, tz=zone)
+            official = take_official(home, today, tz=zone, store=root)
         except Exception:
             official = None
     payload = _payload(

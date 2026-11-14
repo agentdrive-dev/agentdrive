@@ -165,6 +165,8 @@ def schedule_blocks(command, sensitive: set[str] | None = None) -> bool:
         return True
     if _blocks_charge_schedule(raw, text) or _blocks_charge_amps(text) or _blocks_departure_change(text):
         return True
+    if _blocks_request_approval(text):
+        return True
     head = _schedule_text(raw.split()[0])
     return head in _SCHEDULE_BLOCKED or head.replace(" ", "_") in names
 
@@ -179,6 +181,13 @@ def _blocks_charge_amps(text: str) -> bool:
     if text in {"charge amps", "charging set amps"}:
         return True
     return text.startswith("charge amps ") or text.startswith("charging set amps ")
+
+
+def _blocks_request_approval(text: str) -> bool:
+    """A schedule must not approve or deny a family request."""
+    if text in {"request approve", "request deny"}:
+        return True
+    return text.startswith("request approve ") or text.startswith("request deny ")
 
 
 def _blocks_departure_change(text: str) -> bool:

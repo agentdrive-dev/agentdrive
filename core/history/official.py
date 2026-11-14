@@ -15,7 +15,7 @@ from urllib.parse import urlparse
 
 from core.history.clock import local_today, resolve_timezone
 from core.history.locale import locale_for, locale_name, site_root
-from core.history.store import history_session, load_notices, save_notice
+from core.history.store import history_root, history_session, load_notices, save_notice
 from core.history.text import dumps
 from core.history.tips import on_cooldown
 
@@ -60,7 +60,7 @@ def fetch_text(url: str) -> str:
     return text
 
 
-def take_official(home, today: date, *, tz=None, fetch=None) -> dict | None:
+def take_official(home, today: date, *, tz=None, fetch=None, store=None) -> dict | None:
     """Return one new official item, or None when the slot should be omitted."""
     zone = tz or resolve_timezone(home)
     locale = locale_for(home, zone)
@@ -68,7 +68,7 @@ def take_official(home, today: date, *, tz=None, fetch=None) -> dict | None:
     found = _collect(locale, today, getter)
     if not found:
         return None
-    with history_session(home, write=True) as conn:
+    with history_session(history_root(home, store), write=True) as conn:
         notices = load_notices(conn)
         if _shown_this_week(notices, today):
             return None
@@ -88,10 +88,10 @@ def take_official(home, today: date, *, tz=None, fetch=None) -> dict | None:
     return _public(item, locale)
 
 
-def render_news(home, *, as_json: bool, on: date | None = None, tz=None, fetch=None) -> str:
+def render_news(home, *, as_json: bool, on: date | None = None, tz=None, fetch=None, store=None) -> str:
     zone = tz or resolve_timezone(home)
     today = on or local_today(zone)
-    item = take_official(home, today, tz=zone, fetch=fetch)
+    item = take_official(home, today, tz=zone, fetch=fetch, store=store)
     if as_json:
         return dumps({"item": item})
     if item is None:

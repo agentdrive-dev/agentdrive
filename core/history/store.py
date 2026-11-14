@@ -247,6 +247,11 @@ def database_exists(home: Path) -> bool:
     return database_paths(home)[1].is_file()
 
 
+def history_root(home: Path, store: Path | None = None) -> Path:
+    """Directory that holds history.db. ``store`` overrides the config home."""
+    return Path(home if store is None else store)
+
+
 def latest_odometer(conn) -> float | None:
     row = conn.execute(
         "SELECT odometer_km FROM snapshots WHERE odometer_km IS NOT NULL ORDER BY last_seen DESC, id DESC LIMIT 1"

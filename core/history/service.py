@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from core.errors import ConfigError, HistoryError
 from core.history.clock import local_today, resolve_timezone
 from core.history.store import (
+    history_root,
     history_session,
     insert_service_event,
     isoformat_utc,
@@ -58,7 +59,7 @@ def clean_interval(value) -> float | None:
     return number
 
 
-def perform_log(home, kind: str, *, note: str = "", interval_km: float | None = None, now: datetime | None = None) -> str:
+def perform_log(home, kind: str, *, note: str = "", interval_km: float | None = None, now: datetime | None = None, store=None) -> str:
     """Record one service event. Raises when the odometer has not been saved."""
     if kind not in _KINDS:
         raise ConfigError("Service kind must be rotation, replacement, or maintenance.")
@@ -66,10 +67,11 @@ def perform_log(home, kind: str, *, note: str = "", interval_km: float | None = 
     requested = clean_interval(interval_km)
     basis, stored_interval = _resolve_interval(kind, requested)
     logged_at = isoformat_utc(now or datetime.now(timezone.utc))
-    with history_session(home, write=False) as existing:
+    root = history_root(home, store)
+    with history_session(root, write=False) as existing:
         if existing is None or latest_odometer(existing) is None:
             raise HistoryError(NO_ODOMETER)
-    with history_session(home, write=True) as conn:
+    with history_session(root, write=True) as conn:
         odometer = latest_odometer(conn)
         if odometer is None:
             raise HistoryError(NO_ODOMETER)
@@ -85,10 +87,10 @@ def perform_log(home, kind: str, *, note: str = "", interval_km: float | None = 
     return _logged_text(kind, odometer, basis, stored_interval)
 
 
-def render_service_status(home, *, as_json: bool, on=None, tz=None) -> str:
+def render_service_status(home, *, as_json: bool, on=None, tz=None, store=None) -> str:
     zone = tz or resolve_timezone(home)
     today = on or local_today(zone)
-    with history_session(home, write=False) as conn:
+    with history_session(history_root(home, store), write=False) as conn:
         if conn is None:
             view = service_view([], None, {}, today)
         else:

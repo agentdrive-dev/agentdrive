@@ -43,6 +43,11 @@ config/profile.local.yaml
 config/host.yaml
 config/runtime.yaml
 
+# Private multi-car and family state. These belong in $AGENTDRIVE_HOME only.
+/cars.yaml
+/family.yaml
+/requests.json
+
 # Editor and OS noise
 .DS_Store
 .idea/
