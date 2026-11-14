@@ -40,7 +40,7 @@ from core.garage import (
 )
 from core.redact import mask_vin
 from core.requests import approve_request, create_request, deny_request, list_requests
-from core.fleet.http import UrllibClient
+from core.fleet.http import UrllibClient, is_network_error, plain_network_line, reset_command_attempted
 from core.fleet.report import format_report, format_report_json
 from core.advice import parse_kilometers, render_charge_advice, render_trip_advice
 from core.boombox import OVERRIDE_PHRASE, active_window, format_quiet, load_quiet, quiet_refusal, set_quiet
@@ -365,6 +365,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run one command. The console script, ``python -m core``, and setup/doctor share this.
+
+    A network failure prints one line and returns 2. It does not print a traceback.
+    """
+    reset_command_attempted()
     parser = build_parser()
     args = parser.parse_args(_normalize_global(argv))
     home = Path(args.home) if args.home else resolve_home()
@@ -440,6 +445,11 @@ def main(argv: list[str] | None = None) -> int:
         return 3
     except AgentDriveError as exc:
         print(scrub(str(exc)), file=sys.stderr)
+        return 2
+    except Exception as exc:
+        if not is_network_error(exc):
+            raise
+        print(scrub(plain_network_line(exc)), file=sys.stderr)
         return 2
     return 2
 
