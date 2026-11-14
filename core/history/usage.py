@@ -7,11 +7,24 @@ weekly, and weekly over daily. A tip is added only when one is eligible.
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta
+from pathlib import Path
 
 from core.errors import ConfigError
+from core.history.charts import write_dashboard, write_trend_png
 from core.history.clock import local_today, resolve_timezone, timezone_name
+from core.history.energy import annotate_charge
 from core.history.service import take_service_reminders
 from core.history.store import database_exists, history_root, history_session, isoformat_utc, list_named, range_summary
+from core.history.summary import (
+    charge_series,
+    coverage_text,
+    is_long_period,
+    km_series,
+    period_stats,
+    prepare_summary,
+    previous_window,
+    summary_lines,
+)
 from core.history.text import dumps, fmt_km, fmt_kwh, fmt_pct, yes_no
 from core.history.official import take_official
 from core.history.tips import choose_tip, is_tip_day
@@ -68,6 +81,8 @@ def render_list(home, kind: str, *, limit: int, as_json: bool, store=None) -> st
             rows, total = [], 0
         else:
             rows, total = list_named(conn, kind, limit)
+    if kind == "charges":
+        rows = [annotate_charge(row) for row in rows]
     if as_json:
         return dumps({kind: rows, "returned": len(rows), "total": total})
     if total == 0:
@@ -106,21 +121,48 @@ def render_briefing(home, period: str, *, as_json: bool, on: date | None = None,
     start, end = covered(selected, today)
     start_iso, end_iso = _bounds(start, end, zone)
     root = history_root(home, store)
+    views: dict[str, tuple[date, date, dict]] = {}
+    previous_summary = _blank_summary()
     if not database_exists(root) and not is_tip_day(today):
-        summary = {"trips": [], "charges": [], "snapshots": 0, "alerts": []}
+        summary = _blank_summary()
         tip = None
         reminders: list[dict] = []
+        if is_long_period(selected):
+            views = _empty_views(today)
     else:
         with history_session(root, write=True) as conn:
-            summary = range_summary(conn, start_iso, end_iso)
+            if is_long_period(selected):
+                views = _load_views(conn, today, zone)
+                summary = views[selected][2]
+                prev_start, prev_end = previous_window(selected, start, end)
+                previous_summary = range_summary(conn, *_bounds(prev_start, prev_end, zone))
+            else:
+                summary = range_summary(conn, start_iso, end_iso)
             tip, _reason = choose_tip(conn, today)
             reminders = take_service_reminders(conn, today)
+    if is_long_period(selected):
+        if not views:
+            views = _empty_views(today)
+        views = {
+            name: (item_start, item_end, prepare_summary(item))
+            for name, (item_start, item_end, item) in views.items()
+        }
+        summary = views[selected][2]
+        previous_summary = prepare_summary(previous_summary)
+    else:
+        summary = prepare_summary(summary)
     official = None
     if selected == "weekly":
         try:
             official = take_official(home, today, tz=zone, store=root)
         except Exception:
             official = None
+    files = None
+    if is_long_period(selected):
+        try:
+            files = _write_files(root, selected, start, end, summary, views, zone)
+        except Exception:
+            files = None
     payload = _payload(
         selected=selected,
         explicit=period,
@@ -131,20 +173,36 @@ def render_briefing(home, period: str, *, as_json: bool, on: date | None = None,
         tip=tip,
         reminders=reminders,
         official=official,
+        zone=zone,
+        files=files,
+        previous_summary=previous_summary,
     )
     if as_json:
         return dumps(payload)
     return payload["text"]
 
 
-def _payload(*, selected, explicit, start, end, zone_name, summary, tip, reminders, official) -> dict:
+def _payload(*, selected, explicit, start, end, zone_name, summary, tip, reminders, official, zone, files, previous_summary) -> dict:
     inclusive_end = end - timedelta(days=1)
     trips = summary["trips"]
     charges = summary["charges"]
     alerts = summary["alerts"]
     distance, distance_complete = _distance(trips)
-    energy = _sum(charges, "energy_added_kwh")
+    energy = _counted_energy(charges)
     readings = sum(len(item["readings"]) for item in charges)
+    period_block = None
+    if is_long_period(selected):
+        prev_start, prev_end = previous_window(selected, start, end)
+        previous = period_stats(previous_summary, prev_start, prev_end, zone)
+        stats = period_stats(summary, start, end, zone)
+        period_block = {
+            "stats": stats,
+            "previous": previous,
+            "prev_start": prev_start,
+            "prev_end": prev_end,
+            "lines": summary_lines(selected, stats, previous, prev_start, prev_end),
+            "files": files,
+        }
     trip_rows, trips_truncated = _cap(trips)
     charge_rows, charges_truncated = _cap(charges)
     alert_rows, alerts_truncated = _cap(alerts)
@@ -166,6 +224,7 @@ def _payload(*, selected, explicit, start, end, zone_name, summary, tip, reminde
         tip=tip,
         reminders=reminders,
         official=official,
+        period_block=period_block,
     )
     return {
         "selected": selected,
@@ -195,6 +254,7 @@ def _payload(*, selected, explicit, start, end, zone_name, summary, tip, reminde
         "tip": None if tip is None else {"id": tip["id"], "text": tip["text"]},
         "service_reminders": reminders,
         "official": official,
+        "summary": None if period_block is None else _public_summary(period_block),
     }
 
 
@@ -216,6 +276,7 @@ def _text(
     tip,
     reminders,
     official,
+    period_block,
 ) -> str:
     lines = []
     if explicit == "due":
@@ -236,6 +297,15 @@ def _text(
                 lines.append(f"- and {len(alerts) - 8} more")
         else:
             lines.append("Alerts: none")
+    if period_block is not None:
+        lines.extend(period_block["lines"])
+        files = period_block.get("files") or {}
+        if files.get("chart"):
+            lines.append(f"Chart: {files['chart']}")
+        if files.get("dashboard"):
+            lines.append(f"Dashboard: {files['dashboard']}")
+        elif is_long_period(selected):
+            lines.append("Chart: could not be saved on this computer.")
     if reminders:
         lines.append("Service reminders:")
         for item in reminders:
@@ -281,7 +351,11 @@ def _charge_summary(charges, energy, readings) -> str:
         energy_text = "energy added was not in the saved readings"
     else:
         energy_text = f"energy added {fmt_kwh(energy)}"
-    return f"Charges: {len(charges)}, {energy_text}, {readings} charge readings."
+    ignored = sum(1 for item in charges if item.get("energy_ignored"))
+    note = ""
+    if ignored:
+        note = " Saved energy that does not match the battery change was left out of this total or corrected. Those saved rows were not changed."
+    return f"Charges: {len(charges)}, {energy_text}, {readings} charge readings.{note}"
 
 
 def _list_line(kind: str, row: dict) -> str:
@@ -298,7 +372,21 @@ def _list_line(kind: str, row: dict) -> str:
         )
     if kind == "charges":
         end = row["ended_at"] or "still plugged in"
-        energy = fmt_kwh(row["energy_added_kwh"]) if row["energy_added_kwh"] is not None else "energy not recorded"
+        counted = row.get("energy_counted_kwh")
+        if row.get("energy_ignored") and counted is None:
+            saved = fmt_kwh(row["energy_added_kwh"]) if row.get("energy_added_kwh") is not None else "saved value"
+            energy = f"{saved} not counted (does not match the battery change)"
+        elif row.get("energy_ignored") and counted is not None:
+            energy = (
+                f"{fmt_kwh(counted)} counted "
+                f"(saved {fmt_kwh(row.get('energy_added_kwh'))} does not match the battery change)"
+            )
+        elif counted is not None:
+            energy = fmt_kwh(counted)
+        elif row.get("energy_added_kwh") is not None:
+            energy = fmt_kwh(row["energy_added_kwh"])
+        else:
+            energy = "energy not recorded"
         return (
             f"{row['started_at']} to {end} | battery {fmt_pct(row['start_percent'])} to {fmt_pct(row['end_percent'])} | "
             f"{energy} | {len(row['readings'])} charge readings"
@@ -333,6 +421,94 @@ def _distance(trips: list[dict]) -> tuple[float | None, bool]:
     if not known:
         return None, False
     return float(sum(known)), len(known) == len(trips)
+
+
+def _counted_energy(charges: list[dict]) -> float | None:
+    values = [float(item["energy_counted_kwh"]) for item in charges if item.get("energy_counted_kwh") is not None]
+    if not values:
+        return None
+    return float(sum(values))
+
+
+def _public_summary(period_block: dict) -> dict:
+    stats = period_block["stats"]
+    previous = period_block["previous"]
+    files = period_block.get("files") or {}
+    return {
+        "distance_km": stats["distance_km"],
+        "trip_count": stats["trip_count"],
+        "average_km_per_day": stats["average_km_per_day"],
+        "charge_count": stats["charge_count"],
+        "energy_added_kwh": stats["energy_added_kwh"],
+        "average_kwh_per_charge": stats["average_kwh_per_charge"],
+        "energy_replaced": stats["energy_replaced"],
+        "energy_omitted": stats["energy_omitted"],
+        "coverage": {
+            "days_with_readings": stats["days_with_readings"],
+            "days": stats["days"],
+            "incomplete": stats["coverage_incomplete"],
+        },
+        "previous": {
+            "distance_km": previous["distance_km"],
+            "trip_count": previous["trip_count"],
+            "charge_count": previous["charge_count"],
+            "energy_added_kwh": previous["energy_added_kwh"],
+        },
+        "chart": files.get("chart"),
+        "dashboard": files.get("dashboard"),
+        "chart_renderer": files.get("renderer"),
+    }
+
+
+def _blank_summary() -> dict:
+    return {"trips": [], "charges": [], "snapshots": 0, "snapshot_rows": [], "alerts": []}
+
+
+def _empty_views(today: date) -> dict:
+    return {name: (*covered(name, today), _blank_summary()) for name in ("weekly", "monthly", "yearly")}
+
+
+def _load_views(conn, today: date, zone) -> dict:
+    loaded = {}
+    for name in ("weekly", "monthly", "yearly"):
+        start, end = covered(name, today)
+        loaded[name] = (start, end, range_summary(conn, *_bounds(start, end, zone)))
+    return loaded
+
+
+def _write_files(root, selected, start, end, summary, views, zone) -> dict:
+    folder = Path(root) / "briefings"
+    monthly = selected == "yearly"
+    km_labels, km_values = km_series(summary["trips"], start, end, zone, monthly=monthly)
+    charge_labels, charge_values = charge_series(summary["charges"], zone)
+    chart = folder / f"{selected}-{start.isoformat()}.png"
+    title = f"{selected} vehicle history {start.isoformat()}"
+    renderer = write_trend_png(chart, title, km_labels, km_values, charge_labels, charge_values)
+    html_views = []
+    for name in ("weekly", "monthly", "yearly"):
+        view_start, view_end, view = views[name]
+        view_monthly = name == "yearly"
+        labels, values = km_series(view["trips"], view_start, view_end, zone, monthly=view_monthly)
+        c_labels, c_values = charge_series(view["charges"], zone)
+        stats = period_stats(view, view_start, view_end, zone)
+        inclusive = view_end - timedelta(days=1)
+        html_views.append(
+            {
+                "title": f"{name.title()} {view_start.isoformat()} to {inclusive.isoformat()}",
+                "note": coverage_text(stats),
+                "km_labels": labels,
+                "km_values": values,
+                "charge_labels": c_labels,
+                "charge_values": c_values,
+            }
+        )
+    dashboard = folder / "dashboard.html"
+    write_dashboard(dashboard, html_views)
+    return {
+        "chart": str(chart.resolve()),
+        "dashboard": str(dashboard.resolve()),
+        "renderer": renderer,
+    }
 
 
 def _sum(rows: list[dict], key: str) -> float | None:

@@ -23,6 +23,7 @@ _VIN = re.compile(r"^[A-HJ-NPR-Z0-9]{17}$")
 
 # Low-risk reads and parked actions. The owner opts in per member.
 DIRECT_ACTIONS = {
+    "advice",
     "cars",
     "charge-schedule-show",
     "check",

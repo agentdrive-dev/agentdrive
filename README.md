@@ -34,7 +34,7 @@ Say it in a sentence. The AI agent does the rest.
 
 **Get a health alert when something new needs you.** Tyre pressure, a low battery, a charge problem, or the car left unlocked or open. You hear about it when it is new. The same alert then stays quiet until it clears and comes back.
 
-**Review how the car was used.** Ask for a usage review, or receive a morning briefing: the previous day, the previous week on Monday, the previous month on the 1st, and the previous year on 1 January. Some mornings include a short tip, a service reminder when one is due, and on Monday one official Tesla note when there is something new.
+**Review how the car was used.** Ask for a usage review, or receive a morning briefing: the previous day, the previous week on Monday, the previous month on the 1st, and the previous year on 1 January. A week, a month, or a year includes a short summary and a chart saved on this computer. Ask whether the battery is enough for a trip, or whether charging habits and your home electricity hours suggest a change. Some mornings include a short tip, a service reminder when one is due, and on Monday one official Tesla note when there is something new.
 
 ## A conversation
 
@@ -55,6 +55,15 @@ Charges: 1, energy added 18.2 kWh, 12 charge readings.
 Snapshots: 14
 Alerts: none
 Tip: You do not need to memorize commands. Say what you want in plain words. The AI agent turns that into AgentDrive.
+```
+
+On Monday the briefing is the previous week and can look like this. Illustrative sample. The figures are sample data, not a vehicle reading or a transcript.
+
+```text
+Summary: 210 km driven, 9 trips, 30 km per day. Charges: 4, energy added 48.0 kWh, average 12.0 kWh per charge.
+Compared with the previous week (2026-10-26 to 2026-11-01): 210 km versus 180 km, 9 trips versus 8, 48.0 kWh versus 40.0 kWh.
+Coverage is incomplete: saved readings on 5 of 7 days. History is opportunistic, not a continuous record.
+Chart: /home/example/briefings/weekly-2026-11-02.png
 ```
 
 ## How to start

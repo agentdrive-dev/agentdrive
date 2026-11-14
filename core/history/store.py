@@ -28,6 +28,7 @@ from core.history.crypto import (
     seal,
     write_private_bytes,
 )
+from core.history.energy import resolve_charge_energy
 
 MILES_TO_KM = 1.609344
 MIN_TRIP_KM = 0.1
@@ -261,6 +262,47 @@ def latest_odometer(conn) -> float | None:
     return float(row[0])
 
 
+def latest_parked(conn) -> dict | None:
+    """Latest parked snapshot fields used by advice. No coordinates."""
+    row = conn.execute(
+        """
+        SELECT last_seen, battery_percent, outside_temp_c, charge_limit_percent
+        FROM snapshots
+        ORDER BY last_seen DESC, id DESC
+        LIMIT 1
+        """
+    ).fetchone()
+    if row is None:
+        return None
+    return {
+        "last_seen": row["last_seen"],
+        "battery_percent": row["battery_percent"],
+        "outside_temp_c": row["outside_temp_c"],
+        "charge_limit_percent": row["charge_limit_percent"],
+    }
+
+
+def parked_marks(conn, limit: int = 400) -> list[dict]:
+    """Recent snapshot times and battery, newest last-seen first."""
+    rows = conn.execute(
+        """
+        SELECT observed_at, last_seen, battery_percent
+        FROM snapshots
+        ORDER BY last_seen DESC, id DESC
+        LIMIT ?
+        """,
+        (int(limit),),
+    ).fetchall()
+    return [
+        {
+            "observed_at": row["observed_at"],
+            "last_seen": row["last_seen"],
+            "battery_percent": row["battery_percent"],
+        }
+        for row in rows
+    ]
+
+
 def recent_snapshots(conn, limit: int = 20) -> list[dict]:
     rows = conn.execute(
         """
@@ -386,15 +428,18 @@ def range_summary(conn, start_iso: str, end_iso: str) -> dict:
             (end_iso, start_iso),
         )
     ]
-    snapshots = int(
-        conn.execute(
+    snapshot_rows = [
+        {"observed_at": row["observed_at"], "last_seen": row["last_seen"]}
+        for row in conn.execute(
             """
-            SELECT COUNT(*) FROM snapshots
+            SELECT observed_at, last_seen FROM snapshots
             WHERE observed_at < ? AND last_seen >= ?
+            ORDER BY observed_at ASC, id ASC
             """,
             (end_iso, start_iso),
-        ).fetchone()[0]
-    )
+        )
+    ]
+    snapshots = len(snapshot_rows)
     alerts = [
         _alert_dict(row)
         for row in conn.execute(
@@ -406,7 +451,13 @@ def range_summary(conn, start_iso: str, end_iso: str) -> dict:
             (start_iso, end_iso),
         )
     ]
-    return {"trips": trips, "charges": charges, "snapshots": snapshots, "alerts": alerts}
+    return {
+        "trips": trips,
+        "charges": charges,
+        "snapshots": snapshots,
+        "snapshot_rows": snapshot_rows,
+        "alerts": alerts,
+    }
 
 
 def _ingest(conn, reading: Reading, observation: Observation, *, tyre_bar: float, low_battery_percent: int) -> None:
@@ -586,17 +637,18 @@ def _apply_charge(conn, reading: Reading) -> None:
     open_id = _meta_get(conn, "open_charge_id")
     if reading.plugged is True:
         if open_id is None:
+            # A new plug-in must not inherit the previous counter.
+            _meta_set(conn, "open_charge_energy_raw", None)
             cursor = conn.execute(
                 """
                 INSERT INTO charges(
                     started_at, ended_at, start_percent, end_percent, energy_added_kwh, plugged_in, charging, open
-                ) VALUES(?, NULL, ?, ?, ?, 1, ?, 1)
+                ) VALUES(?, NULL, ?, ?, NULL, 1, ?, 1)
                 """,
                 (
                     reading.observed_at,
                     reading.battery_percent,
                     reading.battery_percent,
-                    reading.energy_added_kwh,
                     1 if reading.charging else 0,
                 ),
             )
@@ -604,31 +656,32 @@ def _apply_charge(conn, reading: Reading) -> None:
             _meta_set(conn, "open_charge_id", open_id)
         else:
             _touch_charge(conn, int(open_id), reading)
+        _append_charge_raw(conn, reading.energy_added_kwh)
         _maybe_sample(conn, int(open_id), reading)
+        _write_charge_energy(conn, int(open_id), reading.battery_percent)
         return
     if reading.plugged is False and open_id is not None:
         _close_charge(conn, int(open_id), reading)
         _meta_set(conn, "open_charge_id", None)
+        _meta_set(conn, "open_charge_energy_raw", None)
 
 
 def _touch_charge(conn, charge_id: int, reading: Reading) -> None:
-    row = conn.execute("SELECT energy_added_kwh, charging FROM charges WHERE id = ?", (charge_id,)).fetchone()
+    row = conn.execute("SELECT charging FROM charges WHERE id = ?", (charge_id,)).fetchone()
     if row is None:
         return
-    energy = row[0]
-    if reading.energy_added_kwh is not None:
-        energy = reading.energy_added_kwh if energy is None else max(float(energy), reading.energy_added_kwh)
-    charging = 1 if row[1] or reading.charging else 0
+    charging = 1 if row[0] or reading.charging else 0
     conn.execute(
-        "UPDATE charges SET end_percent = ?, energy_added_kwh = ?, charging = ?, plugged_in = 1 WHERE id = ?",
-        (reading.battery_percent, energy, charging, charge_id),
+        "UPDATE charges SET end_percent = ?, charging = ?, plugged_in = 1 WHERE id = ?",
+        (reading.battery_percent, charging, charge_id),
     )
 
 
 def _close_charge(conn, charge_id: int, reading: Reading) -> None:
-    row = conn.execute("SELECT energy_added_kwh, charging FROM charges WHERE id = ?", (charge_id,)).fetchone()
-    energy = None if row is None else row[0]
-    charging = 0 if row is None else row[1]
+    row = conn.execute("SELECT charging FROM charges WHERE id = ?", (charge_id,)).fetchone()
+    charging = 0 if row is None else row[0]
+    # The unplug reading often reports 0. It is not energy added by this session.
+    energy = _resolved_open_energy(conn, charge_id, reading.battery_percent)
     conn.execute(
         """
         UPDATE charges
@@ -637,6 +690,56 @@ def _close_charge(conn, charge_id: int, reading: Reading) -> None:
         """,
         (reading.observed_at, reading.battery_percent, energy, charging, charge_id),
     )
+
+
+def _write_charge_energy(conn, charge_id: int, end_percent) -> None:
+    energy = _resolved_open_energy(conn, charge_id, end_percent)
+    conn.execute("UPDATE charges SET energy_added_kwh = ? WHERE id = ?", (energy, charge_id))
+
+
+def _resolved_open_energy(conn, charge_id: int, end_percent) -> float | None:
+    series = _parse_raw(_meta_get(conn, "open_charge_energy_raw") or "")
+    if not series:
+        series = [
+            float(row[0])
+            for row in conn.execute(
+                """
+                SELECT energy_added_kwh FROM charge_samples
+                WHERE charge_id = ? AND energy_added_kwh IS NOT NULL
+                ORDER BY observed_at ASC, id ASC
+                """,
+                (charge_id,),
+            )
+            if row[0] is not None
+        ]
+    row = conn.execute("SELECT start_percent FROM charges WHERE id = ?", (charge_id,)).fetchone()
+    start = None if row is None else row[0]
+    return resolve_charge_energy(series, start, end_percent)
+
+
+def _append_charge_raw(conn, raw: float | None) -> None:
+    if raw is None:
+        return
+    values = _parse_raw(_meta_get(conn, "open_charge_energy_raw") or "")
+    if values and abs(values[-1] - float(raw)) <= 1e-6:
+        return
+    values.append(float(raw))
+    if len(values) > 2000:
+        values = values[-2000:]
+    _meta_set(conn, "open_charge_energy_raw", ",".join(f"{item:.3f}" for item in values))
+
+
+def _parse_raw(text: str) -> list[float]:
+    values: list[float] = []
+    for part in str(text or "").split(","):
+        piece = part.strip()
+        if not piece:
+            continue
+        try:
+            values.append(float(piece))
+        except ValueError:
+            continue
+    return values
 
 
 def _maybe_sample(conn, charge_id: int, reading: Reading) -> None:

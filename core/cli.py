@@ -42,6 +42,7 @@ from core.redact import mask_vin
 from core.requests import approve_request, create_request, deny_request, list_requests
 from core.fleet.http import UrllibClient
 from core.fleet.report import format_report, format_report_json
+from core.advice import parse_kilometers, render_charge_advice, render_trip_advice
 from core.history.official import render_news
 from core.history.service import perform_log, render_service_status
 from core.history.usage import render_briefing, render_list, render_tips
@@ -62,6 +63,8 @@ from core.report_schedule import DAILY_REPORT_NOTE, format_schedule, load_report
 from core.paths import resolve_home, resolve_key, resolve_token_file
 from core.redact import scrub
 from core.safety.install_gate import accept, assert_install_allowed, present
+from core.tariff import clear_windows, format_tariff, load_tariff, set_window
+from core.history.text import dumps as dump_json
 from core.update import update_install
 
 
@@ -232,6 +235,28 @@ def build_parser() -> argparse.ArgumentParser:
     service_status = service_sub.add_parser("status", help="Show kilometres since logged service. Does not wake the car.")
     service_status.add_argument("--json", action="store_true")
 
+    advice = sub.add_parser(
+        "advice",
+        help="Trip and charging advice from saved history. Does not wake the car or change a setting.",
+    )
+    advice_sub = advice.add_subparsers(dest="advice_action", required=True)
+    trip = advice_sub.add_parser("trip", help="Say whether the battery covers a trip of N km. Does not wake the car.")
+    trip.add_argument("kilometers", help="Trip distance in kilometres")
+    trip.add_argument("--json", action="store_true")
+    charging = advice_sub.add_parser("charge", help="Flag charging habits and a cheap window. Does not change the car.")
+    charging.add_argument("--json", action="store_true")
+
+    tariff = sub.add_parser("tariff", help="Store home off-peak and peak hours. Does not change the car.")
+    tariff_sub = tariff.add_subparsers(dest="tariff_action", required=True)
+    tariff_show = tariff_sub.add_parser("show", help="Show the saved home tariff.")
+    tariff_show.add_argument("--json", action="store_true")
+    tariff_set = tariff_sub.add_parser("set", help="Save one off-peak or peak window.")
+    tariff_set.add_argument("kind", choices=("off-peak", "peak"))
+    tariff_set.add_argument("window", help="Local hours HH:MM-HH:MM")
+    tariff_set.add_argument("--price", type=float, default=None, help="Optional price per kWh")
+    tariff_clear = tariff_sub.add_parser("clear", help="Remove saved tariff windows.")
+    tariff_clear.add_argument("kind", nargs="?", choices=("off-peak", "peak"))
+
     sub.add_parser("update")
 
     cars = sub.add_parser("cars", help="List cars on this account, or save a nickname. Listing does not wake a car.")
@@ -306,6 +331,10 @@ def main(argv: list[str] | None = None) -> int:
             return _news(args, home)
         if args.command == "service":
             return _service(args, home)
+        if args.command == "advice":
+            return _advice(args, home)
+        if args.command == "tariff":
+            return _tariff(args, home)
         if args.command == "cars":
             return _cars(args, home)
         if args.command == "family":
@@ -479,6 +508,54 @@ def _service(args, home: Path) -> int:
     as_json = bool(args.json)
     print(scrub(render_service_status(home, as_json=as_json, store=store)))
     return 0
+
+
+def _advice(args, home: Path) -> int:
+    _guard_read(args, home, "advice")
+    store = store_for_saved(home, args.car or None)
+    peek = _peek_parked(home, args)
+    if peek is not None and peek.store is not None:
+        store = peek.store
+    if args.advice_action == "trip":
+        kilometers = parse_kilometers(args.kilometers)
+        print(scrub(render_trip_advice(home, kilometers, as_json=args.json, store=store, peek=peek)))
+        return 0
+    if args.advice_action == "charge":
+        print(scrub(render_charge_advice(home, as_json=args.json, store=store, peek=peek)))
+        return 0
+    raise ConfigError("unknown command")
+
+
+def _tariff(args, home: Path) -> int:
+    if getattr(args, "actor", ""):
+        raise ConfigError("Only the owner can edit the home tariff.")
+    if args.tariff_action == "show":
+        tariff = load_tariff(home)
+        if args.json:
+            print(dump_json({"windows": [item.as_dict() for item in tariff.windows]}))
+        else:
+            print(format_tariff(tariff))
+        return 0
+    if args.tariff_action == "set":
+        tariff = set_window(home, args.kind, args.window, args.price)
+        print(format_tariff(tariff))
+        print("Saved in the private config home. This does not change the car.")
+        return 0
+    if args.tariff_action == "clear":
+        tariff = clear_windows(home, args.kind)
+        print(format_tariff(tariff))
+        return 0
+    raise ConfigError("unknown command")
+
+
+def _peek_parked(home: Path, args):
+    """Best-effort non-waking read. A missing token still leaves advice on saved history."""
+    try:
+        return _open_app(home, args).peek(preferred=preferred_vin())
+    except ConfigError:
+        raise
+    except AgentDriveError:
+        return None
 
 
 def _charge_schedule(args, home: Path) -> int:
