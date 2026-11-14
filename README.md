@@ -18,6 +18,8 @@ Grok Bot, Muse, or any shell-capable AI agent uses this same path.
 
 You chat normally with an AI agent to control a parked Tesla. This is conversational parked-car control, not an official Tesla product.
 
+[Illustrated user guide](#user-guide)
+
 ## How it works
 
 ![How it works. You chat in plain words. The AI agent runs AgentDrive. AgentDrive reads the Tesla Fleet API and signs parked commands for the vehicle.](docs/images/how-it-works.svg)
@@ -65,6 +67,53 @@ Compared with the previous week (2026-10-26 to 2026-11-01): 210 km versus 180 km
 Coverage is incomplete: saved readings on 5 of 7 days. History is opportunistic, not a continuous record.
 Chart: /home/example/briefings/weekly-2026-11-02.png
 ```
+
+## User guide
+
+Sunny's illustrated manual is eighteen A4 pages of everyday parked-car use: monitoring, remote control, charging, history, and advice. Sunny is an example car drawn for the comic. Open either edition in the browser, or download it.
+
+<div class="guide-grid">
+<article class="guide-card">
+<a class="guide-cover" href="{{ '/docs/manuals/agentdrive-user-guide-en.pdf' | relative_url }}">
+<img src="{{ '/docs/images/user-guide/cover-en.webp' | relative_url }}" width="993" height="1404" alt="Cover of the English AgentDrive user guide. An illustrated white car named Sunny stands with a small robot holding a map and a battery gauge." loading="lazy" decoding="async">
+</a>
+<div class="guide-body">
+<h3>English edition</h3>
+<p class="guide-desc">Illustrated walkthrough of monitoring, remote control, charging, history, and advice.</p>
+<p class="guide-meta"><span>18 pages</span><span>A4</span><span>9.2 MB</span></p>
+<p class="guide-label">Sample pages</p>
+<div class="guide-previews">
+<a href="{{ '/docs/manuals/agentdrive-user-guide-en.pdf' | relative_url }}#page=5"><img src="{{ '/docs/images/user-guide/preview-en-monitor.webp' | relative_url }}" width="596" height="842" alt="English guide page 5, View and monitor: comics of a status check, a health alert, and the driver seat." loading="lazy" decoding="async"></a>
+<a href="{{ '/docs/manuals/agentdrive-user-guide-en.pdf' | relative_url }}#page=8"><img src="{{ '/docs/images/user-guide/preview-en-control.webp' | relative_url }}" width="596" height="842" alt="English guide page 8, Remote control: comics of flashing the lights, honking, and locking the car." loading="lazy" decoding="async"></a>
+<a href="{{ '/docs/manuals/agentdrive-user-guide-en.pdf' | relative_url }}#page=15"><img src="{{ '/docs/images/user-guide/preview-en-charging.webp' | relative_url }}" width="596" height="842" alt="English guide page 15, Charging, history and advice: comics of a charging schedule, a departure time, and saved history." loading="lazy" decoding="async"></a>
+</div>
+<div class="guide-actions">
+<a class="guide-btn guide-btn-primary" href="{{ '/docs/manuals/agentdrive-user-guide-en.pdf' | relative_url }}">View online</a>
+<a class="guide-btn guide-btn-secondary" href="{{ '/docs/manuals/agentdrive-user-guide-en.pdf' | relative_url }}" download="agentdrive-user-guide-en.pdf">Download</a>
+</div>
+</div>
+</article>
+<article class="guide-card">
+<a class="guide-cover" href="{{ '/docs/manuals/agentdrive-user-guide-zh.pdf' | relative_url }}">
+<img src="{{ '/docs/images/user-guide/cover-zh.webp' | relative_url }}" width="993" height="1404" alt="Cover of the Chinese AgentDrive user guide. An illustrated white car named Sunny stands with a small robot holding a map and a battery gauge." loading="lazy" decoding="async">
+</a>
+<div class="guide-body">
+<h3>Chinese edition</h3>
+<p class="guide-desc">The same illustrated walkthrough, written in Chinese.</p>
+<p class="guide-meta"><span>18 pages</span><span>A4</span><span>9.5 MB</span></p>
+<p class="guide-label">Sample pages</p>
+<div class="guide-previews">
+<a href="{{ '/docs/manuals/agentdrive-user-guide-zh.pdf' | relative_url }}#page=5"><img src="{{ '/docs/images/user-guide/preview-zh-monitor.webp' | relative_url }}" width="596" height="842" alt="Chinese guide page 5, the monitoring chapter: comics of a status check, a health alert, and the driver seat." loading="lazy" decoding="async"></a>
+<a href="{{ '/docs/manuals/agentdrive-user-guide-zh.pdf' | relative_url }}#page=8"><img src="{{ '/docs/images/user-guide/preview-zh-control.webp' | relative_url }}" width="596" height="842" alt="Chinese guide page 8, the remote-control chapter: comics of flashing the lights, honking, and locking the car." loading="lazy" decoding="async"></a>
+<a href="{{ '/docs/manuals/agentdrive-user-guide-zh.pdf' | relative_url }}#page=15"><img src="{{ '/docs/images/user-guide/preview-zh-charging.webp' | relative_url }}" width="596" height="842" alt="Chinese guide page 15, the charging chapter: comics of a charging schedule, a departure time, and saved history." loading="lazy" decoding="async"></a>
+</div>
+<div class="guide-actions">
+<a class="guide-btn guide-btn-primary" href="{{ '/docs/manuals/agentdrive-user-guide-zh.pdf' | relative_url }}">View online</a>
+<a class="guide-btn guide-btn-secondary" lang="zh" href="{{ '/docs/manuals/agentdrive-user-guide-zh.pdf' | relative_url }}" download="agentdrive-user-guide-zh.pdf">中文版说明书</a>
+</div>
+</div>
+</article>
+</div>
 
 ## How to start
 
