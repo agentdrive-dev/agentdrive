@@ -43,10 +43,10 @@ while climate, climate keeper, or bioweapon defense stays on and the driver seat
 is empty, and it is not sent when someone is in the driver seat. The driver-seat
 reading covers only the driver seat and is not a guarantee nobody is inside.
 Do not wake the car from that check, and do not
-schedule unlock, turning sentry off, the trunk, the front trunk, remote start, a charging change, or a departure schedule change. This check is separate from the one daily
+schedule unlock, turning sentry off, the trunk, the front trunk, remote start, a charging change, a departure schedule change, or the external speaker. This check is separate from the one daily
 morning job above. AgentDrive does not run it itself.
 If several cars are on the account, ask me for a nickname for each, run `agentdrive cars name`, and set a default only if I choose one. Pass `--car <nickname>` when a command is for one car. With one car, keep the commands as they are. With several cars, run the health check and `agentdrive history due` once per car. A confirmation names the car, for example `I confirm unlock on daily`.
-If I add a family member, a sensitive request such as unlock or a charging change is not run. Use `--as <handle>` so AgentDrive records a pending request, then relay that text to me. I approve with `agentdrive request approve <id>` or deny with `agentdrive request deny <id>`. Do not approve it yourself. A family member cannot approve their own request.
+If I add a family member, a sensitive request such as unlock, a charging change, or the external speaker is not run. Use `--as <handle>` so AgentDrive records a pending request, then relay that text to me. I approve with `agentdrive request approve <id>` or deny with `agentdrive request deny <id>`. Do not approve it yourself. A family member cannot approve their own request.
 agentdrive report is the live snapshot when I want the car's current status, including
 the skip line when the car is asleep. If I later ask for a different time or to turn the
 briefing off, update the stored schedule and update that job.

@@ -31,6 +31,7 @@ class Gateway:
         observe,
         extra_args: list[str] | None = None,
         car: str = "",
+        confirm_suffix: str = "",
     ) -> Observation:
         spec = self.specs.get(command)
         if spec is None:
@@ -42,6 +43,9 @@ class Gateway:
                 raise ScheduleBlocked("A schedule cannot run a sensitive command.")
             label = " ".join(str(car or "").split())
             summary = spec.action if not label else f"{spec.action} on {label}"
+            suffix = " ".join(str(confirm_suffix or "").split())
+            if suffix:
+                summary = f"{summary} {suffix}"
             challenge = new_challenge(command, summary, car=label)
             response = adapter.confirm(challenge)
             self.broker.authorize(spec, challenge, response, via_schedule=False)

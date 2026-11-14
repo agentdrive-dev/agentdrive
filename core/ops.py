@@ -23,6 +23,7 @@ from pathlib import Path
 
 from adapters.template import TemplateAdapter
 from core.config import load_regions
+from core.boombox import OVERRIDE_PHRASE, active_window, override_phrase_missing, quiet_refusal
 from core.errors import CommandFailed, ConfigError, ConfirmationRequired, TokenError
 from core.fleet.area import WhereReport, area_from_vehicle_payload, precise_from_vehicle_payload, precise_point
 from core.fleet.charge_schedule import (
@@ -116,7 +117,11 @@ PUBLIC_COMMANDS = {
     "bioweapon-off": "bioweapon_off",
     "software-schedule": "software_schedule",
     "software-cancel": "software_cancel",
+    "boombox-fart": "boombox_fart",
+    "boombox-ping": "boombox_ping",
 }
+
+BOOMBOX_COMMANDS = {"boombox-fart", "boombox-ping"}
 
 
 def parse_temp(value: str) -> str:
@@ -500,11 +505,26 @@ class App:
         statement: str | None,
         extra: list[str] | None = None,
         sleep=time.sleep,
+        override: bool = False,
+        now=None,
     ) -> str:
         spec = PUBLIC_COMMANDS.get(name)
         if spec is None:
             raise ConfigError("unknown command")
         extra_args = list(extra) if extra is not None else _extra(name, argument)
+        confirm_suffix = ""
+        adapter = _cli_adapter(statement)
+        if name in BOOMBOX_COMMANDS:
+            window = active_window(self.home, now)
+            if window is not None and not override:
+                raise ConfigError(quiet_refusal(window))
+            if window is not None and override:
+                if statement is not None and override_phrase_missing(statement):
+                    raise ConfirmationRequired(
+                        "Overriding quiet hours needs a confirmation that includes despite quiet hours."
+                    )
+                confirm_suffix = OVERRIDE_PHRASE
+                adapter = _QuietOverrideAdapter(adapter)
         if name == "wake":
             selection = self._bind(preferred)
             key = vehicle_key(selection.row)
@@ -524,13 +544,14 @@ class App:
                 spec,
                 shift_state=observation.shift_state,
                 speed=observation.speed,
-                adapter=_cli_adapter(statement),
+                adapter=adapter,
                 via_schedule=False,
                 vin=_key,
                 access_token=token,
                 observe=observe,
                 extra_args=extra_args,
                 car=label,
+                confirm_suffix=confirm_suffix,
             )
         except CommandFailed as exc:
             clarified = clarify_command_failure(name, str(exc))
@@ -868,6 +889,21 @@ def _cli_adapter(statement: str | None):
     return TemplateAdapter(prompter)
 
 
+class _QuietOverrideAdapter:
+    """Require the quiet-hours phrase after the owner types or passes a sentence."""
+
+    def __init__(self, inner):
+        self.inner = inner
+
+    def confirm(self, challenge):
+        response = self.inner.confirm(challenge)
+        if override_phrase_missing(getattr(response, "statement", "")):
+            raise ConfirmationRequired(
+                "Overriding quiet hours needs a confirmation that includes despite quiet hours."
+            )
+        return response
+
+
 def format_status(vehicle: dict, observation: Observation, vin: str) -> str:
     name = " ".join(str(vehicle.get("display_name") or "Vehicle").split()) or "Vehicle"
     state = str(vehicle.get("state") or "online")
@@ -923,6 +959,10 @@ def _result_name(name: str, extra_args: list[str] | None) -> str:
         return "software schedule " + extra_args[0]
     if name == "software-cancel":
         return "software cancel"
+    if name == "boombox-fart":
+        return "boombox fart"
+    if name == "boombox-ping":
+        return "boombox ping"
     if name == "seat-climate" and extra_args and len(extra_args) >= 2:
         seats = {"L": "front-left", "R": "front-right", "LR": "both"}
         return f"seat-climate {seats.get(extra_args[0], extra_args[0])} {extra_args[1]}"

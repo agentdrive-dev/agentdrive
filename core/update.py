@@ -35,6 +35,7 @@ PRIVATE_NAMES = (
     "history.db",
     ".history.lock",
     "tariff.yaml",
+    "boombox.yaml",
 )
 
 

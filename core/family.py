@@ -84,6 +84,8 @@ REQUEST_ACTIONS = {
     "software-schedule",
     "software-cancel",
     "bioweapon-on",
+    "boombox-fart",
+    "boombox-ping",
 }
 
 
@@ -231,6 +233,8 @@ def expand_action(token: str) -> list[tuple[str, str]]:
     text = " ".join(str(token or "").split()).lower()
     if text == "charging":
         return [(name, "request") for name in CHARGING_ACTIONS]
+    if text == "boombox":
+        return [("boombox-fart", "request"), ("boombox-ping", "request")]
     if text in REQUEST_ACTIONS:
         return [(text, "request")]
     if text in DIRECT_ACTIONS:
@@ -277,11 +281,16 @@ def action_phrase(command: str) -> str:
     return spec.action
 
 
-def owner_confirmation(command: str, label: str) -> str:
+def owner_confirmation(command: str, label: str, *, override: str = "") -> str:
     phrase = action_phrase(command)
     if label:
-        return f"I confirm {phrase} on {label}"
-    return f"I confirm {phrase}"
+        text = f"I confirm {phrase} on {label}"
+    else:
+        text = f"I confirm {phrase}"
+    suffix = " ".join(str(override or "").split())
+    if suffix:
+        return f"{text} {suffix}"
+    return text
 
 
 def _member(item) -> Member:

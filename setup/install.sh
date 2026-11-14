@@ -59,6 +59,7 @@ install_vehicle_command() {
   fi
   python3 "${ROOT}/setup/patch_tesla_control_defrost.py" "${src}/cmd/tesla-control/commands.go"
   python3 "${ROOT}/setup/patch_tesla_control_phase8.py" "${src}/cmd/tesla-control/commands.go"
+  python3 "${ROOT}/setup/patch_tesla_control_boombox.py" "${src}/cmd/tesla-control/commands.go"
   (
     cd "$src"
     go build -o "${bindir}/tesla-control" ./cmd/tesla-control
