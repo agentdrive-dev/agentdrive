@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import sys
 import time
+from dataclasses import dataclass
 from pathlib import Path
 
 from adapters.template import TemplateAdapter
@@ -227,6 +228,16 @@ def resolve_thresholds(
     return float(tyre), int(battery)
 
 
+@dataclass(frozen=True)
+class ParkedPeek:
+    """A read that did not wake the car. ``observation`` is set only when it is already online."""
+
+    state: str
+    observation: Observation | None
+    store: Path | None
+    label: str
+
+
 class App:
     """Wires the fleet reader, token manager, and signed-command runner."""
 
@@ -275,6 +286,31 @@ class App:
         # and a skipped check never reaches this write.
         self._remember(payload, observation, tyre_bar=tyre_bar, low_battery_percent=low_battery_percent, store=selection.store)
         return apply_rising_edge(selection.store, report)
+
+    def peek(self, *, preferred: str | None) -> ParkedPeek:
+        """Read battery, climate, and schedules when the car is already online.
+
+        A car that is not online is left asleep. This never calls wake.
+        """
+        try:
+            selection = self._bind(preferred)
+        except ConfigError:
+            raise
+        except (VehicleAsleep, TimeoutError, HttpError, QueryError, TokenError):
+            return ParkedPeek("unavailable", None, None, "")
+        state = vehicle_state_name(selection.row) or "unknown"
+        if state != "online":
+            return ParkedPeek(state, None, selection.store, selection.label)
+        try:
+            payload = self.reader.vehicle_data(
+                vehicle_key(selection.row),
+                [*DATA_ENDPOINTS, CHARGE_SCHEDULE_ENDPOINT, DEPARTURE_ENDPOINT],
+            )
+        except (VehicleAsleep, TimeoutError, HttpError, QueryError, TokenError):
+            return ParkedPeek("unavailable", None, selection.store, selection.label)
+        observation = from_vehicle_data(payload)
+        self._remember(payload, observation, store=selection.store)
+        return ParkedPeek("online", observation, selection.store, selection.label)
 
     def report(self, *, preferred: str | None) -> VehicleReport:
         """Read-only briefing. A car that is not online, a timeout, or HTTP 408 is a skip.

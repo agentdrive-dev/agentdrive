@@ -29,6 +29,12 @@ Every other morning send the previous day. That one job is the whole morning bri
 the usage report, a short tip on some mornings, a service reminder when one is due, and
 on a Monday weekly briefing one official Tesla note only when the local Tesla site has
 something new. If it does not, leave that part out. Do not add a second morning job.
+When the briefing prints a Chart path, attach that PNG to the weekly, monthly, or yearly message.
+The Dashboard path is a local HTML file on this computer. Do not upload the history database.
+If I ask whether the battery is enough for a trip, run `agentdrive advice trip <km>`.
+If I ask about charging habits or cheap hours, run `agentdrive advice charge`.
+Save home off-peak and peak hours with `agentdrive tariff set` when I tell you the times.
+Advice does not change the car. A charging change still needs my confirmation.
 Also schedule a health check that runs agentdrive check --json every 30 minutes.
 Notify me only when it exits 1. Exit 0 means nothing new, including when the car
 is asleep and when the same alert is still active. That alert stays quiet until

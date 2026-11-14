@@ -38,7 +38,9 @@ AgentDrive does not run that job and does not install cron.
 Then read `agentdrive report-schedule`. The default is 07:30 local time and enabled.
 Create one daily job at that time that runs `agentdrive history due` and send me that usage briefing.
 On Monday send the previous week, on the 1st the previous month, and on 1 January the previous year.
-Every other morning send the previous day. `agentdrive report` is the live snapshot when I want the car's current status, including the skip line when the vehicle is asleep.
+Every other morning send the previous day. When a weekly, monthly, or yearly briefing prints a Chart path, attach that PNG. The Dashboard path is a local HTML file. Do not upload the history database.
+If I ask whether the battery is enough for a trip, run `agentdrive advice trip <km>`. If I ask about charging habits or cheap hours, run `agentdrive advice charge`. Save home tariff hours with `agentdrive tariff set` when I give you the times. Advice does not change the car. A charging change still needs my confirmation.
+`agentdrive report` is the live snapshot when I want the car's current status, including the skip line when the vehicle is asleep.
 If I later ask for a different time, run `agentdrive report-schedule set HH:MM` and update the job.
 If I ask to turn the briefing off, run `agentdrive report-schedule disable` and remove the job.
 AgentDrive stores the time and does not run in the background.

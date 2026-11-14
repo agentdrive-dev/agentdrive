@@ -47,6 +47,7 @@ config/runtime.yaml
 /cars.yaml
 /family.yaml
 /requests.json
+/tariff.yaml
 
 # Editor and OS noise
 .DS_Store

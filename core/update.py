@@ -34,6 +34,7 @@ PRIVATE_NAMES = (
     "history.key",
     "history.db",
     ".history.lock",
+    "tariff.yaml",
 )
 
 
