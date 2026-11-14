@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from core.errors import CommandFailed
+from core.fleet.http import note_command_attempted
 from core.redact import redact
 
 
@@ -66,9 +67,20 @@ class TeslaControl:
             except FileNotFoundError as exc:
                 raise CommandFailed("tesla-control is not installed on this machine") from exc
             except subprocess.TimeoutExpired as exc:
+                note_command_attempted()
                 raise CommandFailed("tesla-control timed out. The command was not sent again.") from exc
+            except Exception:
+                # The process was started, so the car may already have the command.
+                note_command_attempted()
+                raise
+            note_command_attempted()
             redacted = redact(output or "", [access_token, vin, str(token_path)])
             if returncode != 0:
+                if _context_deadline(redacted):
+                    raise CommandFailed(
+                        "tesla-control timed out (context deadline exceeded). "
+                        "The command was not sent again. The car may or may not have received it."
+                    )
                 raise CommandFailed(
                     f"tesla-control failed (exit {returncode}). The command was not sent again. {redacted}".strip()
                 )
@@ -83,6 +95,10 @@ class TeslaControl:
                     created_dir.rmdir()
                 except OSError:
                     pass
+
+
+def _context_deadline(text: str) -> bool:
+    return "context deadline exceeded" in " ".join(text.lower().split())
 
 
 def _subprocess_runner(argv: list[str], timeout: float, env: dict) -> tuple[int, str]:

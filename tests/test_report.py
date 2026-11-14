@@ -218,6 +218,7 @@ def test_report_still_fails_on_a_real_read_error():
 def test_urllib_timeout_and_408_are_skips(monkeypatch):
     from core.config import load_regions
 
+    monkeypatch.setattr("core.fleet.http.time.sleep", lambda _seconds: None)
     calls = []
 
     def timeout(request, timeout=30):
