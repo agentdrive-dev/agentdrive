@@ -20,6 +20,9 @@ from core.errors import ConfigError
 # Climate keeper, seat cooling, and bioweapon defense are added the same way.
 # Charge port open/close and software schedule/cancel are already upstream commands.
 # Automatic seat climate is upstream `auto-seat-and-climate`.
+# The external speaker is `boombox`, added to the local tesla-control build.
+# Upstream does not register it. Sound 0 is a random fart. Sound 2000 is the locate ping.
+# It plays one sound and stops.
 TOOL_ARGS: dict[str, tuple[str, ...]] = {
     "flash_lights": ("flash-lights",),
     "climate_on": ("climate-on",),
@@ -59,6 +62,8 @@ TOOL_ARGS: dict[str, tuple[str, ...]] = {
     "bioweapon_off": ("bioweapon-mode", "off"),
     "software_schedule": ("software-update-start",),
     "software_cancel": ("software-update-cancel",),
+    "boombox_fart": ("boombox", "0"),
+    "boombox_ping": ("boombox", "2000"),
 }
 
 VERIFY_KIND = {
@@ -100,6 +105,8 @@ VERIFY_KIND = {
     "bioweapon_off": "bioweapon_off",
     "software_schedule": "software_scheduled",
     "software_cancel": "software_cancelled",
+    "boombox_fart": "parked_only",
+    "boombox_ping": "parked_only",
 }
 
 
@@ -118,6 +125,8 @@ ACTION_NAMES = {
     "software_schedule": "schedule software update",
     "software_cancel": "cancel software update",
     "bioweapon_on": "turn bioweapon defense on",
+    "boombox_fart": "boombox fart",
+    "boombox_ping": "boombox ping",
 }
 
 # Normalized command strings a schedule must not store. `drive` is the signed remote-start command.
@@ -200,7 +209,7 @@ def schedule_blocks(command, sensitive: set[str] | None = None) -> bool:
         return True
     if _blocks_charge_schedule(raw, text) or _blocks_charge_amps(text) or _blocks_departure_change(text):
         return True
-    if _blocks_phase8(text):
+    if _blocks_phase8(text) or _blocks_boombox(text):
         return True
     if _blocks_request_approval(text):
         return True
@@ -243,6 +252,16 @@ def _blocks_phase8(text: str) -> bool:
     if text.startswith("software-schedule") or text.startswith("software-cancel"):
         return True
     if text.startswith("software-update-start") or text.startswith("software-update-cancel"):
+        return True
+    return False
+
+
+def _blocks_boombox(text: str) -> bool:
+    """Block playing the external speaker. The quiet-hours setting stays allowed."""
+    parts = text.split()
+    if parts[:1] == ["boombox"] and (len(parts) == 1 or parts[1] in {"fart", "ping", "0", "2000"}):
+        return True
+    if text.startswith("boombox-fart") or text.startswith("boombox-ping"):
         return True
     return False
 

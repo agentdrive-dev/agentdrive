@@ -693,7 +693,11 @@ def test_installer_does_not_add_a_tesla_control_patch_for_these_commands():
     assert "precondition-schedule" not in text
     assert "set_scheduled_departure" not in text
     names = {path.name for path in (ROOT / "setup").glob("patch_tesla_control*.py")}
-    assert names == {"patch_tesla_control_defrost.py", "patch_tesla_control_phase8.py"}
+    assert names == {
+        "patch_tesla_control_defrost.py",
+        "patch_tesla_control_phase8.py",
+        "patch_tesla_control_boombox.py",
+    }
 
 
 def test_readme_mentions_both_and_does_not_add_a_wake_caveat():

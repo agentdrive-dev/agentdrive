@@ -80,6 +80,8 @@ capabilities:
     - software_schedule
     - software_cancel
     - bioweapon_on
+    - boombox_fart
+    - boombox_ping
   charging_reads:
     - nearby_charging_sites
     - charging_history
