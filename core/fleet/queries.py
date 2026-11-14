@@ -158,8 +158,58 @@ class FleetReader:
         path = charging.nearby_path(self.regions, _check_vehicle_id(vehicle_id))
         return charging.normalize_nearby(self._get(path))
 
-    def charging_history(self) -> dict:
-        return charging.normalize_history(self._get(charging.history_path(self.regions)))
+    def charging_history(self) -> list[dict]:
+        """Account charging history. This does not call the vehicle and does not wake it."""
+        path = charging.history_path(self.regions)
+        records: list[dict] = []
+        seen: set[tuple] = set()
+        for page in range(1, 11):
+            try:
+                payload = self._get(f"{path}?pageNo={page}&pageSize=50")
+            except QueryError as exc:
+                if exc.status in (401, 403):
+                    raise QueryError(
+                        "Charging history needs the vehicle_charging_cmds scope. Sign in again and include it.",
+                        status=exc.status,
+                    ) from exc
+                raise
+            batch = charging.history_rows(payload)
+            if not batch:
+                break
+            fresh = []
+            for row in batch:
+                key = (row["date"], row["site"], row["energy"], row["cost"], row["invoice_id"])
+                if key in seen:
+                    continue
+                seen.add(key)
+                fresh.append(row)
+            if not fresh:
+                break
+            records.extend(fresh)
+            if len(batch) < 50:
+                break
+        return records
 
-    def charging_invoice(self, invoice_id: str) -> dict:
-        return charging.normalize_invoice(self._get(charging.invoice_path(self.regions, invoice_id)))
+    def charging_invoice_pdf(self, invoice_id: str) -> bytes:
+        """Download one invoice PDF. The caller writes it only when asked."""
+        path = charging.invoice_path(self.regions, invoice_id)
+        headers = self._headers()
+        headers["Accept"] = "application/pdf"
+        status, payload = self.http.request_bytes("GET", self._url(path), headers)
+        if status in (401, 403):
+            raise QueryError(
+                "Charging invoices need the vehicle_charging_cmds scope. Sign in again and include it.",
+                status=status,
+            )
+        if status == 404:
+            raise QueryError("That invoice was not found.", status=status)
+        if status >= 400 or not payload.startswith(b"%PDF"):
+            raise QueryError("The invoice was not a PDF.", status=status)
+        return payload
+
+    def release_notes(self, vehicle_id: str, *, staged: bool = False) -> dict:
+        """Official release notes. Call this only when the vehicle list already says online."""
+        path = fill_path(endpoint(self.regions, "release_notes"), vehicle_id=_check_vehicle_id(vehicle_id))
+        if staged:
+            path = f"{path}?staged=true"
+        return self._get(path)

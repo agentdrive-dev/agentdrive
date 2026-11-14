@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 
-from core.fleet.snapshot import Observation
+from core.fleet.snapshot import Observation, driver_seat_text
 
 MILES_TO_KM = 1.609344
 
@@ -58,6 +58,7 @@ def vehicle_report(name: str, observation: Observation) -> VehicleReport:
         ),
         f"Charge connection: {charging}",
         f"Locked: {_yes_no(observation.locked)}",
+        f"Driver seat: {driver_seat_text(observation.driver_present)}",
         f"Gear: {_gear(observation)}",
         f"Doors, windows, and trunk: {_closures(observation)}",
         f"Sentry: {_on_off(observation.sentry_on)}",
@@ -77,6 +78,8 @@ def vehicle_report(name: str, observation: Observation) -> VehicleReport:
         "charge_limit_percent": observation.charge_limit_soc,
         "charging_state": observation.charging_state,
         "locked": observation.locked,
+        "driver_present": observation.driver_present,
+        "driver_seat": driver_seat_text(observation.driver_present),
         "shift_state": observation.shift_state,
         "speed": observation.speed,
         "parked": _parked(observation),

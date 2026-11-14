@@ -42,6 +42,15 @@ class HttpClient(Protocol):
     def get_text(self, url: str, timeout: float = 20) -> tuple[int, str]:
         """Return the status code and the response body as text."""
 
+    def request_bytes(
+        self,
+        method: str,
+        url: str,
+        headers: dict[str, str],
+        timeout: float = 60,
+    ) -> tuple[int, bytes]:
+        """Return the status code and the raw body. Used for invoice PDFs."""
+
 
 def build_request(
     url: str,
@@ -140,3 +149,22 @@ class UrllibClient:
             return exc.code, exc.read().decode("utf-8", errors="replace")
         except (URLError, TimeoutError) as exc:
             raise HttpError("Public key URL could not be reached") from None
+
+    def request_bytes(
+        self,
+        method: str,
+        url: str,
+        headers: dict[str, str],
+        timeout: float = 60,
+    ) -> tuple[int, bytes]:
+        try:
+            with open_url(url, method=method, headers=headers, timeout=timeout) as response:
+                return response.status, response.read()
+        except HTTPError as exc:
+            return exc.code, exc.read()
+        except TimeoutError:
+            raise HttpError("Fleet API request timed out", timed_out=True) from None
+        except URLError as exc:
+            if isinstance(getattr(exc, "reason", None), TimeoutError):
+                raise HttpError("Fleet API request timed out", timed_out=True) from None
+            raise HttpError("Fleet API request failed") from None

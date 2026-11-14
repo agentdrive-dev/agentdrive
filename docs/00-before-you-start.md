@@ -38,7 +38,11 @@ Advice does not change the car. A charging change still needs my confirmation.
 Also schedule a health check that runs agentdrive check --json every 30 minutes.
 Notify me only when it exits 1. Exit 0 means nothing new, including when the car
 is asleep and when the same alert is still active. That alert stays quiet until
-it clears and later returns. Do not wake the car from that check, and do not
+it clears and later returns. An energy-mode alert repeats at most once an hour
+while climate, climate keeper, or bioweapon defense stays on and the driver seat
+is empty, and it is not sent when someone is in the driver seat. The driver-seat
+reading covers only the driver seat and is not a guarantee nobody is inside.
+Do not wake the car from that check, and do not
 schedule unlock, turning sentry off, the trunk, the front trunk, remote start, a charging change, or a departure schedule change. This check is separate from the one daily
 morning job above. AgentDrive does not run it itself.
 If several cars are on the account, ask me for a nickname for each, run `agentdrive cars name`, and set a default only if I choose one. Pass `--car <nickname>` when a command is for one car. With one car, keep the commands as they are. With several cars, run the health check and `agentdrive history due` once per car. A confirmation names the car, for example `I confirm unlock on daily`.
@@ -97,7 +101,7 @@ bash setup/install.sh
 
 `gate-present` prints the disclaimer and the security file in full.
 
-After install, the AI agent schedules `agentdrive check --json` every 30 minutes. Notify only when that command exits 1. Exit 0 means nothing new, including when the car is asleep and when the same alerts are still active. The same alert stays quiet until it clears and later returns. The check does not wake the car. Do not schedule unlock, turning sentry off, the trunk, the front trunk, remote start, a charging change, or a departure schedule change on it. AgentDrive does not run that job. It is separate from the daily morning briefing. Precise coordinates are used only when you ask for a precise location or a departure place taken from the car, and they are not saved in the local history.
+After install, the AI agent schedules `agentdrive check --json` every 30 minutes. Notify only when that command exits 1. Exit 0 means nothing new, including when the car is asleep and when the same alerts are still active. The same alert stays quiet until it clears and later returns. An energy-mode alert (climate on, climate keeper keep, dog, or camp, or bioweapon defense) while parked and the driver seat is empty repeats at most once an hour until the mode is off, and it is not sent when someone is in the driver seat. The parked-and-unlocked alert is also skipped when someone is in the driver seat. That reading covers only the driver seat and is not a guarantee nobody is inside. The check does not wake the car. Do not schedule unlock, turning sentry off, the trunk, the front trunk, remote start, a charging change, or a departure schedule change on it. AgentDrive does not run that job. It is separate from the daily morning briefing. Precise coordinates are used only when you ask for a precise location or a departure place taken from the car, and they are not saved in the local history.
 
 After install, the AI agent reads `agentdrive report-schedule`. The default is 07:30 local time and enabled. It creates one daily job at that time that runs `agentdrive history due` and sends that usage briefing. On Monday it sends the previous week, on the 1st the previous month, and on 1 January the previous year. Every other morning it sends the previous day. `agentdrive report` remains available when you want the car's current status, including the skip line when the car is asleep. A later change of time, or turning the briefing off, is `agentdrive report-schedule set HH:MM`, `disable`, or `enable`. The AI agent then updates its own job. AgentDrive does not install that job.
 

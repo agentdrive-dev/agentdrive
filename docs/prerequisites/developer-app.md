@@ -16,7 +16,7 @@ Open <https://developer.tesla.com> and sign in with the vehicle account. Complet
 
 ![Diagram: you submit a unique application name and the application exists](../images/developer-app-2.svg)
 
-Create an application with a unique English name. Describe personal use of your own vehicle: occasional reads and occasional commands, not a service for other people. Select the scopes you actually want. The default set for this toolkit is `openid`, `offline_access`, `user_data`, `vehicle_device_data`, `vehicle_location`, and `vehicle_cmds`. `vehicle_location` is the Fleet API scope required to read location, including the coarse area from `agentdrive where`. Add `vehicle_charging_cmds` only if you want charging changes later. If the portal's fields do not match a private individual, stop and read the form. Do not invent a company.
+Create an application with a unique English name. Describe personal use of your own vehicle: occasional reads and occasional commands, not a service for other people. Select the scopes you actually want. The default set for this toolkit is `openid`, `offline_access`, `user_data`, `vehicle_device_data`, `vehicle_location`, `vehicle_cmds`, and `vehicle_charging_cmds`. `vehicle_location` is the Fleet API scope required to read location, including the coarse area from `agentdrive where`. `vehicle_charging_cmds` is required for official charging history and invoices. If the portal's fields do not match a private individual, stop and read the form. Do not invent a company.
 
 ## Step 3 — Set the origin and the redirect to the public-key hostname
 

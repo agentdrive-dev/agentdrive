@@ -53,6 +53,19 @@ class Observation:
     departure_schedules: tuple[DepartureRow, ...] = ()
     departure_schedule_section_present: bool = False
     departure_schedule_list_present: bool = False
+    driver_present: bool | None = None
+    climate_keeper: str | None = None
+    bioweapon_on: bool | None = None
+    seat_cool: dict[str, int] | None = None
+    auto_seat_left: bool | None = None
+    auto_seat_right: bool | None = None
+    seat_cooling: bool | None = None
+    charge_port_open: bool | None = None
+    charge_port_latch: str | None = None
+    charge_cable: str | None = None
+    car_version: str | None = None
+    software_update_status: str | None = None
+    software_update_version: str | None = None
 
 
 def _section(payload: dict, name: str) -> dict:
@@ -158,6 +171,59 @@ def seat_heater_names() -> tuple[str, ...]:
     return tuple(SEAT_API_FIELDS.values())
 
 
+# Front seats only. The signed seat-cooler command has no rear positions.
+SEAT_COOLER_NAMES = ("front-left", "front-right")
+SEAT_COOLER_LEVELS = {"off": 0, "low": 1, "medium": 2, "high": 3}
+_SEAT_COOLER_FIELDS = {
+    "front-left": ("seat_fan_front_left", "seat_cooler_left"),
+    "front-right": ("seat_fan_front_right", "seat_cooler_right"),
+}
+_KEEPER_NAMES = {
+    "0": "off",
+    "off": "off",
+    "1": "keep",
+    "on": "keep",
+    "keep": "keep",
+    "2": "dog",
+    "dog": "dog",
+    "3": "camp",
+    "camp": "camp",
+}
+_EMPTY_CABLE = {"", "<invalid>", "invalid", "<null>", "null", "none", "disconnected"}
+
+
+def climate_keeper_name(value) -> str | None:
+    """Map a climate-keeper reading to off, keep, dog, or camp."""
+    if isinstance(value, bool) or value is None or value == "":
+        return None
+    if isinstance(value, (int, float)):
+        key = str(int(value))
+    else:
+        key = str(value).strip().lower()
+    return _KEEPER_NAMES.get(key)
+
+
+def driver_seat_text(present: bool | None) -> str:
+    """The check and report line. Unknown is not treated as empty."""
+    if present is True:
+        return "someone appears to be in the driver seat"
+    if present is False:
+        return "no one detected in the driver seat"
+    return "the driver-seat sensor did not report"
+
+
+def cable_plugged(observation: Observation) -> bool:
+    """True when the charge state says a cable is still attached."""
+    latch = str(observation.charge_port_latch or "").strip().lower()
+    if latch == "engaged":
+        return True
+    cable = str(observation.charge_cable or "").strip().lower()
+    if cable not in _EMPTY_CABLE:
+        return True
+    state = str(observation.charging_state or "").strip().lower()
+    return bool(state) and state != "disconnected"
+
+
 def _heater_level(value) -> int | None:
     if isinstance(value, bool) or value is None or value == "":
         return None
@@ -177,6 +243,38 @@ def _seat_heat(climate: dict) -> dict[str, int]:
         if level is not None:
             heaters[name] = level
     return heaters
+
+
+def _seat_cool(climate: dict) -> dict[str, int]:
+    coolers: dict[str, int] = {}
+    for name, keys in _SEAT_COOLER_FIELDS.items():
+        for key in keys:
+            if key not in climate:
+                continue
+            level = _heater_level(climate.get(key))
+            if level is not None:
+                coolers[name] = level
+                break
+    return coolers
+
+
+def _present(value) -> bool | None:
+    if isinstance(value, bool):
+        return value
+    if value in (0, 1) and not isinstance(value, bool):
+        return bool(value)
+    return None
+
+
+def _text(value) -> str | None:
+    if value is None or isinstance(value, bool):
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def _flag(value) -> bool | None:
+    return value if isinstance(value, bool) else None
 
 
 def _optional_mode(value) -> int | str | None:
@@ -219,6 +317,11 @@ def from_vehicle_data(payload: dict) -> Observation:
     vehicle = _section(payload, "vehicle_state")
     climate = _section(payload, "climate_state")
     charge = _section(payload, "charge_state")
+    config = _section(payload, "vehicle_config")
+    update = vehicle.get("software_update") if isinstance(vehicle.get("software_update"), dict) else {}
+    bioweapon = _flag(climate.get("bioweapon_mode"))
+    if bioweapon is None:
+        bioweapon = _flag(climate.get("bioweapon_mode_on"))
     request = charge.get("charge_current_request")
     amps = charge.get("charge_amps")
     if amps is None:
@@ -264,4 +367,17 @@ def from_vehicle_data(payload: dict) -> Observation:
         departure_schedules=departures,
         departure_schedule_section_present=departure_section,
         departure_schedule_list_present=departure_list,
+        driver_present=_present(vehicle.get("is_user_present")) if "is_user_present" in vehicle else None,
+        climate_keeper=climate_keeper_name(climate.get("climate_keeper_mode")) if "climate_keeper_mode" in climate else None,
+        bioweapon_on=bioweapon,
+        seat_cool=_seat_cool(climate),
+        auto_seat_left=_flag(climate.get("auto_seat_climate_left")) if "auto_seat_climate_left" in climate else None,
+        auto_seat_right=_flag(climate.get("auto_seat_climate_right")) if "auto_seat_climate_right" in climate else None,
+        seat_cooling=_flag(config.get("has_seat_cooling")) if "has_seat_cooling" in config else None,
+        charge_port_open=_flag(charge.get("charge_port_door_open")) if "charge_port_door_open" in charge else None,
+        charge_port_latch=_text(charge.get("charge_port_latch")) if "charge_port_latch" in charge else None,
+        charge_cable=_text(charge.get("conn_charge_cable")) if "conn_charge_cable" in charge else None,
+        car_version=_text(vehicle.get("car_version")),
+        software_update_status=_text(update.get("status")) if update else None,
+        software_update_version=_text(update.get("version")) if update else None,
     )

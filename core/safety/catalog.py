@@ -17,6 +17,9 @@ from core.errors import ConfigError
 # Charging current is upstream `charging-set-amps` (`set_charging_amps`).
 # Max defrost is `preconditioning-max`, added to the local tesla-control build because
 # upstream does not register SetPreconditioningMax. The manual override is not sent.
+# Climate keeper, seat cooling, and bioweapon defense are added the same way.
+# Charge port open/close and software schedule/cancel are already upstream commands.
+# Automatic seat climate is upstream `auto-seat-and-climate`.
 TOOL_ARGS: dict[str, tuple[str, ...]] = {
     "flash_lights": ("flash-lights",),
     "climate_on": ("climate-on",),
@@ -44,6 +47,18 @@ TOOL_ARGS: dict[str, tuple[str, ...]] = {
     "charging_schedule_remove": ("charging-schedule-remove",),
     "departure_schedule_set": ("precondition-schedule-add",),
     "departure_schedule_remove": ("precondition-schedule-remove",),
+    "climate_keeper_off": ("climate-keeper", "off"),
+    "climate_keeper_keep": ("climate-keeper", "keep"),
+    "climate_keeper_dog": ("climate-keeper", "dog"),
+    "climate_keeper_camp": ("climate-keeper", "camp"),
+    "charge_port_open": ("charge-port-open",),
+    "charge_port_close": ("charge-port-close",),
+    "seat_cooler": ("seat-cooler",),
+    "auto_seat_climate": ("auto-seat-and-climate",),
+    "bioweapon_on": ("bioweapon-mode", "on"),
+    "bioweapon_off": ("bioweapon-mode", "off"),
+    "software_schedule": ("software-update-start",),
+    "software_cancel": ("software-update-cancel",),
 }
 
 VERIFY_KIND = {
@@ -73,6 +88,18 @@ VERIFY_KIND = {
     "charging_schedule_remove": "charge_schedule_remove",
     "departure_schedule_set": "departure_schedule_set",
     "departure_schedule_remove": "departure_schedule_remove",
+    "climate_keeper_off": "climate_keeper_off",
+    "climate_keeper_keep": "climate_keeper_keep",
+    "climate_keeper_dog": "climate_keeper_dog",
+    "climate_keeper_camp": "climate_keeper_camp",
+    "charge_port_open": "charge_port_open",
+    "charge_port_close": "charge_port_closed",
+    "seat_cooler": "seat_cooler",
+    "auto_seat_climate": "auto_seat_climate",
+    "bioweapon_on": "bioweapon_on",
+    "bioweapon_off": "bioweapon_off",
+    "software_schedule": "software_scheduled",
+    "software_cancel": "software_cancelled",
 }
 
 
@@ -83,6 +110,14 @@ ACTION_NAMES = {
     "frunk_open": "open frunk",
     "remote_start": "enable remote start",
     "sentry_off": "turn sentry off",
+    "climate_keeper_keep": "climate keeper keep",
+    "climate_keeper_dog": "climate keeper dog",
+    "climate_keeper_camp": "climate keeper camp",
+    "charge_port_open": "open charge port",
+    "charge_port_close": "close charge port",
+    "software_schedule": "schedule software update",
+    "software_cancel": "cancel software update",
+    "bioweapon_on": "turn bioweapon defense on",
 }
 
 # Normalized command strings a schedule must not store. `drive` is the signed remote-start command.
@@ -165,6 +200,8 @@ def schedule_blocks(command, sensitive: set[str] | None = None) -> bool:
         return True
     if _blocks_charge_schedule(raw, text) or _blocks_charge_amps(text) or _blocks_departure_change(text):
         return True
+    if _blocks_phase8(text):
+        return True
     if _blocks_request_approval(text):
         return True
     head = _schedule_text(raw.split()[0])
@@ -188,6 +225,26 @@ def _blocks_request_approval(text: str) -> bool:
     if text in {"request approve", "request deny"}:
         return True
     return text.startswith("request approve ") or text.startswith("request deny ")
+
+
+def _blocks_phase8(text: str) -> bool:
+    """Block confirmation-required phase 8 commands. Reads and off states stay allowed."""
+    parts = text.split()
+    if parts[:2] == ["climate", "keeper"] and len(parts) >= 3 and parts[2] in {"keep", "dog", "camp"}:
+        return True
+    if text.startswith("climate-keeper keep") or text.startswith("climate-keeper dog") or text.startswith("climate-keeper camp"):
+        return True
+    if parts[:2] == ["bioweapon", "on"] or text.startswith("bioweapon-on") or text.startswith("bioweapon on"):
+        return True
+    if parts[:2] == ["charge", "port"] or text.startswith("charge-port"):
+        return True
+    if parts[:2] in (["software", "schedule"], ["software", "cancel"]):
+        return True
+    if text.startswith("software-schedule") or text.startswith("software-cancel"):
+        return True
+    if text.startswith("software-update-start") or text.startswith("software-update-cancel"):
+        return True
+    return False
 
 
 def _blocks_departure_change(text: str) -> bool:

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from core.fleet.snapshot import Observation
+from core.fleet.snapshot import Observation, driver_seat_text
 
 DEFAULT_TYRE_BAR = 2.5
 DEFAULT_LOW_BATTERY_PERCENT = 30
@@ -32,6 +32,9 @@ class CheckReport:
     alerts: list[Alert] = field(default_factory=list)
     tyre_bar: float = DEFAULT_TYRE_BAR
     low_battery_percent: int = DEFAULT_LOW_BATTERY_PERCENT
+    driver_present: bool | None = None
+    # Modes still running, including when the driver seat suppresses the alert.
+    energy_modes: list[str] = field(default_factory=list)
 
     @property
     def exit_code(self) -> int:
@@ -45,6 +48,8 @@ class CheckReport:
             "tyre_bar": self.tyre_bar,
             "low_battery_percent": self.low_battery_percent,
             "alerts": [{"code": item.code, "message": item.message} for item in self.alerts],
+            "driver_present": self.driver_present,
+            "driver_seat": None if self.skipped else driver_seat_text(self.driver_present),
         }
 
 
@@ -100,11 +105,42 @@ def evaluate_alerts(
         state = observation.charging_state or "error"
         alerts.append(Alert("charge_error", f"Charging reported an error ({state}). Check the cable and the charge port."))
     if _parked(observation):
-        if observation.locked is False:
+        # Occupied means someone appears to be in the driver seat. Unknown does not suppress.
+        if observation.locked is False and observation.driver_present is not True:
             alerts.append(Alert("unlocked", "The vehicle is unlocked while parked. Lock it if nobody is with it."))
         if observation.open_closure is True:
             alerts.append(Alert("open", "A door, trunk, frunk, or window is open while the vehicle is parked. Close it."))
+        if observation.driver_present is not True:
+            alerts.extend(_energy_alerts(observation))
     return alerts
+
+
+def active_energy_modes(observation: Observation) -> list[str]:
+    """Energy-heavy modes that are on while parked, whether or not the seat is occupied."""
+    if not _parked(observation):
+        return []
+    modes: list[str] = []
+    keeper = observation.climate_keeper
+    if keeper in {"keep", "dog", "camp"}:
+        modes.append(f"energy:keeper:{keeper}")
+    if observation.bioweapon_on is True:
+        modes.append("energy:bioweapon")
+    if observation.climate_on is True:
+        modes.append("energy:climate")
+    return modes
+
+
+_ENERGY_MESSAGES = {
+    "energy:climate": "Climate is on while the vehicle is parked and no one is in the driver seat.",
+    "energy:keeper:keep": "Climate keeper is set to keep while the vehicle is parked and no one is in the driver seat.",
+    "energy:keeper:dog": "Climate keeper is set to dog while the vehicle is parked and no one is in the driver seat.",
+    "energy:keeper:camp": "Climate keeper is set to camp while the vehicle is parked and no one is in the driver seat.",
+    "energy:bioweapon": "Bioweapon defense mode is on while the vehicle is parked and no one is in the driver seat.",
+}
+
+
+def _energy_alerts(observation: Observation) -> list[Alert]:
+    return [Alert(code, _ENERGY_MESSAGES[code]) for code in active_energy_modes(observation)]
 
 
 def report_from_observation(
@@ -121,6 +157,8 @@ def report_from_observation(
         alerts=alerts,
         tyre_bar=tyre_bar,
         low_battery_percent=low_battery_percent,
+        driver_present=observation.driver_present,
+        energy_modes=active_energy_modes(observation),
     )
 
 
