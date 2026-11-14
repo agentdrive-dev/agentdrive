@@ -28,7 +28,7 @@ Override a wrong detection with `bash setup/install.sh --adapter template`.
 
 ## Step 3 — What the safety gate will refuse
 
-A state-changing command is sent only when the shift state is Park and the speed is 0. Unlock, remote start, opening the front trunk, opening or closing the rear trunk, sentry off, charging changes, and setting or removing a departure schedule each need an explicit confirmation for that action. The next action needs a new one. A schedule cannot supply it, and it cannot run remote start, the rear trunk, the front trunk, sentry off, or a departure schedule change. Sentry on, seat heat, steering-wheel heat, defrost, and preconditioning the cabin now use that park check and do not add a confirmation of their own.
+A state-changing command is sent only when the shift state is Park and the speed is 0. Unlock, remote start, opening the front trunk, opening or closing the rear trunk, sentry off, charging changes, and setting or removing a departure schedule each need an explicit confirmation for that action. When you have named more than one car, that confirmation also names the car. The next action needs a new one. A schedule cannot supply it, and it cannot run remote start, the rear trunk, the front trunk, sentry off, or a departure schedule change. Sentry on, seat heat, steering-wheel heat, defrost, and preconditioning the cabin now use that park check and do not add a confirmation of their own. A family member's request for a sensitive action waits until you approve it.
 
 ## After install — health check
 

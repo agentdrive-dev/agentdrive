@@ -44,3 +44,5 @@ If I ask to turn the briefing off, run `agentdrive report-schedule disable` and 
 AgentDrive stores the time and does not run in the background.
 The same daily job is used for every shell-capable AI agent.
 Keep every secret in the config home or in the existing key and token files.
+If several cars are on the account, ask for a nickname for each and pass `--car <nickname>`. With one car, do not. A confirmation then names the car, for example `I confirm unlock on daily`.
+If a family member asks for unlock or a charging change, run it with `--as <handle>` and relay the pending-request text to the owner. The owner approves with `agentdrive request approve <id>`. Do not approve it yourself.

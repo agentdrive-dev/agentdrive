@@ -30,6 +30,7 @@ class Gateway:
         access_token: str,
         observe,
         extra_args: list[str] | None = None,
+        car: str = "",
     ) -> Observation:
         spec = self.specs.get(command)
         if spec is None:
@@ -39,7 +40,9 @@ class Gateway:
         if spec.tier == "sensitive":
             if via_schedule:
                 raise ScheduleBlocked("A schedule cannot run a sensitive command.")
-            challenge = new_challenge(command, spec.action)
+            label = " ".join(str(car or "").split())
+            summary = spec.action if not label else f"{spec.action} on {label}"
+            challenge = new_challenge(command, summary, car=label)
             response = adapter.confirm(challenge)
             self.broker.authorize(spec, challenge, response, via_schedule=False)
         args = list(spec.tool_args)

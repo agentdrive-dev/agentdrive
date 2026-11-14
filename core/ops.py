@@ -49,6 +49,7 @@ from core.fleet.queries import FleetReader, QueryError, VehicleAsleep, location_
 from core.fleet.report import VehicleReport, skipped_vehicle_report, skip_text, vehicle_report
 from core.fleet.snapshot import SEAT_API_FIELDS, SEAT_HEATER_LEVELS, Observation, from_vehicle_data, seat_heater_names
 from core.fleet.tokens import AtomicTokenStore, FleetTokenRefresher, TokenManager, audience_for
+from core.garage import resolve_vehicle
 from core.paths import resolve_key, resolve_token_file
 from core.profile.owner import load_profile
 from core.redact import mask_vin, redact
@@ -246,18 +247,24 @@ class App:
         self.region = region
         self.history = history
         self.gateway = Gateway(control)
+        self.car_name = ""
 
     def refresh(self) -> str:
         self.tokens.access_token(force=True)
         return "refreshed; tokens saved"
 
+    def prepare(self, preferred: str | None):
+        """Resolve the car from the vehicle list. This does not wake the car."""
+        return self._bind(preferred)
+
     def status(self, *, preferred: str | None, sleep=time.sleep) -> str:
-        chosen, key, observation = self._online(preferred, sleep=sleep)
+        _selection, chosen, key, observation = self._online(preferred, sleep=sleep)
         text = format_status(chosen, observation, key)
         return redact(text, [key, preferred or ""])
 
     def check(self, *, preferred: str | None, tyre_bar: float, low_battery_percent: int) -> CheckReport:
-        chosen = select_vehicle(self.reader.list_vehicles(), preferred)
+        selection = self._bind(preferred)
+        chosen = selection.row
         state = vehicle_state_name(chosen) or "unknown"
         if state != "online":
             return skipped_report(state, tyre_bar=tyre_bar, low_battery_percent=low_battery_percent)
@@ -266,8 +273,8 @@ class App:
         report = report_from_observation(observation, tyre_bar=tyre_bar, low_battery_percent=low_battery_percent)
         # History records the full online reading. Notification dedupe is separate,
         # and a skipped check never reaches this write.
-        self._remember(payload, observation, tyre_bar=tyre_bar, low_battery_percent=low_battery_percent)
-        return apply_rising_edge(self.home, report)
+        self._remember(payload, observation, tyre_bar=tyre_bar, low_battery_percent=low_battery_percent, store=selection.store)
+        return apply_rising_edge(selection.store, report)
 
     def report(self, *, preferred: str | None) -> VehicleReport:
         """Read-only briefing. A car that is not online, a timeout, or HTTP 408 is a skip.
@@ -275,7 +282,8 @@ class App:
         This never calls wake.
         """
         try:
-            chosen = select_vehicle(self.reader.list_vehicles(), preferred)
+            selection = self._bind(preferred)
+            chosen = selection.row
         except (VehicleAsleep, TimeoutError, HttpError, QueryError) as exc:
             state = _report_skip_state(exc)
             if state is None:
@@ -294,14 +302,14 @@ class App:
         observation = from_vehicle_data(payload)
         name = str(chosen.get("display_name") or "Vehicle")
         briefing = vehicle_report(name, observation)
-        self._remember(payload, observation)
+        self._remember(payload, observation, store=selection.store)
         secrets = [item for item in (str(chosen.get("vin") or ""), preferred or "") if item]
         return _redact_report(briefing, secrets)
 
     def where(self, *, preferred: str | None, precise: bool = False) -> WhereReport:
         """Area or a precise point. A sleeping or offline vehicle is not woken."""
         try:
-            chosen = select_vehicle(self.reader.list_vehicles(), preferred)
+            chosen = self._bind(preferred).row
         except VehicleAsleep:
             return WhereReport(kind="skipped", state="asleep")
         state = vehicle_state_name(chosen) or "unknown"
@@ -323,7 +331,7 @@ class App:
 
     def charge_schedule_show(self, *, preferred: str | None) -> ScheduleReport:
         """Read the in-car timetable. A car that is not online is left asleep."""
-        chosen = select_vehicle(self.reader.list_vehicles(), preferred)
+        chosen = self._bind(preferred).row
         state = vehicle_state_name(chosen) or "unknown"
         if state != "online":
             return ScheduleReport(
@@ -391,12 +399,12 @@ class App:
             raise ConfigError("unknown command")
         extra_args = list(extra) if extra is not None else _extra(name, argument)
         if name == "wake":
-            chosen = select_vehicle(self.reader.list_vehicles(), preferred)
-            key = vehicle_key(chosen)
+            selection = self._bind(preferred)
+            key = vehicle_key(selection.row)
             token = self.tokens.access_token()
             self.control.run(vin=key, access_token=token, args=["wake"])
-            return "OK: wake"
-        _key, observation = self._read_online(preferred, sleep=sleep)
+            return _tagged("OK: wake", selection.label)
+        _key, observation, label = self._read_online(preferred, sleep=sleep)
         token = self.tokens.access_token()
 
         def observe() -> Observation:
@@ -413,14 +421,23 @@ class App:
             access_token=token,
             observe=observe,
             extra_args=extra_args,
+            car=label,
         )
         if name == "charge-amps" and extra_args:
-            return charge_amps_result(extra_args[0], observed)
+            return _tagged(charge_amps_result(extra_args[0], observed), label)
         if extra_args:
-            return f"OK: {name} {' '.join(extra_args)}"
-        return f"OK: {name}"
+            return _tagged(f"OK: {name} {' '.join(extra_args)}", label)
+        return _tagged(f"OK: {name}", label)
 
-    def _remember(self, payload, observation, *, tyre_bar=None, low_battery_percent=None) -> None:
+    def _bind(self, preferred: str | None):
+        return resolve_vehicle(
+            self.home,
+            self.reader.list_vehicles(),
+            car_name=self.car_name or None,
+            preferred=preferred,
+        )
+
+    def _remember(self, payload, observation, *, tyre_bar=None, low_battery_percent=None, store=None) -> None:
         """Save a parked snapshot. A failure is printed and does not change the command."""
         if not self.history:
             return
@@ -430,7 +447,7 @@ class App:
             from core.history.store import record_parked_snapshot
 
             record_parked_snapshot(
-                self.home,
+                Path(store) if store is not None else self.home,
                 payload if isinstance(payload, dict) else {},
                 observation,
                 tyre_bar=float(tyre_bar),
@@ -439,18 +456,19 @@ class App:
         except Exception as exc:
             _remember_failure(exc)
 
-    def _online(self, preferred: str | None, *, sleep) -> tuple[dict, str, Observation]:
-        chosen = select_vehicle(self.reader.list_vehicles(), preferred)
+    def _online(self, preferred: str | None, *, sleep):
+        selection = self._bind(preferred)
+        chosen = selection.row
         key = vehicle_key(chosen)
         if vehicle_state_name(chosen) != "online":
             woken = self.reader.wake_until_online(key, sleep=sleep)
             chosen = {**chosen, **woken, "state": woken.get("state") or "online"}
         payload = self.reader.vehicle_data(key, DATA_ENDPOINTS)
-        return chosen, key, from_vehicle_data(payload)
+        return selection, chosen, key, from_vehicle_data(payload)
 
-    def _read_online(self, preferred: str | None, *, sleep) -> tuple[str, Observation]:
-        _chosen, key, observation = self._online(preferred, sleep=sleep)
-        return key, observation
+    def _read_online(self, preferred: str | None, *, sleep) -> tuple[str, Observation, str]:
+        selection, _chosen, key, observation = self._online(preferred, sleep=sleep)
+        return key, observation, selection.label
 
     def _charge_schedule_command(
         self,
@@ -461,7 +479,7 @@ class App:
         statement: str | None,
         sleep,
     ) -> str:
-        key, _observation = self._read_online(preferred, sleep=sleep)
+        key, _observation, label = self._read_online(preferred, sleep=sleep)
         token = self.tokens.access_token()
 
         def observe() -> Observation:
@@ -478,17 +496,18 @@ class App:
             access_token=token,
             observe=observe,
             extra_args=tool_args[1:],
+            car=label,
         )
         if spec_name == "charging_schedule_set":
             found = matching_ids(observed.charge_schedules, tool_args[1:])
             if found:
-                return "OK: charge-schedule set id " + " ".join(found)
-            return "OK: charge-schedule set"
-        return f"OK: charge-schedule remove {tool_args[-1]}"
+                return _tagged("OK: charge-schedule set id " + " ".join(found), label)
+            return _tagged("OK: charge-schedule set", label)
+        return _tagged(f"OK: charge-schedule remove {tool_args[-1]}", label)
 
     def departure_show(self, *, preferred: str | None) -> DepartureReport:
         """Read departure schedules. A car that is not online is left asleep."""
-        chosen = select_vehicle(self.reader.list_vehicles(), preferred)
+        chosen = self._bind(preferred).row
         state = vehicle_state_name(chosen) or "unknown"
         if state != "online":
             return DepartureReport(
@@ -570,7 +589,7 @@ class App:
         sleep,
         spec: DepartureWrite | None = None,
     ) -> str:
-        key, _observation = self._read_online(preferred, sleep=sleep)
+        key, _observation, label = self._read_online(preferred, sleep=sleep)
         if spec is not None and (spec.latitude is None or spec.longitude is None):
             latitude, longitude = self._read_precise_location(key)
             spec = spec.with_location(latitude, longitude)
@@ -593,13 +612,23 @@ class App:
             access_token=token,
             observe=observe,
             extra_args=tool_args[1:],
+            car=label,
         )
         if spec_name == "departure_schedule_set":
             found = matching_departure_ids(observed.departure_schedules, tool_args[1:])
             if found:
-                return "OK: departure set id " + " ".join(found)
-            return "OK: departure set"
-        return f"OK: departure remove {tool_args[-1]}"
+                return _tagged("OK: departure set id " + " ".join(found), label)
+            return _tagged("OK: departure set", label)
+        return _tagged(f"OK: departure remove {tool_args[-1]}", label)
+
+
+def _tagged(text: str, label: str) -> str:
+    """Name the car on the first line when a confirmation has to name it."""
+    if not label:
+        return text
+    head, sep, tail = text.partition("\n")
+    named = f"{head} on {label}"
+    return named + sep + tail if sep else named
 
 
 def _extra(name: str, argument: str | None) -> list[str] | None:
@@ -636,10 +665,18 @@ def _cli_adapter(statement: str | None):
         phrase = _action_phrase(challenge)
         if statement is not None:
             return statement
+        car = str(getattr(challenge, "car", "") or "").strip()
         if not sys.stdin.isatty():
+            if car:
+                raise ConfirmationRequired(
+                    "This action needs an explicit confirmation. "
+                    f"Pass --confirm with a sentence that includes confirm, the car, and {phrase}."
+                )
             raise ConfirmationRequired(
                 f"This action needs an explicit confirmation. Pass --confirm with a sentence that includes confirm and {phrase}."
             )
+        if car:
+            return input(f"Confirm {phrase}. Type a sentence that names the action and the car and includes confirm: ")
         return input(f"Confirm {phrase}. Type a sentence that names the action and includes confirm: ")
 
     return TemplateAdapter(prompter)

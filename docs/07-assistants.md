@@ -31,7 +31,7 @@ Copy `adapters/template.py` for a host that is not listed. The same five operati
 Setup for an AI agent includes this instruction: set up a recurring health check by default. The routine runs `agentdrive check --json` every 30 minutes. It is read-only. It reads the vehicle list first and does not wake a sleeping car. Exit 0 means there is nothing new to report, including when the car is asleep and when the same alerts are still active, so the AI agent stays quiet. Exit 1 means a new alert (tyre pressure, TPMS warning, low battery while not charging, sentry off while the battery is low and the vehicle is not charging, unlocked or open while parked, or a charge error). Notify only on exit 1. The same alert stays quiet until it clears and later returns. `agentdrive adapter install` prints the same note. AgentDrive does not run that job and does not install cron. The morning usage briefing stays the separate daily job. The config home and the private-key path work on Windows as well as macOS and Linux.
 
 ```text
-Schedule a routine named health-check that runs `agentdrive check --json` every 30 minutes. Notify me only when the exit code is 1. Exit 0 means nothing new, including when the car is asleep and when the same alerts are still active. The same alert stays quiet until it clears and later returns. Do not wake the car from that routine. Do not schedule unlock, turning sentry off, the trunk, the front trunk, remote start, a charging change, or a departure schedule change.
+Schedule a routine named health-check that runs `agentdrive check --json` every 30 minutes. With several cars, run it once per car as `agentdrive check --json --car <nickname>`. Notify me only when the exit code is 1. Exit 0 means nothing new, including when the car is asleep and when the same alerts are still active. The same alert stays quiet until it clears and later returns. An alert on one car does not silence the same alert on another car. Do not wake the car from that routine. Do not schedule unlock, turning sentry off, the trunk, the front trunk, remote start, a charging change, or a departure schedule change.
 ```
 
 ## Daily vehicle report by default
@@ -47,7 +47,7 @@ When you ask for a different time, the AI agent runs `agentdrive report-schedule
 A host that uses cron can copy the example line printed by `agentdrive report-schedule`. AgentDrive does not install that line or a systemd timer. This is the recommended setup. It is not zero-setup: something outside AgentDrive has to run the command.
 
 ```text
-Read `agentdrive report-schedule`. If it is enabled, create a daily job at that local time that runs `agentdrive history due` and send me that briefing every day. On Monday send the previous week, on the 1st the previous month, and on 1 January the previous year. If I change the time or turn the briefing off, update the job to match the command. Do not wake the car from that job.
+Read `agentdrive report-schedule`. If it is enabled, create a daily job at that local time that runs `agentdrive history due` and send me that briefing every day. With several cars, run `agentdrive history due --car <nickname>` once per car and send each briefing on its own. On Monday send the previous week, on the 1st the previous month, and on 1 January the previous year. If I change the time or turn the briefing off, update the job to match the command. Do not wake the car from that job.
 ```
 
 ## Using more than one AI agent

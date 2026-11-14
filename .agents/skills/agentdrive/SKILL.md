@@ -1,6 +1,6 @@
 ---
 name: agentdrive
-description: Use AgentDrive to read a personal vehicle and send parked commands through the agentdrive program. Use when the user asks about battery, climate, lock state, tyre pressure, a health check, the daily vehicle report, a coarse area, an in-car charging timetable, charging current, a departure time that preconditions the cabin, sentry mode, seat or steering heat, defrost, cabin preconditioning, the rear trunk, the front trunk, remote start, or a parked command such as flash lights, lock, or charging. Do not sign vehicle commands in this skill.
+description: Use AgentDrive to read a personal vehicle and send parked commands through the agentdrive program. Use when the user asks about battery, climate, lock state, tyre pressure, a health check, the daily vehicle report, a coarse area, an in-car charging timetable, charging current, a departure time that preconditions the cabin, sentry mode, seat or steering heat, defrost, cabin preconditioning, the rear trunk, the front trunk, remote start, or a parked command such as flash lights, lock, or charging. Also use it when the user has more than one car or a family member asks for an action the owner must approve. Do not sign vehicle commands in this skill.
 ---
 
 # AgentDrive
@@ -55,6 +55,53 @@ Security trade-off of a shared key: every agent that can read the private key fi
 
 `agentdrive status` answers a direct question and may wake a sleeping vehicle. It is still not a lock, unlock, climate, or charging command. Use `agentdrive check` for the check that must happen first.
 
+## Which car
+
+`agentdrive cars` lists the cars on the account. It does not wake a car and it does not print a full VIN. A masked tail is enough to tell them apart.
+
+With one car, do not ask for a nickname and do not pass `--car`. The commands stay as they are.
+
+With several cars, ask the owner for a nickname for each car, then run `agentdrive cars name <tail> <nickname>`. The tail is the last four characters from `agentdrive cars`. Set a default only when the owner chooses one: `agentdrive cars default <nickname>`. `agentdrive cars clear-default` clears it.
+
+Pass `--car <nickname>` on a command for one car. `--car` can sit before or after the command name. If several cars are saved and there is no default and no `--car`, a command that would act on one car refuses. Do not guess.
+
+When a nickname is in use, a confirmation-required command names that car. The sentence has to include `confirm`, the action, and the nickname. Example: `I confirm unlock on daily`. `I confirm unlock` is not enough for that car, and a sentence that names a different nickname does not apply. The result line names the car too, for example `OK: unlock on daily`. With one car and no `--car`, keep the existing sentence, such as `I confirm unlock`.
+
+Health checks, alert memory, briefings, and the local history are per car. The first car that is named keeps history that was already saved. With several cars, schedule `agentdrive check --json --car <nickname>` once per car. The same alert on two cars is two alerts. The morning job runs `agentdrive history due --car <nickname>` once per car and you send each briefing on its own. With one car, `agentdrive check --json` and `agentdrive history due` stay as they are. Those commands still do not wake the car.
+
+## Family members
+
+The owner registers a handle and the actions that handle may ask for.
+
+```bash
+agentdrive family add rider
+agentdrive family allow rider lock
+agentdrive family allow rider status
+agentdrive family allow rider unlock
+agentdrive family allow rider charging
+agentdrive family list
+agentdrive family revoke rider lock
+agentdrive family remove rider
+```
+
+`charging` means the charging changes: start, stop, charge limit, charging current, and the in-car timetable changes. Low-risk actions the owner allowed, such as status or lock, run directly. Run them with `--as <handle>`.
+
+Unlock and charging changes are not run for a family member, even if the owner allowed the request and even if a confirmation sentence is on the command. Turning sentry off, the trunk, the front trunk, remote start, and departure changes are the same. The command writes a pending request and prints relay text. Read that text to the owner. Do not send it yourself, and do not approve it yourself.
+
+```bash
+agentdrive --as rider --car daily unlock
+```
+
+The owner approves or denies with the id from that text:
+
+```bash
+agentdrive request list
+agentdrive request approve <id>
+agentdrive request deny <id>
+```
+
+Approve runs the action once. The car must still be in Park at speed 0. A request expires 10 minutes after it is created. Expired, denied, and already used requests do not run. A family member cannot approve or deny their own request. Do not pass `--as` on `request approve` or `request deny`.
+
 ## Health check
 
 On install, schedule a routine that runs `agentdrive check --json` every 30 minutes. Exit 0 means there is nothing new to report, including when the vehicle is asleep and when the same alerts are still active, so stay quiet. Exit 1 means a new alert the user should hear. Notify only when the exit code is 1. The same alert stays quiet until it clears and later returns. Do not schedule unlock, turning sentry off, the trunk, the front trunk, remote start, a charging change, or a departure schedule change. `charge-amps`, `charge-schedule set`, and `charge-schedule remove` are charging changes. `departure set` and `departure remove` are departure schedule changes. `sentry-off` is a sensitive command. Do not put `agentdrive report` or `agentdrive history due` on that health-check loop. When the car is already online, `check` also saves local history, including when there is nothing new to notify. It does not wake the car to do that. AgentDrive does not run that job and does not install cron.
@@ -71,4 +118,4 @@ The same job is used for every shell-capable AI agent. Do not invent a second mo
 
 ## Secrets
 
-Never put a private key, token, client secret, authorization code, or VIN in this skill, in the AI agent's memory, or in chat.
+Never put a private key, token, client secret, authorization code, or VIN in this skill, in the AI agent's memory, or in chat. Car nicknames and family handles live in the config home. Do not copy `cars.yaml`, `family.yaml`, or `requests.json` into chat or into the git repo.

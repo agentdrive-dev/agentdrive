@@ -6,7 +6,11 @@
 
 Reads use the Fleet API: the vehicle list, `vehicle_data`, and wake. Location on firmware 2023.38 and later needs the `location_data` endpoint and the `vehicle_location` scope. `status` and `check` do not request that endpoint. `where` and `where --precise` request it only when the vehicle list already says the car is online. Precise coordinates are used only when you ask for them (`where --precise`, or a departure place taken from the car) and are not written to the local history.
 
-`agentdrive status` reads charge, climate, and vehicle state, including tyre pressures and TPMS warnings. If the vehicle list says the car is asleep, status sends one wake and then polls for up to 45 seconds. The VIN is masked. Tokens are not printed. When the account has more than one vehicle, set `AGENTDRIVE_VIN` to choose one. Otherwise the first vehicle on the account is used.
+`agentdrive status` reads charge, climate, and vehicle state, including tyre pressures and TPMS warnings. If the vehicle list says the car is asleep, status sends one wake and then polls for up to 45 seconds. The VIN is masked. Tokens are not printed.
+
+`agentdrive cars` lists the cars on the account from the vehicle list. It does not wake a car. Each line shows the nickname, the name on the account, a masked VIN tail, and whether the car is the default. `agentdrive cars name <tail> <nickname>` saves a nickname you choose. The tail is the last four characters from that list. `agentdrive cars default <nickname>` sets the car used when a command does not pass `--car`. `agentdrive cars clear-default` clears it. With one car, leave the nickname unset and the commands stay as they are. With several cars and no default, a command does not guess: pass `--car <nickname>` or set a default. `AGENTDRIVE_VIN` still selects a car when that car already has a nickname. The full VIN is not printed.
+
+Health checks, alert memory, the morning briefing, and the encrypted history are kept per car. The first car you name keeps the history and alert file that were already in the config home. Another car gets its own files under the config home. An alert that is already active on one car is still new on another car. `agentdrive history`, `agentdrive tips`, and `agentdrive service` read the selected car and do not contact it. With several cars and no default, pass `--car`. The morning job runs `agentdrive history due` once per car when you have several. The health check runs `agentdrive check --json --car <nickname>` once per car. With one car, both commands stay as they are.
 
 `agentdrive check` is the read-only health check for a schedule. It reads the vehicle list first and does not wake a sleeping car. If the car is not online, the command skips, prints that it skipped, and exits 0. That skip does not change which alerts are remembered. If the car is online it looks for a TPMS warning, a tyre below the configured bar threshold, a low battery that is not charging, sentry off while that same low battery is not charging, the car unlocked or open while parked, or a charge error. It exits 1 only when an alert is new. The printed alerts are those new ones. The same alert exits 0, and is not printed again, until it clears and later returns. A different new alert still exits 1 while an older one continues. `--json` prints a short object for the AI agent. On install, schedule `agentdrive check --json` every 30 minutes and notify only when the exit code is 1. AgentDrive does not run that job and does not install cron. The morning usage briefing stays the separate daily job at the report-schedule time. Thresholds come from `--tyre-threshold`, `--battery-threshold`, or the `tyre_pressure_bar` and `low_battery_percent` habits in the profile. The default tyre line is 2.5 bar and the default battery line is 30 percent. Sentry off uses that same battery line. The check does not request location. Remembered alert codes are stored in `$AGENTDRIVE_HOME/check-alerts.json` (or `~/.config/agentdrive/check-alerts.json`). That file is alert codes only. Do not copy it into the git repo.
 
@@ -78,7 +82,56 @@ Commands:
 | `news` | no signed command; reads the official Tesla site for the owner's country | no, and it does not wake the car |
 | `service`, `service log rotation`, `service log replacement`, `service log maintenance` | no signed command; uses the saved odometer | no, and it does not wake the car |
 
-Unlock, turning sentry off, every charging change, setting or removing a departure schedule, the rear trunk, the front trunk, and remote start go through the existing confirmation layer. A schedule cannot confirm them and cannot run sentry off, the trunk, the front trunk, remote start, or a departure schedule change. The health check stays `agentdrive check`. The morning job stays `agentdrive history due`. State-changing commands are sent only in Park at speed 0, then read back once.
+Unlock, turning sentry off, every charging change, setting or removing a departure schedule, the rear trunk, the front trunk, and remote start go through the existing confirmation layer. A schedule cannot confirm them and cannot run sentry off, the trunk, the front trunk, remote start, or a departure schedule change. When a nickname is in use for that command, the confirmation also names the car. `I confirm unlock on daily` approves unlock for the car named daily. `I confirm unlock` does not. With one car and no `--car`, the sentence stays `I confirm unlock`. The prompt is `Confirm unlock on daily. Type a sentence that names the action and the car and includes confirm:`. The result line names the car too: `OK: unlock on daily`. The health check stays `agentdrive check`. The morning job stays `agentdrive history due`. State-changing commands are sent only in Park at speed 0, then read back once.
+
+## Several cars
+
+```bash
+agentdrive cars
+agentdrive cars name 0001 daily
+agentdrive cars name 0002 weekend
+agentdrive cars default daily
+agentdrive --car weekend lock
+agentdrive unlock --car weekend --confirm "I confirm unlock on weekend"
+```
+
+`0001` and `0002` stand in for the last four characters printed by `cars`. The nickname is yours. `daily` and `weekend` are examples.
+
+## Family members
+
+You can register a handle for someone in the household and choose what they may ask for. Low-risk reads and parked actions that you allow run directly. Unlock, charging changes, turning sentry off, the trunk, the front trunk, remote start, and departure changes do not. Those become a pending request. The command prints text for the assistant to relay to you. AgentDrive does not send that message itself.
+
+```bash
+agentdrive family add rider
+agentdrive family allow rider lock
+agentdrive family allow rider status
+agentdrive family allow rider unlock
+agentdrive family allow rider charging
+agentdrive family list
+```
+
+`charging` covers start, stop, the charge limit, the charging current, and the in-car timetable changes. A family member's assistant runs the command with `--as`:
+
+```bash
+agentdrive --as rider --car daily unlock
+```
+
+That prints a pending request and does not unlock the car, even if a confirmation sentence is passed. You approve or deny it:
+
+```bash
+agentdrive request list
+agentdrive request approve ab12cd34
+agentdrive request deny ab12cd34
+```
+
+The id is the short id in the relay text. A request lasts 10 minutes. Approve runs it once, and the car must still be in Park at speed 0. A second approve, a deny, an expired request, or an approve from the same family member does not run it. Only you can approve or deny. The relay text looks like this:
+
+```text
+Pending request ab12cd34 from rider on daily: unlock.
+Created 2026-11-14T01:00:00Z. Expires 2026-11-14T01:10:00Z (10 minutes).
+This action was not run.
+Tell the owner: rider asked to unlock on daily. Approve with `agentdrive request approve ab12cd34` or deny with `agentdrive request deny ab12cd34`.
+```
 
 ## Sentry and cabin climate
 
