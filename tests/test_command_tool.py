@@ -546,10 +546,10 @@ def _run_rebuild(directory: Path, version: str | None) -> subprocess.CompletedPr
     directory.mkdir()
     bindir = directory / "bin"
     bindir.mkdir()
-    if version is not None:
-        go = bindir / "go"
-        go.write_text(_go_script(version), encoding="utf-8")
-        go.chmod(0o755)
+    # Always shadow go. A runner image may already have a new enough Go on PATH.
+    go = bindir / "go"
+    go.write_text(_go_script(version), encoding="utf-8")
+    go.chmod(0o755)
     git = bindir / "git"
     git.write_text("#!/bin/sh\necho 'git should not run' >&2\nexit 9\n", encoding="utf-8")
     git.chmod(0o755)
