@@ -4,13 +4,13 @@
 
 The private key, the token file, and `tesla-control` live on a computer the AI agent can operate. `agentdrive doctor` (the same command as `python -m core doctor`) checks the config files, the private key, the public-key URL, and the saved token, then names the adapter. A phone can approve sign-in and pairing. It cannot hold the private key for this toolkit.
 
-You provide the machine. The AI agent checks the tools. Nothing here is a fee from AgentDrive. Python, OpenSSL, curl, the GitHub CLI, and the Go toolchain are free. Go is only needed if `tesla-control` is built from source.
+You provide the machine. The AI agent checks the tools. Nothing here is a fee from AgentDrive. Python, OpenSSL, curl, the GitHub CLI, and the Go toolchain are free. Go 1.23 or newer is only needed when the car command tool is built.
 
 ## Step 1 — Provide a machine with the tools
 
 ![Diagram: you provide a computer with Python, OpenSSL, curl, and gh](../images/computer-1.svg)
 
-The machine needs Python 3.11 or newer, OpenSSL, curl, and the GitHub CLI (`gh`). `gh` is used to publish the public key to GitHub Pages after you approve `gh auth login` once. `tesla-control` comes from Tesla's vehicle-command project: <https://github.com/teslamotors/vehicle-command>. `setup/install.sh` clones that repository and runs `go build ./cmd/tesla-control`. Installing the module with Go's `@latest` selector fails because the upstream module uses replace directives, so the installer does not do that. AgentDrive uses internet (Fleet API) commands, not Bluetooth. Windows is fine for that path; Tesla's Bluetooth features in tesla-control are unsupported on Windows and unused here.
+The machine needs Python 3.11 or newer, OpenSSL, curl, and the GitHub CLI (`gh`). `gh` is used to publish the public key to GitHub Pages after you approve `gh auth login` once. `tesla-control` comes from Tesla's vehicle-command project: <https://github.com/teslamotors/vehicle-command>. `setup/install.sh` clones that repository and runs `go build ./cmd/tesla-control`. The build needs Go 1.23 or newer. Installing the module with Go's `@latest` selector fails because the upstream module uses replace directives, so the installer does not do that. AgentDrive uses internet (Fleet API) commands, not Bluetooth. Windows is fine for that path; Tesla's Bluetooth features in tesla-control are unsupported on Windows and unused here.
 
 ## Step 2 — Let the AI agent check, not guess
 
@@ -38,7 +38,7 @@ The four version commands succeed, `tesla-control -h` prints help, and `~/.confi
 
 `gh` is missing. Install the GitHub CLI before the public-key step. The rest of the toolkit can wait.
 
-`tesla-control` is not on `PATH`. Re-run `setup/install.sh` so it can clone the vehicle-command repository and build `./cmd/tesla-control`. The binary is placed in `$AGENTDRIVE_HOME/bin`. Do not substitute a random binary from a forum.
+`tesla-control` is not on `PATH`. Update with `agentdrive update`. If you only pull the code, AgentDrive rebuilds its car command tool by itself the next time it needs it. The binary is placed in `$AGENTDRIVE_HOME/bin`. Do not substitute a random binary from a forum.
 
 The private key was created inside the git repository. Move it to `~/.config/agentdrive` (or `$AGENTDRIVE_HOME`) and do not commit it.
 

@@ -40,7 +40,7 @@ AgentDrive does not run in the background. After `setup/install.sh` finishes, th
 
 ## Update an existing install
 
-`agentdrive update` brings the checkout in line with the latest `main` and re-runs the install steps, including the `tesla-control` build. It does not modify private configuration under `$AGENTDRIVE_HOME`: tokens, keys, client credentials, `host.yaml`, or vehicle files. `setup/install.sh --update` is the same tooling step without the adapter detection that writes `host.yaml`.
+Update with `agentdrive update`. If you only pull the code, AgentDrive rebuilds its car command tool by itself the next time it needs it. Private files stay as they are: tokens, keys, client credentials, `host.yaml`, and vehicle files.
 
 ## Expected result
 
