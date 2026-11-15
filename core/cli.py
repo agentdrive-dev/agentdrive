@@ -11,6 +11,7 @@ from adapters.detect import VALID_ADAPTERS, resolve_adapter
 from adapters.grokbot import INSTALL_NOTE as GROK_INSTALL_NOTE
 from adapters.muse import INSTALL_NOTE as MUSE_INSTALL_NOTE
 from core.fleet.check_state import HEALTH_CHECK_NOTE
+from core import command_tool
 from core.config import repo_root
 from core.doctor import run_doctor
 from core.errors import AgentDriveError, AmbiguousAdapter, ConfigError
@@ -473,6 +474,7 @@ def _adapter(args, home: Path) -> int:
 
 
 def _doctor(args, home: Path) -> int:
+    _ensure_tool(home)
     if args.secrets_dir:
         secrets = Path(args.secrets_dir)
         key = secrets / "private-key.pem"
@@ -692,6 +694,7 @@ def _charge_schedule(args, home: Path) -> int:
         if held is not None:
             print(scrub(held))
             return 0
+        _ensure_tool(home, app)
         print(
             scrub(
                 app.charge_schedule_set(
@@ -709,6 +712,7 @@ def _charge_schedule(args, home: Path) -> int:
         if held is not None:
             print(scrub(held))
             return 0
+        _ensure_tool(home, app)
         print(
             scrub(
                 app.charge_schedule_remove(
@@ -763,6 +767,7 @@ def _departure(args, home: Path) -> int:
         if held is not None:
             print(scrub(held))
             return 0
+        _ensure_tool(home, app)
         print(
             scrub(
                 app.departure_set(
@@ -780,6 +785,7 @@ def _departure(args, home: Path) -> int:
         if held is not None:
             print(scrub(held))
             return 0
+        _ensure_tool(home, app)
         print(
             scrub(
                 app.departure_remove(
@@ -813,6 +819,7 @@ def _boombox(args, home: Path) -> int:
     if held is not None:
         print(scrub(held))
         return 0
+    _ensure_tool(home, app)
     print(
         scrub(
             app.command(
@@ -861,6 +868,7 @@ def _vehicle(args, home: Path) -> int:
         print(scrub(held))
         return 0
     statement = getattr(args, "confirm", None)
+    _ensure_tool(home, app)
     print(
         scrub(
             app.command(
@@ -903,6 +911,17 @@ def _normalize_global(argv: list[str] | None) -> list[str] | None:
         rest.append(token)
         index += 1
     return pulled + rest
+
+
+def _ensure_tool(home: Path, app=None) -> None:
+    """Rebuild a stale car command tool, then point the runner at the new binary."""
+    command_tool.ensure_command_tool(home)
+    control = getattr(app, "control", None)
+    if control is None or not hasattr(control, "binary"):
+        return
+    candidate = Path(home) / "bin" / "tesla-control"
+    if candidate.is_file():
+        control.binary = str(candidate)
 
 
 def _open_app(home: Path, args):
@@ -1009,6 +1028,7 @@ def _software(args, home: Path) -> int:
     if held is not None:
         print(scrub(held))
         return 0
+    _ensure_tool(home, app)
     print(
         scrub(
             app.command(
@@ -1091,6 +1111,7 @@ def _ready_saved(home: Path, record: dict, *, override: bool = False) -> None:
 
 
 def _execute_saved(home: Path, record: dict, *, override: bool = False) -> str:
+    _ensure_tool(home)
     app = build_app(home)
     garage = load_garage(home)
     car = garage.by_id(str(record.get("car_id") or "")) if record.get("car_id") else None

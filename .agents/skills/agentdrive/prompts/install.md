@@ -7,7 +7,7 @@ Do not install anything until I reply in a later message with the acceptance sen
 
 After I accept, install from the repository root with bash setup/install.sh --adapter muse.
 Git Bash can run that script on Windows. If the shell is PowerShell only, run python -m pip install -e ., set the variables below, and run python -m core adapter install --adapter muse.
-Building tesla-control still needs Go. Its Bluetooth path does not support Windows. Internet commands are what AgentDrive uses.
+Building tesla-control still needs Go 1.23 or newer. Its Bluetooth path does not support Windows. Internet commands are what AgentDrive uses.
 The config home is $AGENTDRIVE_HOME when that variable is set.
 Otherwise use ~/.config/agentdrive on macOS and Linux, and C:\Users\<you>\.config\agentdrive on Windows.
 

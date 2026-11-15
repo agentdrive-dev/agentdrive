@@ -22,6 +22,7 @@ Other stops:
 - Installer exit 2: the disclaimer was not accepted in a separate turn.
 - Installer exit 3: Grok Bot and Muse signals are both set.
 - A command exits non-zero: do not send it again until a read shows the car's state.
+- A parked command says Go 1.23 or newer is required, or that the car command tool could not be updated. The command was not sent. Install Go 1.23 or newer and run it again. A read such as `agentdrive check` does not build the tool.
 - Partner registration says the domain is invalid: keep the error. The key has to be at the domain root (`https://<username>.github.io/.well-known/appspecific/com.tesla.3p.public-key.pem`). A project subpath does not work. Any other HTTPS host at a domain root, for example a custom domain, can serve the same file.
 - The car is not in Park or the speed is missing: the command is refused before `tesla-control` runs.
 - `agentdrive check` exits 0 when the car is asleep. That is not a failure. It did not wake the car. Exit 1 means a new alert. The same alert exits 0 until it clears and later returns. An energy-mode alert repeats at most once an hour while that mode stays on and the driver seat is empty. A skip does not change the remembered alerts. Exit 2 means the read itself failed. A problem saving local history prints `history:` on the error stream and leaves the check's exit code and briefing as they are.

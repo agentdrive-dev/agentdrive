@@ -1016,6 +1016,7 @@ def build_app(home: Path, *, region: str | None = None) -> App:
         resolve_key(home),
         session_cache=home / ".session-cache.json",
         token_dir=home,
+        home=home,
     )
     return App(home, reader=reader, tokens=tokens, control=control, region=chosen, history=True)
 

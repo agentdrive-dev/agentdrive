@@ -228,7 +228,7 @@ agentdrive precondition
 
 `steering-heat` sends `steering-wheel-heater` with `on` or `off`. A heat level is refused, because that signed command has no level.
 
-`defrost-on` and `defrost-off` send `preconditioning-max`. That is max defrost for the front and rear together. There is no separate front-only or rear-only command, and the manual override is not sent. Upstream `tesla-control` does not include that subcommand, so the installer adds it to the local build. `agentdrive update` rebuilds that binary.
+`defrost-on` and `defrost-off` send `preconditioning-max`. That is max defrost for the front and rear together. There is no separate front-only or rear-only command, and the manual override is not sent. Upstream `tesla-control` does not include that subcommand, so the installer adds it to the local build. If you only pull the code, AgentDrive rebuilds that tool the next time a command needs it.
 
 `precondition` sends `climate-on`, which starts cabin preconditioning now. It does not add a precondition schedule or a scheduled departure. A later departure time is `agentdrive departure`. `climate-off` stops the cabin climate.
 
@@ -251,7 +251,7 @@ Quiet hours default to 00:00-06:00 local time. The end time is not included, so 
 
 A family member cannot run boombox and cannot override quiet hours. `agentdrive family allow rider boombox` lets them request either sound. The command writes a pending request. Approving it still obeys quiet hours. `agentdrive request approve <id> --override` is how the owner plays it during quiet hours. That approval uses the same `despite quiet hours` confirmation.
 
-Upstream `tesla-control` does not include this subcommand. The published vehicle-command protocol leaves the action out, and its proxy reports `remote_boombox` as not implemented. The installer adds `boombox` to the local build. The signed message is the infotainment BoomboxAction: VehicleAction field 64, with the sound id in field 1. `agentdrive update` rebuilds that binary.
+Upstream `tesla-control` does not include this subcommand. The published vehicle-command protocol leaves the action out, and its proxy reports `remote_boombox` as not implemented. The installer adds `boombox` to the local build. The signed message is the infotainment BoomboxAction: VehicleAction field 64, with the sound id in field 1. If you only pull the code, AgentDrive rebuilds that tool the next time a command needs it.
 
 ## Rear trunk, front trunk, and remote start
 
@@ -356,7 +356,7 @@ The sample coordinates and the sample id above are placeholders.
 
 Signed commands run `tesla-control` with `TESLA_TOKEN_FILE`, `TESLA_KEY_FILE`, and `TESLA_VIN` set in the environment. Those names are what the tool requires. The access token is written to a mode 0600 file and deleted in a `finally` block. It is never placed on the argument list. The tool is invoked once. If it fails, it is not launched again until a read shows whether the car already changed.
 
-`agentdrive update` fast-forwards the checkout from `main`, or downloads that branch when the tree is not a git checkout, then re-runs the install steps. It does not modify tokens, keys, client credentials, `host.yaml`, or vehicle files under `$AGENTDRIVE_HOME`.
+Update with `agentdrive update`. If you only pull the code, AgentDrive rebuilds its car command tool by itself the next time it needs it. Private files stay as they are: tokens, keys, client credentials, `host.yaml`, and vehicle files.
 
 ```bash
 agentdrive check

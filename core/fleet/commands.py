@@ -14,6 +14,7 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
+from core import command_tool
 from core.errors import CommandFailed
 from core.fleet.http import note_command_attempted
 from core.redact import redact
@@ -26,14 +27,29 @@ class CommandResult:
 
 
 class TeslaControl:
-    def __init__(self, binary: str, key_file: Path, runner=None, *, session_cache: Path | None = None, token_dir: Path | None = None):
+    def __init__(
+        self,
+        binary: str,
+        key_file: Path,
+        runner=None,
+        *,
+        session_cache: Path | None = None,
+        token_dir: Path | None = None,
+        home: Path | None = None,
+    ):
         self.binary = binary
         self.key_file = Path(key_file)
         self.runner = runner or _subprocess_runner
         self.session_cache = Path(session_cache) if session_cache else None
         self.token_dir = Path(token_dir) if token_dir else None
+        self.home = Path(home) if home is not None else None
 
     def run(self, *, vin: str, access_token: str, args: list[str], timeout: float = 90) -> CommandResult:
+        if self.home is not None:
+            command_tool.ensure_command_tool(self.home)
+            candidate = self.home / "bin" / "tesla-control"
+            if candidate.is_file():
+                self.binary = str(candidate)
         if not vin or not access_token or not args:
             raise CommandFailed("A signed command needs a vehicle id, an access token, and a command")
         directory = self.token_dir
