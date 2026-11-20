@@ -15,18 +15,46 @@
   max-width: 100%;
 }
 
-/* Illustrated user-guide cards. */
+/* Illustrated user-guide cards.
+   The README uses a plain table so the editions sit side by side on GitHub,
+   where these classes are removed. Here the table is restyled into cards. */
 
-.guide-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+.markdown-body table.guide-table {
+  display: table;
+  width: 100%;
+  max-width: 100%;
   margin: 0 0 8px;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: visible;
+}
+
+.markdown-body table.guide-table tr {
+  background: transparent;
+  border: 0;
+}
+
+.markdown-body table.guide-table td {
+  box-sizing: border-box;
+  width: 50%;
+  padding: 0 8px;
+  vertical-align: top;
+  border: 0;
+  background: transparent;
+}
+
+.markdown-body table.guide-table td:first-child {
+  padding-left: 0;
+}
+
+.markdown-body table.guide-table td:last-child {
+  padding-right: 0;
 }
 
 .guide-card {
   display: flex;
   flex-direction: column;
+  height: 100%;
   min-width: 0;
   overflow: hidden;
   background: #fff;
@@ -84,14 +112,16 @@
 }
 
 .guide-meta {
-  color: #586069;
+  color: #959da5;
   font-size: 14px;
 }
 
-.guide-meta span + span::before {
-  margin: 0 0.45em;
-  color: #959da5;
-  content: "·";
+.guide-meta span {
+  color: #586069;
+}
+
+.guide-sep {
+  display: none;
 }
 
 .guide-label {
@@ -177,7 +207,21 @@
 }
 
 @media (max-width: 720px) {
-  .guide-grid {
-    grid-template-columns: minmax(0, 1fr);
+  .markdown-body table.guide-table,
+  .markdown-body table.guide-table tbody,
+  .markdown-body table.guide-table tr,
+  .markdown-body table.guide-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .markdown-body table.guide-table td,
+  .markdown-body table.guide-table td:first-child,
+  .markdown-body table.guide-table td:last-child {
+    padding: 0;
+  }
+
+  .markdown-body table.guide-table td + td {
+    margin-top: 16px;
   }
 }
