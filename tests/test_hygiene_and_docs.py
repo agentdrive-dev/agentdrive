@@ -113,6 +113,39 @@ def test_homepage_how_to_start_leads_with_the_paste_prompt():
     assert (ROOT / "docs" / "manuals" / "agentdrive-user-guide-zh.pdf").is_file()
 
 
+def test_readme_user_guide_renders_on_github_and_pages():
+    """Liquid relative_url paths stay literal on github.com, and class-only layout collapses there."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    visible = _without_fences(readme)
+    assert "{{" not in visible
+    assert "{%" not in visible
+    assert "relative_url" not in readme
+    guide = readme[readme.index("## User guide"):readme.index("## How to start")]
+    assert '<table class="guide-table"' in guide
+    assert guide.count('width="50%"') == 2
+    text = re.sub(r"<[^>]+>", "", guide)
+    text = re.sub(r"\s+", " ", text)
+    assert "18 pages · A4 · 9.2 MB" in text
+    assert "18 pages · A4 · 9.5 MB" in text
+    assert "View online · Download" in text
+    assert "View online · 中文版说明书" in text
+    assert "Sunny" in guide
+    images = re.findall(r"<img\b[^>]*>", guide)
+    assert len(images) == 8
+    covers = [image for image in images if "cover-" in image]
+    previews = [image for image in images if "preview-" in image]
+    assert len(covers) == 2
+    assert len(previews) == 6
+    assert all('width="100%"' in image for image in covers)
+    assert all('width="30%"' in image for image in previews)
+    refs = re.findall(r'(?:src|href)="([^"]+)"', guide)
+    assert refs
+    for target in refs:
+        path_part, _, _anchor = target.partition("#")
+        assert path_part.startswith("docs/"), target
+        assert (ROOT / path_part).is_file(), target
+
+
 def test_install_page_holds_the_full_prompt_and_agent_steps():
     page = (ROOT / "docs" / "00-before-you-start.md").read_text(encoding="utf-8")
     how_at = page.index("## How to start")
