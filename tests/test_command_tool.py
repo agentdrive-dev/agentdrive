@@ -5,6 +5,7 @@ import subprocess
 import sys
 import textwrap
 import time
+from datetime import date
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -318,6 +319,9 @@ def test_read_only_commands_do_not_rebuild(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr("core.cli.build_app", lambda home: fake)
     monkeypatch.setattr(command_tool, "_default_runner", lambda *args: calls.append(args))
     monkeypatch.setattr(command_tool, "_go_version", lambda: (1, 23))
+    # history due records a tip on Monday, Wednesday, Friday, and the 1st, and that creates the history files.
+    # 2026-03-03 is a Tuesday, so this check stays on the rebuild.
+    monkeypatch.setattr("core.history.usage.local_today", lambda _tz: date(2026, 3, 3))
     commands = [
         ["check"],
         ["report"],
